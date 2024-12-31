@@ -1,11 +1,11 @@
 // success/page.js
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Header from '../../components/Header'
 
-export default function Success() {
+function SuccessContent() {
   const [orderDetails, setOrderDetails] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -94,5 +94,16 @@ export default function Success() {
         )}
       </main>
     </div>
+  )
+}
+
+
+
+
+export default function Success() {
+  return (
+    <Suspense fallback={<div className="text-center text-lg font-medium text-gray-700 py-8">Loading page...</div>}>
+      <SuccessContent />
+    </Suspense>
   )
 }
