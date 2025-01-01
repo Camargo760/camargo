@@ -189,7 +189,7 @@ export default function Admin() {
     return <div>Loading...</div>;
   }
 
-  if (!session || session.user.email !== 'admin@example.com') {
+  if (!session || session.user.email !== 'camargo_co@outlook.com') {
     return <div>You do not have permission to access this page.</div>;
   }
 
