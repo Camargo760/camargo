@@ -25,7 +25,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (status === 'loading') return;
-    if (!session || session.user.email !== 'admin@example.com') {
+    if (!session || session.user.email !== 'camargo_co@outlook.com') {
       router.push('/');
     } else {
       fetchProducts();
