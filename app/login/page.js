@@ -40,7 +40,7 @@ export default function Login() {
       password: sanitizedPassword,
     })
     if (result.ok) {
-      if (sanitizedEmail === 'admin@example.com') {
+      if (sanitizedEmail === NEXT_PUBLIC_ADMIN_EMAIL) {
         router.push('/admin')
       } else {
         router.push('/')
