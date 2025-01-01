@@ -25,7 +25,7 @@ export default function Header() {
           </Link>
           {session ? (
             <>
-              {session.user.email === 'admin@example.com' && (
+              {session.user.email === NEXT_PUBLIC_ADMIN_EMAIL && (
                 <Link href="/admin" className="nav-link">
                   Admin
                 </Link>
