@@ -7,7 +7,7 @@ import Header from '../../../components/Header'
 import { loadStripe } from '@stripe/stripe-js'
 import { use } from 'react'
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+const stripePromise = loadStripe('pk_test_51P2GkSSEzW86D25YUkzW9QoZE31ODA3vRCoQpwmKlue7nrsuj7MI0MVD5w8oVUXwsSYhjbV7Xvq2iNu12Mi6vpjQ00a8DAondY')
 
 const sanitizeInput = (input) => {
   // Remove any potentially harmful characters
