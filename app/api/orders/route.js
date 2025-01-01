@@ -6,11 +6,11 @@ import Stripe from 'stripe'
 import clientPromise from '../../../lib/mongodb'
 import { ObjectId } from 'mongodb'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+const stripe = new Stripe('sk_test_51P2GkSSEzW86D25YTF33BP83Rf4ffGJORl0gfTr3YBvpr5dejYm8bfO6hH3DYBu9saWy9TEDCUELfJNOW1S80rkG00SEhjrTCo')
 
 export async function GET(request) {
   const session = await getServerSession(authOptions)
-  if (!session || session.user.email !== 'admin@example.com') {
+  if (!session || session.user.email !== 'camargo_co@outlook.com') {
     return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
   }
 
