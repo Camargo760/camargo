@@ -17,7 +17,7 @@ export default function Header() {
     <header className="header">
       <nav className="nav-container">
         <Link href="/" className="logo">
-          <Image src='/assets/sleeve.png' width={150} height={20} alt="Logo" />
+          <Image src='/assets/logo.png' width={150} height={20} alt="Logo" />
         </Link>
         <div className="nav-links">
           <Link href="/" className="nav-link">
