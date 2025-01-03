@@ -21,7 +21,7 @@ export default async function Home() {
             <Link
               href="/products"
               className="bg-black hover:bg-blue-200 hover:text-black text-white font-bold py-3 px-6 rounded-full text-lg transition duration-300"
-            >4
+            >
               Shop Now
             </Link>
 
