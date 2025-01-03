@@ -16,12 +16,12 @@ export default async function Home() {
               Welcome To Camargo's World, We can customize apparel for you.
             </h1>
             <p className="text-xl mb-8 text-shadow-sm">
-              and here the subtitile you can also change!
+              ☆♧◇♡♤
             </p>
             <Link
               href="/products"
               className="bg-black hover:bg-blue-200 hover:text-black text-white font-bold py-3 px-6 rounded-full text-lg transition duration-300"
-            >
+            >4
               Shop Now
             </Link>
 
