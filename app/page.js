@@ -13,7 +13,7 @@ export default async function Home() {
         <div className="relative text-white py-32 bg-banner h-screen">
           <div className="relative z-10 container mx-auto text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-4 text-shadow-md">
-              You can change the titile here
+              Welcome To Camargo's World, We Can Customize You Shirts!
             </h1>
             <p className="text-xl mb-8 text-shadow-sm">
               and here the subtitile you can also change!
