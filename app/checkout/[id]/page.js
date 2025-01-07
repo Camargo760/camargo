@@ -7,7 +7,7 @@ import Header from '../../../components/Header'
 import { loadStripe } from '@stripe/stripe-js'
 import { use } from 'react'
 
-const stripePromise = loadStripe('pk_test_51P2GkSSEzW86D25YUkzW9QoZE31ODA3vRCoQpwmKlue7nrsuj7MI0MVD5w8oVUXwsSYhjbV7Xvq2iNu12Mi6vpjQ00a8DAondY')
+const stripePromise = loadStripe('pk_test_51QZg9BD8mrcLYX2eSS3SVHt0JEh24sV9oBcDyQYhq1dlxs4EC0yrvDTKHGQ9sSE8oRDaaBkxqorGTagsnG0k7bVC00tIAnbWi7')
 
 const sanitizeInput = (input) => {
   // Remove any potentially harmful characters
