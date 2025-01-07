@@ -81,7 +81,7 @@ export default function SignUp() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen flex flex-col items-center justify-center">
+    <div>
       <Header />
       <main className="container mx-auto p-8 px-4 md:px-8 w-full max-w-lg">
         <h1 className="text-3xl font-extrabold mb-8 text-center text-gray-800">Sign Up</h1>
