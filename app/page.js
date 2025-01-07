@@ -12,7 +12,7 @@ export default async function Home() {
         {/* Banner Section */}
         <div className="relative text-white py-32 bg-banner h-screen">
           <div className="relative z-10 container mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 text-shadow-md">
+            <h1 className="text-4xl md:text-6xl font-bold mb-4 text-shadow-md banner-heading">
               Welcome To Camargo's World, We Can Customize Apparel For You.
             </h1>
             <p className="text-xl mb-8 text-shadow-sm">
@@ -24,11 +24,16 @@ export default async function Home() {
             >
               Shop Now
             </Link>
-
           </div>
         </div>
       </main>
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .banner-heading {
+            letter-spacing: 2px; /* Adjust as needed */
+          }
+        }
+      `}</style>
     </div>
   )
 }
-
