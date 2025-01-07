@@ -83,7 +83,7 @@ export default function SignUp() {
   return (
     <div>
       <Header />
-      <main className="container mx-auto px-8 py-100 px-4 md:px-8 w-full max-w-lg">
+      <main className="container mx-auto px-8 py-100 px-4 md:px-8 md:py-100 w-full max-w-lg">
         <h1 className="text-3xl font-extrabold mb-8 text-center text-gray-800">Sign Up</h1>
         <form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-lg p-8 space-y-6">
           <div className="mb-4">
