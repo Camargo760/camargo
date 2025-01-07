@@ -4,7 +4,7 @@ import Stripe from 'stripe'
 import clientPromise from '../../../lib/mongodb'
 import { ObjectId } from 'mongodb'
 
-const stripe = new Stripe('sk_test_51P2GkSSEzW86D25YTF33BP83Rf4ffGJORl0gfTr3YBvpr5dejYm8bfO6hH3DYBu9saWy9TEDCUELfJNOW1S80rkG00SEhjrTCo')
+const stripe = new Stripe('sk_test_51QZg9BD8mrcLYX2ej1ccqQNpzzOfbBKQbKjEsMJsXbhglF3mflOy8b8fvokUICannuHbARZ9pvrRyEXzuLZ5KV5e00Q4zzI8bm')
 
 export async function POST(request) {
   try {
