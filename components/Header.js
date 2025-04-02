@@ -23,6 +23,9 @@ export default function Header() {
           <Link href="/" className="nav-link">
             Home
           </Link>
+            <Link href="/customOrder" className="nav-link">
+            Home
+          </Link>
           {session ? (
             <>
               {session.user.email === 'camargo_co@outlook.com' && (
