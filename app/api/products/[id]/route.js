@@ -1,14 +1,16 @@
+// api/products/[id]/route.js
 import { NextResponse } from 'next/server';
 import clientPromise from '../../../../lib/mongodb';
 import { ObjectId } from 'mongodb';
 
 export async function PUT(request, { params }) {
   try {
+    const { id } = await params;
     const client = await clientPromise;
     const db = client.db("ecommerce");
     const product = await request.json();
     const result = await db.collection("products").updateOne(
-      { _id: new ObjectId(params.id) },
+      { _id: new ObjectId(id) },
       { $set: { ...product, uploadTime: new Date() } }
     );
     if (result.modifiedCount === 0) {
@@ -23,11 +25,12 @@ export async function PUT(request, { params }) {
 
 export async function PATCH(request, { params }) {
   try {
+    const { id } = await params;
     const client = await clientPromise;
     const db = client.db("ecommerce");
     const update = await request.json();
     const result = await db.collection("products").updateOne(
-      { _id: new ObjectId(params.id) },
+      { _id: new ObjectId(id) },
       { $set: { ...update, uploadTime: new Date() } }
     );
     if (result.modifiedCount === 0) {
@@ -42,17 +45,19 @@ export async function PATCH(request, { params }) {
 
 export async function GET(request, { params }) {
   try {
-    if (!params?.id) {
+    const { id } = await params;
+    
+    if (!id) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
-    if (!ObjectId.isValid(params.id)) {
+    if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 });
     }
 
     const client = await clientPromise;
     const db = client.db("ecommerce");
-    const product = await db.collection("products").findOne({ _id: new ObjectId(params.id) });
+    const product = await db.collection("products").findOne({ _id: new ObjectId(id) });
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
@@ -65,12 +70,12 @@ export async function GET(request, { params }) {
   }
 }
 
-
 export async function DELETE(request, { params }) {
   try {
+    const { id } = await params;
     const client = await clientPromise;
     const db = client.db("ecommerce");
-    const result = await db.collection("products").deleteOne({ _id: new ObjectId(params.id) });
+    const result = await db.collection("products").deleteOne({ _id: new ObjectId(id) });
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
@@ -80,4 +85,3 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
   }
 }
-

@@ -14,7 +14,7 @@ export default function Header() {
   }
 
   return (
-    <header className="header">
+    <header className="header z-[10000000000]">
       <nav className="nav-container">
         <Link href="/" className="logo">
           <Image src='/assets/logo.png' width={150} height={20} alt="Logo" />

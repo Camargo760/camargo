@@ -1,181 +1,357 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Header from '../../../components/Header'
-import { loadStripe } from '@stripe/stripe-js'
-import { use } from 'react'
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Image from "next/image"
+import Header from "../../../components/Header"
+import PaymentModal from "../../../components/payment-modal"
+import DeliveryPaymentForm from "../../../components/delivery-payment-form"
+import { loadStripe } from "@stripe/stripe-js"
+import { useSession } from "next-auth/react"
 
-const stripePromise = loadStripe('pk_test_51QZg9BD8mrcLYX2eSS3SVHt0JEh24sV9oBcDyQYhq1dlxs4EC0yrvDTKHGQ9sSE8oRDaaBkxqorGTagsnG0k7bVC00tIAnbWi7')
-
-const sanitizeInput = (input) => {
-  // Remove any potentially harmful characters
-  return input.replace(/[<>]/g, '');
-};
-
-const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-const validatePhone = (phone) => {
-  const phoneRegex = /^[0-9]{10,15}$/;
-  return phoneRegex.test(phone);
-};
+// Use React.use for params
+import { use } from "react"
 
 export default function Checkout({ params }) {
+  // Unwrap params with React.use
+  const id = use(params).id
+
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const { data: session } = useSession()
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
+  const [address, setAddress] = useState("")
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [isDeliveryFormOpen, setIsDeliveryFormOpen] = useState(false)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null)
+
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
 
-  // Unwrap the params promise
-  const resolvedParams = use(params)
+  const color = searchParams.get("color") || ""
+  const size = searchParams.get("size") || ""
+  const customText = searchParams.get("customText") || ""
+  const quantity = Number.parseInt(searchParams.get("quantity") || "1", 10)
+  const isCustomProduct = searchParams.get("customProduct") === "true"
 
-  const selectedColor = searchParams.get('color')
-  const selectedSize = searchParams.get('size')
+  useEffect(() => {
+    // Pre-fill user details if logged in
+    if (session && session.user) {
+      setEmail(session.user.email || "")
+      setName(session.user.name || "")
+    }
+  }, [session])
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`/api/products/${resolvedParams.id}`)
+        // Use id instead of params.id
+        const endpoint = isCustomProduct ? `/api/customProducts/${id}` : `/api/products/${id}`
+        const res = await fetch(endpoint)
+
         if (!res.ok) {
-          throw new Error('Failed to fetch product')
+          throw new Error("Failed to fetch product")
         }
+
         const data = await res.json()
         setProduct(data)
       } catch (err) {
-        setError(err.message)
+        console.error("Error fetching product:", err)
+        setError("Failed to load product. Please try again.")
       } finally {
         setLoading(false)
       }
     }
-    fetchProduct()
-  }, [resolvedParams.id])
 
-  const handleSubmit = async (e) => {
+    if (id) {
+      fetchProduct()
+    }
+  }, [id, isCustomProduct])
+
+  const handleProceedToPayment = (e) => {
     e.preventDefault()
-    if (!product) return
 
-    const name = sanitizeInput(e.target.name.value)
-    const email = sanitizeInput(e.target.email.value)
-    const phone = sanitizeInput(e.target.phone.value)
-
-    // Validate email and phone
-    if (!validateEmail(email)) {
-      alert('Invalid email format')
-      return
-    }
-    if (!validatePhone(phone)) {
-      alert('Invalid phone number format')
+    // Validate form
+    if (!name || !email || !phone || !address) {
+      setError("Please fill in all required fields")
       return
     }
 
-    const stripe = await stripePromise
-    const response = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        productId: product._id,
-        name,
-        email,
-        phone,
-        address: session?.user?.address || '',
-        color: selectedColor,
-        size: selectedSize,
-      }),
-    })
+    // Open payment method selection modal
+    setIsPaymentModalOpen(true)
+  }
 
-    const checkoutSession = await response.json()
+  const handleSelectPaymentMethod = async (method) => {
+    setSelectedPaymentMethod(method)
 
-    if (checkoutSession.error) {
-      setError(checkoutSession.error)
-      return
-    }
-
-    const result = await stripe.redirectToCheckout({
-      sessionId: checkoutSession.id,
-    })
-
-    if (result.error) {
-      setError(result.error.message)
+    if (method === "stripe") {
+      await handleStripeCheckout()
+    } else if (method === "delivery") {
+      // Show delivery payment form
+      setIsDeliveryFormOpen(true)
     }
   }
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div className="text-red-500">Error: {error}</div>
-  if (!product) return <div className="text-red-500">Product not found</div>
+  const handleStripeCheckout = async () => {
+    try {
+      setLoading(true)
+
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productId: id,
+          name,
+          email,
+          phone,
+          address,
+          color,
+          size,
+          isCustomProduct,
+          customText,
+          quantity,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to create checkout session")
+      }
+
+      const { id: sessionId } = await response.json()
+
+      // Redirect to Stripe Checkout
+      const stripe = await loadStripe(
+        "pk_test_51P2GkSSEzW86D25YUkzW9QoZE31ODA3vRCoQpwmKlue7nrsuj7MI0MVD5w8oVUXwsSYhjbV7Xvq2iNu12Mi6vpjQ00a8DAondY",
+      )
+      await stripe.redirectToCheckout({ sessionId })
+    } catch (err) {
+      console.error("Error creating checkout session:", err)
+      setError("Failed to process payment. Please try again.")
+      setLoading(false)
+    }
+  }
+
+  if (loading && !product) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <Header />
+        <main className="container mx-auto py-8 px-4">
+          <div className="flex justify-center items-center h-64">
+            <p className="text-xl font-semibold">Loading...</p>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (error && !product) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <Header />
+        <main className="container mx-auto py-8 px-4">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <p>{error}</p>
+          </div>
+          <div className="flex justify-center">
+            <button
+              onClick={() => router.back()}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Go Back
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <Header />
+        <main className="container mx-auto py-8 px-4">
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+            <p>Product not found</p>
+          </div>
+          <div className="flex justify-center">
+            <button
+              onClick={() => router.push("/")}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Return to Home
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="min-h-screen bg-gray-100">
       <Header />
-      <main className="container mx-auto p-8 px-4 md:px-8">
-        <h1 className="text-3xl font-extrabold mb-8 text-center text-gray-800">Checkout</h1>
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Order Summary Section */}
-          <div className="md:w-1/2 bg-white shadow-lg rounded-lg p-6 mx-auto">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Order Summary</h2>
-            <div className="border p-4 rounded-lg shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-700">{product.name}</h3>
-              <p className="text-gray-600 mt-2">${product.price}</p>
-              <p className="text-gray-600 mt-2">Category: {product.category}</p>
-              <p className="text-gray-600 mt-2">Description: {product.description}</p>
-              <p className="text-gray-600 mt-2">Selected Color: {selectedColor}</p>
-              <p className="text-gray-600 mt-2">Selected Size: {selectedSize}</p>
+      <main className="container mx-auto py-8 px-4">
+        <h1 className="text-3xl font-bold mb-8 text-center">Checkout</h1>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <p>{error}</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+            <div className="flex mb-4">
+              <div className="w-24 h-24 relative flex-shrink-0 bg-gray-200 rounded-md overflow-hidden">
+                {product.images && product.images.length > 0 ? (
+                  <Image
+                    src={product.images[0] || "/placeholder.svg"}
+                    alt={product.name}
+                    fill
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-500">No Image</div>
+                )}
+              </div>
+              <div className="ml-4">
+                <h3 className="font-semibold">{product.name}</h3>
+                <p className="text-gray-600 text-sm">${product.price.toFixed(2)}</p>
+                {color && <p className="text-gray-600 text-sm">Color: {color}</p>}
+                {size && <p className="text-gray-600 text-sm">Size: {size}</p>}
+                {customText && <p className="text-gray-600 text-sm">Custom Text: {customText}</p>}
+                <p className="text-gray-600 text-sm">Quantity: {quantity}</p>
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <div className="flex justify-between mb-2">
+                <span>Subtotal</span>
+                <span>${(product.price * quantity).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span>Shipping</span>
+                <span>Free</span>
+              </div>
+              <div className="flex justify-between font-semibold text-lg">
+                <span>Total</span>
+                <span>${(product.price * quantity).toFixed(2)}</span>
+              </div>
             </div>
           </div>
 
-          {/* Shipping Information Section */}
-          <div className="md:w-1/2 bg-white shadow-lg rounded-lg p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Shipping Information</h2>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-6">
-                <label htmlFor="name" className="block text-lg font-medium text-gray-700 mb-2">Name</label>
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">Customer Information</h2>
+            <form onSubmit={handleProceedToPayment}>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+                  Full Name
+                </label>
                 <input
-                  type="text"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   id="name"
-                  name="name"
-                  defaultValue={session?.user?.name || ''}
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div className="mb-6">
-                <label htmlFor="email" className="block text-lg font-medium text-gray-700 mb-2">Email</label>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                  Email
+                </label>
                 <input
-                  type="email"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   id="email"
-                  name="email"
-                  defaultValue={session?.user?.email || ''}
+                  type="email"
+                  placeholder="john@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="phone">
+                  Phone
+                </label>
+                <input
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="phone"
+                  type="tel"
+                  placeholder="(123) 456-7890"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
                 />
               </div>
               <div className="mb-6">
-                <label htmlFor="phone" className="block text-lg font-medium text-gray-700 mb-2">Phone Number</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
+                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="address">
+                  Shipping Address
+                </label>
+                <textarea
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="address"
+                  placeholder="123 Main St, City, State, ZIP"
+                  rows="3"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300 ease-in-out"
-              >
-                Proceed to Payment
-              </button>
+              <div className="flex items-center justify-between">
+                <button
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? "Processing..." : "Proceed to Payment"}
+                </button>
+              </div>
             </form>
           </div>
         </div>
+
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onSelectPaymentMethod={handleSelectPaymentMethod}
+          productDetails={{
+            name: product.name,
+            price: product.price,
+            color,
+            size,
+            quantity,
+          }}
+        />
+
+        <DeliveryPaymentForm
+          isOpen={isDeliveryFormOpen}
+          onClose={() => setIsDeliveryFormOpen(false)}
+          productDetails={{
+            id,
+            name: product.name,
+            price: product.price,
+            color,
+            size,
+            quantity,
+            isCustomProduct,
+            customText,
+          }}
+          customerInfo={{
+            name,
+            email,
+            phone,
+            address,
+          }}
+        />
       </main>
     </div>
   )
 }
+
