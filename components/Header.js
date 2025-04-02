@@ -24,7 +24,7 @@ export default function Header() {
             Home
           </Link>
             <Link href="/customOrder" className="nav-link">
-            Home
+            Custom Order
           </Link>
           {session ? (
             <>
