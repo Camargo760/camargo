@@ -5,6 +5,14 @@ import clientPromise from '../../../lib/mongodb';
 
 export async function POST(request) {
   try {
+
+        const textBody = await request.text();
+    console.log('Raw request body:', textBody);
+
+    if (!textBody) {
+      return NextResponse.json({ error: 'Empty request body' }, { status: 400 });
+    }
+    
     const { name, email, password } = await request.json();
 
     // Basic validation
