@@ -46,39 +46,46 @@ export default function SignUp() {
   const [password, setPassword] = useState('')
   const router = useRouter()
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // Sanitize input
-    const sanitizedName = sanitizeInput(name);
-    const sanitizedEmail = sanitizeInput(email);
-    const sanitizedPassword = sanitizeInput(password);
+  const sanitizedName = sanitizeInput(name);
+  const sanitizedEmail = sanitizeInput(email);
+  const sanitizedPassword = sanitizeInput(password);
 
-    // Validate email
-    if (!validateEmail(sanitizedEmail)) {
-      alert('Invalid email format');
-      return;
-    }
-
-    // Validate password
-    const passwordError = validatePassword(sanitizedPassword);
-    if (passwordError) {
-      alert(passwordError);
-      return;
-    }
-
-    const res = await fetch('/api/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: sanitizedName, email: sanitizedEmail, password: sanitizedPassword }),
-    })
-    const data = await res.json()
-    if (res.ok) {
-      router.push('/login')
-    } else {
-      alert(data.error || 'Sign up failed')
-    }
+  if (!validateEmail(sanitizedEmail)) {
+    alert('Invalid email format');
+    return;
   }
+
+  const passwordError = validatePassword(sanitizedPassword);
+  if (passwordError) {
+    alert(passwordError);
+    return;
+  }
+
+  const payload = { name: sanitizedName, email: sanitizedEmail, password: sanitizedPassword };
+  console.log('Sending payload:', payload); // ✅ Debugging
+
+  const res = await fetch('/api/signup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  console.log('Response Status:', res.status);
+  console.log('Response Headers:', [...res.headers]);
+
+  const data = await res.json();
+  console.log('Response Data:', data);
+
+  if (res.ok) {
+    router.push('/login');
+  } else {
+    alert(data.error || 'Sign up failed');
+  }
+};
+
 
   return (
     <div>
