@@ -241,9 +241,9 @@ export default function Admin() {
     return <div>Loading...</div>
   }
 
-  if (!session || session.user.email !== "camargo_co@outlook.com") {
-    return <div>You do not have permission to access this page.</div>
-  }
+  // if (!session || session.user.email !== "camargo_co@outlook.com") {
+  //   return <div>You do not have permission to access this page.</div>
+  // }
 
   return (
     <div className="min-h-screen bg-gray-100">
