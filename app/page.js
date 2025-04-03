@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import Header from '../components/Header'
+import SimpleForm from '../components/compo';
 
 export default async function Home() {
   return (
     <div className='overflow-hidden'>
       <Header />
+      <SimpleForm />
       <main
         style={{ height: 'calc(100vh - 100px)' }}
         className='bg-black h-screen overflow-hidden'
@@ -30,4 +32,3 @@ export default async function Home() {
     </div>
   )
 }
-
