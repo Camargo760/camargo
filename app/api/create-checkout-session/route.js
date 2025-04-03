@@ -102,8 +102,8 @@ export async function POST(request) {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/product/${productId}`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.camargosworld.com"}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.camargosworld.com"}/product/${productId}`,
       customer_email: email,
       billing_address_collection: "required",
       shipping_address_collection: {
