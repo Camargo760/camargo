@@ -116,8 +116,8 @@ export default function Home() {
             <Header />
             <main className="flex-grow">
                 <div className="max-w-7xl mx-auto my-12 px-4 md:px-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="bg-[#1a1a1a] p-8 rounded-lg border border-[#333] shadow-xl text-center relative overflow-hidden">
+                    <div className="md:flex md:gap-10 block">
+                        <div className="mb-8 md:mb-0 bg-[#1a1a1a] p-8 rounded-lg border border-[#333] shadow-xl text-center relative overflow-hidden">
                             <div
                                 className="w-full h-[400px] md:h-[500px] bg-[#2a2a2a] mb-6 flex items-center justify-center relative overflow-hidden rounded border border-[#333]"
                                 style={{ backgroundColor: currentBgColor }}
@@ -130,13 +130,13 @@ export default function Home() {
                                             className="max-w-[80%] max-h-[80%] object-contain"
                                         />
                                         {customText && (
-                                            <div className="absolute bottom-5 w-full font-['Kanit'] text-4xl font-bold text-white text-shadow">
+                                            <div className="absolute bottom-5 w-full font-['Kanit'] text-4xl font-bold text-white text-shadow text-center w-full">
                                                 {customText}
                                             </div>
                                         )}
                                     </>
                                 ) : (
-                                    <div className="font-['Kanit'] text-4xl font-bold text-white text-shadow">
+                                    <div className="font-['Kanit'] text-4xl font-bold text-white text-shadow text-center w-full mx-auto">
                                         {customText || "YOUR DESIGN"}
                                     </div>
                                 )}
@@ -153,15 +153,15 @@ export default function Home() {
                                 CUSTOMIZE YOUR TEE
                             </h2>
 
-                            <div className="mb-6">
+                            <div className="mb-6" >
                                 <span className="font-semibold mb-3 block text-[#f0f0f0] text-sm uppercase tracking-wide">
                                     T-SHIRT COLOR
                                 </span>
-                                <div className="flex gap-3 flex-wrap">
+                                <div>
                                     {colorOptions.map((option) => (
                                         <button
                                             key={option.color}
-                                            className={`w-9 h-9 rounded-full cursor-pointer border-2 transition-transform hover:scale-110 ${currentBgColor === option.color ? "border-[#ff3e00] scale-110" : "border-transparent"
+                                            className={`mx-2 my-2 w-9 h-9 rounded-full cursor-pointer border-2 transition-transform hover:scale-110 ${currentBgColor === option.color ? "border-[#ff3e00] scale-110" : "border-transparent"
                                                 }`}
                                             style={{ backgroundColor: option.color }}
                                             onClick={() => setCurrentBgColor(option.color)}
@@ -173,11 +173,11 @@ export default function Home() {
 
                             <div className="mb-6">
                                 <span className="font-semibold mb-3 block text-[#f0f0f0] text-sm uppercase tracking-wide">SIZE</span>
-                                <div className="flex gap-3 flex-wrap">
+                                <div>
                                     {sizeOptions.map((size) => (
                                         <button
                                             key={size}
-                                            className={`py-2 px-5 bg-[#2a2a2a] rounded cursor-pointer font-semibold border border-[#333] transition-all hover:bg-[#333] ${selectedSize === size ? "bg-[#ff3e00] text-white border-[#ff3e00]" : ""
+                                            className={`py-2 px-5 mx-2 my-2 bg-[#2a2a2a] rounded cursor-pointer font-semibold border border-[#333] transition-all hover:bg-[#333] ${selectedSize === size ? "bg-[#ff3e00] text-white border-[#ff3e00]" : ""
                                                 }`}
                                             onClick={() => setSelectedSize(size)}
                                         >
