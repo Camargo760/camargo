@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-
+ 
 // Import FontAwesome icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons'
