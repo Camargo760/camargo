@@ -6,6 +6,7 @@ import Image from "next/image"
 import Header from "../../../components/Header"
 import PaymentModal from "../../../components/payment-modal"
 import DeliveryPaymentForm from "../../../components/delivery-payment-form"
+import SimpleCaptcha from "../../../components/SimpleCaptcha"
 import { loadStripe } from "@stripe/stripe-js"
 import { useSession } from "next-auth/react"
 
@@ -26,6 +27,7 @@ export default function Checkout({ params }) {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isDeliveryFormOpen, setIsDeliveryFormOpen] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null)
+  const [captchaVerified, setCaptchaVerified] = useState(false)
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -73,6 +75,12 @@ export default function Checkout({ params }) {
 
   const handleProceedToPayment = (e) => {
     e.preventDefault()
+
+    // Verify captcha first
+    if (!captchaVerified) {
+      setError("Please verify the captcha first")
+      return
+    }
 
     // Validate form
     if (!name || !email || !phone || !address) {
@@ -135,6 +143,10 @@ export default function Checkout({ params }) {
       setError("Failed to process payment. Please try again.")
       setLoading(false)
     }
+  }
+
+  const handleCaptchaVerify = (verified) => {
+    setCaptchaVerified(verified)
   }
 
   if (loading && !product) {
@@ -304,11 +316,18 @@ export default function Checkout({ params }) {
                   required
                 />
               </div>
-              <div className="flex items-center justify-between">
+
+              <SimpleCaptcha onVerify={handleCaptchaVerify} />
+
+              <div className="flex items-center justify-between mt-4">
                 <button
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+                  className={`w-full font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+                    captchaVerified
+                      ? "bg-blue-500 hover:bg-blue-700 text-white"
+                      : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                  }`}
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !captchaVerified}
                 >
                   {loading ? "Processing..." : "Proceed to Payment"}
                 </button>
@@ -354,4 +373,3 @@ export default function Checkout({ params }) {
     </div>
   )
 }
-
