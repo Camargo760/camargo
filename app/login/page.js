@@ -58,7 +58,6 @@ export default function Login() {
     <>
       <Header />
       <main className="container mx-auto px-8 py-100 px-4 md:px-8 md:py-100 w-full max-w-lg">
-        <h1 className="text-3xl font-extrabold mb-8 text-center text-gray-800">Log In</h1>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -67,6 +66,7 @@ export default function Login() {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-lg p-8 space-y-6">
+                  <h1 className="text-3xl font-extrabold mb-8 text-center text-gray-800">Log In</h1>
           <div className="mb-4">
             <label htmlFor="email" className="block text-lg font-medium text-gray-700 mb-2">
               Email
