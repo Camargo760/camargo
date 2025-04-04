@@ -73,18 +73,21 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden max-h-[90vh]">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-800">Pay at Delivery</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
+      <div className="mt-[140px] bg-white rounded-lg shadow-xl w-full max-w-md overflow-y-auto" style={{ maxHeight: "calc(90vh - 100px)" }}>
+        <div className="p-6 border-b relative">
+          <h2 className="text-xl font-bold text-gray-800 inline-block">Pay at Delivery</h2>
+          <button
+            onClick={onClose}
+            className="float-right text-gray-500 hover:text-gray-700 transition-colors absolute top-1/2 transform -translate-y-1/2 right-0"
+          >
             <X size={24} />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto" style={{ maxHeight: "calc(90vh - 80px)" }}>
-          <div className="flex items-center justify-center mb-6">
-            <div className="bg-green-100 p-3 rounded-full">
+        <div className="p-6">
+          <div className="mb-6 text-center">
+            <div className="bg-green-100 p-3 rounded-full inline-block">
               <Truck className="text-green-600" size={32} />
             </div>
           </div>
@@ -103,7 +106,7 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2">Preferred Payment Method</label>
               <div className="space-y-2">
-                <label className="flex items-center">
+                <label className="block">
                   <input
                     type="radio"
                     name="paymentMethod"
@@ -114,7 +117,7 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
                   />
                   <span>Cash</span>
                 </label>
-                <label className="flex items-center">
+                <label className="block">
                   <input
                     type="radio"
                     name="paymentMethod"
@@ -125,7 +128,7 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
                   />
                   <span>Cash App Pay</span>
                 </label>
-                <label className="flex items-center">
+                <label className="block">
                   <input
                     type="radio"
                     name="paymentMethod"
@@ -136,7 +139,7 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
                   />
                   <span>Zelle</span>
                 </label>
-                <label className="flex items-center">
+                <label className="block">
                   <input
                     type="radio"
                     name="paymentMethod"
@@ -164,7 +167,7 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
               />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="mb-6">
               <button
                 type="submit"
                 className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
@@ -177,6 +180,7 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
         </div>
       </div>
     </div>
+
   )
 }
 
