@@ -42,7 +42,7 @@ export default function Header() {
           </Link>
           {session ? (
             <>
-              {session.user.email === process.env.ADMIN_EMAIL && (
+              {session.user.email === 'camargo_co@outlook.com' && (
                 <Link href="/admin" className="nav-link">
                   Admin
                 </Link>
