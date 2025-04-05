@@ -563,11 +563,11 @@ export default function Admin() {
                         >
                           {order.paymentMethod || "stripe"}
                         </span>
-                        {/* {order.paymentMethod === "delivery" && order.preferredMethod && (
+                         {order.paymentMethod === "delivery" && order.preferredMethod && (
                           <span className="ml-2 text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded capitalize">
                             {order.preferredMethod}
                           </span>
-                        )} */}
+                        )} 
                         {/* {order.status && (
                           <span className={`ml-2 text-xs ${getStatusBadgeColor(order.status)} px-2 py-1 rounded`}>
                             {getStatusText(order.status)}
