@@ -36,7 +36,6 @@ export async function POST(request) {
       name,
       email,
       password: hashedPassword,
-      role: 'user', // Default role for new signups
     });
 
     return NextResponse.json({ message: 'User created successfully', userId: result.insertedId }, { status: 201 });
