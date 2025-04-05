@@ -25,7 +25,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (status === "loading") return
-    if (!session || session.user.email !==  'camargo_co@outlook.com') {
+    if (!session || session.user.email !==  process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
       router.push("/")
     } else {
       fetchProducts()
@@ -241,7 +241,7 @@ export default function Admin() {
     return <div>Loading...</div>
   }
 
-  if (!session || session.user.email !== 'camargo_co@outlook.com') {
+  if (!session || session.user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
     return <div>You do not have permission to access this page.</div>
   }
 
