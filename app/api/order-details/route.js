@@ -3,7 +3,7 @@ import Stripe from "stripe"
 import clientPromise from "../../../lib/mongodb"
 import { ObjectId } from "mongodb"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 export async function GET(request) {
   try {
@@ -19,8 +19,11 @@ export async function GET(request) {
     // Handle delivery orders
     if (orderId && paymentMethod === "delivery") {
       try {
+        console.log("Fetching delivery order details for ID:", orderId)
+
         // Validate ObjectId format
         if (!ObjectId.isValid(orderId)) {
+          console.log("Invalid order ID format:", orderId)
           return NextResponse.json({ error: "Invalid order ID format" }, { status: 400 })
         }
 
@@ -28,7 +31,21 @@ export async function GET(request) {
         const order = await db.collection("orders").findOne({ _id: new ObjectId(orderId) })
 
         if (!order) {
+          console.log("Order not found:", orderId)
           return NextResponse.json({ error: "Order not found" }, { status: 404 })
+        }
+
+        console.log("Found delivery order:", order._id.toString())
+
+        // Check if there's a design image ID and fetch the image data
+        let finalDesignImage = null
+        if (order.product.designImageId && ObjectId.isValid(order.product.designImageId)) {
+          const imageDoc = await db.collection("customProductImages").findOne({
+            _id: new ObjectId(order.product.designImageId),
+          })
+          if (imageDoc && imageDoc.imageData) {
+            finalDesignImage = imageDoc.imageData
+          }
         }
 
         // Format the response to match the Stripe response structure
@@ -54,9 +71,9 @@ export async function GET(request) {
             selectedSize: order.selectedSize,
             customText: order.product.customText || "",
             customImage: order.product.customImage || null,
+            finalDesignImage: finalDesignImage, // Include the actual image data
             price: order.product.price,
           },
-          status: order.status || "pending",
         })
       } catch (error) {
         console.error("Error fetching delivery order details:", error)
@@ -123,6 +140,19 @@ export async function GET(request) {
       _id: new ObjectId(session.metadata.productId),
     })
 
+    // Check if there's a design image ID and fetch the image data
+    let finalDesignImage = null
+    const designImageId = session.metadata.designImageId || (product ? product.finalDesignImageId : null)
+
+    if (designImageId && ObjectId.isValid(designImageId)) {
+      const imageDoc = await db.collection("customProductImages").findOne({
+        _id: new ObjectId(designImageId),
+      })
+      if (imageDoc && imageDoc.imageData) {
+        finalDesignImage = imageDoc.imageData
+      }
+    }
+
     // Calculate quantity from metadata or default to 1
     const quantity = Number.parseInt(session.metadata.quantity || "1", 10)
 
@@ -144,6 +174,7 @@ export async function GET(request) {
             selectedSize: session.metadata.size || "N/A",
             customText: session.metadata.customText || "",
             customImage: product.customImage || null,
+            finalDesignImage: finalDesignImage, // Include the actual image data
             price: product.price || 0,
           }
         : {
