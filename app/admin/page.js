@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Header from "../../components/Header"
+import { Download } from "lucide-react"
 
 export default function Admin() {
   const [products, setProducts] = useState([])
@@ -21,11 +22,10 @@ export default function Admin() {
   const [sortOrder, setSortOrder] = useState("desc")
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [updatingOrderStatus, setUpdatingOrderStatus] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
-    if (!session || session.user.email !==  process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+    if (!session || session.user.email !== "camargo_co@outlook.com") {
       router.push("/")
     } else {
       fetchProducts()
@@ -185,63 +185,21 @@ export default function Admin() {
     setImages((prevImages) => prevImages.filter((_, i) => i !== index))
   }
 
-  const updateOrderStatus = async (orderId, newStatus) => {
-    if (updatingOrderStatus) return
-
-    try {
-      setUpdatingOrderStatus(true)
-      const res = await fetch(`/api/orders/${orderId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData.error || "Failed to update order status")
-      }
-
-      // Update the order status locally
-      setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
-    } catch (err) {
-      console.error("Error updating order status:", err)
-      setError("Failed to update order status. Please try again.")
-    } finally {
-      setUpdatingOrderStatus(false)
-    }
-  }
-
-  const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case "received":
-        return "bg-blue-100 text-blue-800"
-      case "out_for_delivery":
-        return "bg-yellow-100 text-yellow-800"
-      case "delivered":
-        return "bg-green-100 text-green-800"
-      default:
-        return "bg-orange-100 text-orange-800"
-    }
-  }
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case "received":
-        return "Order Received"
-      case "out_for_delivery":
-        return "Out for Delivery"
-      case "delivered":
-        return "Delivered"
-      default:
-        return "Pending"
-    }
+  // Function to download the final design image
+  const downloadDesignImage = (imageUrl, orderId) => {
+    const link = document.createElement("a")
+    link.href = imageUrl
+    link.download = `custom-design-${orderId}.png`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   if (status === "loading") {
     return <div>Loading...</div>
   }
 
-  if (!session || session.user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+  if (!session || session.user.email !== "camargo_co@outlook.com") {
     return <div>You do not have permission to access this page.</div>
   }
 
@@ -434,9 +392,8 @@ export default function Admin() {
                   </button>
                   <button
                     onClick={() => handlePublish(product._id, !product.published)}
-                    className={`${
-                      product.published ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
-                    } text-white font-bold py-1 px-2 rounded text-sm`}
+                    className={`${product.published ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
+                      } text-white font-bold py-1 px-2 rounded text-sm`}
                   >
                     {product.published ? "Unpublish" : "Publish"}
                   </button>
@@ -493,9 +450,6 @@ export default function Admin() {
                   <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Payment Method
                   </th>
-                  {/* <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Actions
-                  </th> */}
                 </tr>
               </thead>
               <tbody>
@@ -547,6 +501,28 @@ export default function Admin() {
                             </a>
                           </div>
                         )}
+                        {/* Display final design image if available */}
+                        {order.product.finalDesignImage && (
+                          <div className="mt-3">
+                            <p className="text-xs font-semibold text-gray-700">Final Design:</p>
+                            <div className="relative block group">
+                              <Image
+                                src={order.product.finalDesignImage || "/placeholder.svg"}
+                                alt="Final design"
+                                width={100}
+                                height={100}
+                                className="rounded border-2 border-orange-400 mt-1 hover:border-orange-600 transition-all"
+                              />
+                              <button
+                                onClick={() => downloadDesignImage(order.product.finalDesignImage, order.id)}
+                                className="bottom-2 mt-2 right-2 p-1 bg-green-500 rounded-md w-24"
+                                title="Download final design"
+                              >
+                                Download
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">{order.quantity || 1}</td>
@@ -563,60 +539,18 @@ export default function Admin() {
                         >
                           {order.paymentMethod || "stripe"}
                         </span>
-                         {order.paymentMethod === "delivery" && order.preferredMethod && (
+                        {order.paymentMethod === "delivery" && order.preferredMethod && (
                           <span className="ml-2 text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded capitalize">
                             {order.preferredMethod}
                           </span>
-                        )} 
-                        {/* {order.status && (
-                          <span className={`ml-2 text-xs ${getStatusBadgeColor(order.status)} px-2 py-1 rounded`}>
-                            {getStatusText(order.status)}
-                          </span>
-                        )} */}
+                        )}
                       </div>
-                      {/* {order.paymentMethod === "delivery" && order.additionalNotes && (
+                      {order.paymentMethod === "delivery" && order.additionalNotes && (
                         <p className="mt-1 text-xs text-gray-600">
                           <span className="font-semibold">Notes:</span> {order.additionalNotes}
                         </p>
-                      )} */}
-                    </td>
-                    {/* <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                      {order.paymentMethod === "delivery" && (
-                        <div className="flex flex-col space-y-2">
-                          <button
-                            onClick={() => updateOrderStatus(order.id, "received")}
-                            className={`text-xs px-2 py-1 rounded ${
-                              order.status === "received" ? "bg-blue-500 text-white" : "bg-gray-200 hover:bg-blue-100"
-                            }`}
-                            disabled={updatingOrderStatus}
-                          >
-                            Order Received
-                          </button>
-                          <button
-                            onClick={() => updateOrderStatus(order.id, "out_for_delivery")}
-                            className={`text-xs px-2 py-1 rounded ${
-                              order.status === "out_for_delivery"
-                                ? "bg-yellow-500 text-white"
-                                : "bg-gray-200 hover:bg-yellow-100"
-                            }`}
-                            disabled={updatingOrderStatus}
-                          >
-                            Out for Delivery
-                          </button>
-                          <button
-                            onClick={() => updateOrderStatus(order.id, "delivered")}
-                            className={`text-xs px-2 py-1 rounded ${
-                              order.status === "delivered"
-                                ? "bg-green-500 text-white"
-                                : "bg-gray-200 hover:bg-green-100"
-                            }`}
-                            disabled={updatingOrderStatus}
-                          >
-                            Delivered
-                          </button>
-                        </div>
                       )}
-                    </td> */}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -627,4 +561,3 @@ export default function Admin() {
     </div>
   )
 }
-
