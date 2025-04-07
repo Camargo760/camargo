@@ -1,91 +1,57 @@
 import { NextResponse } from "next/server"
-import clientPromise from "../../../../lib/mongodb"
-import { ObjectId } from "mongodb"
+import clientPromise from "../../../lib/mongodb"
 
-export async function GET(request, context) {
+export async function POST(request) {
   try {
-    const { id } = context.params
+    const customProduct = await request.json()
 
-    // Validate ObjectId format
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid product ID format" }, { status: 400 })
+    // Validate required fields
+    if (!customProduct.name || !customProduct.price) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
     // Connect to MongoDB
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Find the custom product
-    const customProduct = await db.collection("customProducts").findOne({ _id: new ObjectId(id) })
+    // Add timestamp
+    customProduct.uploadTime = new Date()
 
-    if (!customProduct) {
-      return NextResponse.json({ error: "Custom product not found" }, { status: 404 })
-    }
+    // Insert the custom product
+    const result = await db.collection("customProducts").insertOne(customProduct)
+
+    return NextResponse.json(
+      {
+        id: result.insertedId.toString(),
+        message: "Custom product created successfully",
+      },
+      { status: 201 },
+    )
+  } catch (error) {
+    console.error("Error creating custom product:", error)
+    return NextResponse.json({ error: "Failed to create custom product" }, { status: 500 })
+  }
+}
+
+export async function GET(request) {
+  try {
+    // Connect to MongoDB
+    const client = await clientPromise
+    const db = client.db("ecommerce")
+
+    // Get all custom products
+    const customProducts = await db.collection("customProducts").find({}).toArray()
 
     // Convert ObjectId to string
-    customProduct._id = customProduct._id.toString()
+    const formattedProducts = customProducts.map((product) => ({
+      ...product,
+      _id: product._id.toString(),
+    }))
 
-    return NextResponse.json(customProduct)
+    return NextResponse.json(formattedProducts)
   } catch (error) {
-    console.error("Error fetching custom product:", error)
-    return NextResponse.json({ error: "Failed to fetch custom product" }, { status: 500 })
+    console.error("Error fetching custom products:", error)
+    return NextResponse.json({ error: "Failed to fetch custom products" }, { status: 500 })
   }
 }
 
-export async function PUT(request, context) {
-  try {
-    const { id } = context.params
-    const updates = await request.json()
-
-    // Validate ObjectId format
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid product ID format" }, { status: 400 })
-    }
-
-    // Connect to MongoDB
-    const client = await clientPromise
-    const db = client.db("ecommerce")
-
-    // Update the custom product
-    const result = await db.collection("customProducts").updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updates }
-    )
-
-    if (result.matchedCount === 0) {
-      return NextResponse.json({ error: "Custom product not found" }, { status: 404 })
-    }
-
-    return NextResponse.json({ message: "Custom product updated successfully" })
-  } catch (error) {
-    console.error("Error updating custom product:", error)
-    return NextResponse.json({ error: "Failed to update custom product" }, { status: 500 })
-  }
-}
-
-export async function DELETE(request, context) {
-  try {
-    const { id } = context.params
-
-    // Validate ObjectId format
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: "Invalid product ID format" }, { status: 400 })
-    }
-
-    // Connect to MongoDB
-    const client = await clientPromise
-    const db = client.db("ecommerce")
-
-    // Delete the custom product
-    const result = await db.collection("customProducts").deleteOne({ _id: new ObjectId(id) })
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json({ error: "Custom product not found" }, { status: 404 })
-    }
-
-    return NextResponse.json({ message: "Custom product deleted successfully" })
-  } catch (error) {
-    console.error("Error deleting custom product:", error)
-    return NextResponse.json({ error: "Failed to delete custom product" }, { status: 500 })
-  }
-}
