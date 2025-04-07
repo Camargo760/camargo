@@ -41,17 +41,30 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
       }
 
       // Create a new recaptcha verifier with correct options
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-        size: "normal",
-        callback: () => {
-          console.log("reCAPTCHA verified!")
-          setRecaptchaVerified(true)
-        },
-        "expired-callback": () => {
-          setRecaptchaVerified(false)
-          setError("reCAPTCHA expired. Please solve it again.")
-        },
-      })
+      // window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+      //   size: "normal",
+      //   callback: () => {
+      //     console.log("reCAPTCHA verified!")
+      //     setRecaptchaVerified(true)
+      //   },
+      //   "expired-callback": () => {
+      //     setRecaptchaVerified(false)
+      //     setError("reCAPTCHA expired. Please solve it again.")
+      //   },
+      // })
+
+      window.recaptchaVerifier = new RecaptchaVerifier("recaptcha-container", {
+  size: "normal",
+  callback: () => {
+    console.log("reCAPTCHA verified!")
+    setRecaptchaVerified(true)
+  },
+  "expired-callback": () => {
+    setRecaptchaVerified(false)
+    setError("reCAPTCHA expired. Please solve it again.")
+  },
+}, auth)
+
 
       // Render the reCAPTCHA
       window.recaptchaVerifier
