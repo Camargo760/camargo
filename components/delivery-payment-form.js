@@ -25,6 +25,8 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
     setError(null)
 
     try {
+      console.log("Submitting delivery order with product details:", productDetails)
+
       const response = await fetch("/api/create-delivery-order", {
         method: "POST",
         headers: {
@@ -38,12 +40,13 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
           address: customerInfo.address,
           color: productDetails.color,
           size: productDetails.size,
-          isCustomProduct: productDetails.isCustomProduct,
+          isCustomProduct: productDetails.isCustomProduct || false,
           customText: productDetails.customText,
           quantity: productDetails.quantity,
           preferredMethod,
           additionalNotes,
           price: productDetails.price,
+          designImageId: productDetails.designImageId || null,
         }),
       })
 
@@ -73,19 +76,21 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
-      <div className="mt-[140px] bg-white rounded-lg shadow-xl w-full max-w-md overflow-y-auto" style={{ maxHeight: "calc(90vh - 100px)" }}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 p-4" style={{ textAlign: "center" }}>
+      {/* Using inline-block for centering */}
+      <div style={{ display: "inline-block", verticalAlign: "middle", height: "100%", width: "0" }}></div>
+      <div className="mt-20 bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden inline-block align-middle text-left">
         <div className="p-6 border-b relative">
-          <h2 className="text-xl font-bold text-gray-800 inline-block">Pay at Delivery</h2>
+          <h2 className="text-lg md:text-xl font-bold text-gray-800 inline-block">Pay at Delivery</h2>
           <button
             onClick={onClose}
-            className="float-right text-gray-500 hover:text-gray-700 transition-colors absolute top-1/2 transform -translate-y-1/2 right-0"
+            className="text-gray-500 hover:text-gray-700 transition-colors absolute right-6 top-6"
           >
             <X size={24} />
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto" style={{ maxHeight: "350px" }}>
           <div className="mb-6 text-center">
             <div className="bg-green-100 p-3 rounded-full inline-block">
               <Truck className="text-green-600" size={32} />
@@ -113,9 +118,9 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
                     value="cash"
                     checked={preferredMethod === "cash"}
                     onChange={() => setPreferredMethod("cash")}
-                    className="mr-2"
+                    className="mr-2 align-middle"
                   />
-                  <span>Cash</span>
+                  <span className="align-middle">Cash</span>
                 </label>
                 <label className="block">
                   <input
@@ -124,9 +129,9 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
                     value="cashapp"
                     checked={preferredMethod === "cashapp"}
                     onChange={() => setPreferredMethod("cashapp")}
-                    className="mr-2"
+                    className="mr-2 align-middle"
                   />
-                  <span>Cash App Pay</span>
+                  <span className="align-middle">Cash App Pay</span>
                 </label>
                 <label className="block">
                   <input
@@ -135,9 +140,9 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
                     value="zelle"
                     checked={preferredMethod === "zelle"}
                     onChange={() => setPreferredMethod("zelle")}
-                    className="mr-2"
+                    className="mr-2 align-middle"
                   />
-                  <span>Zelle</span>
+                  <span className="align-middle">Zelle</span>
                 </label>
                 <label className="block">
                   <input
@@ -146,9 +151,9 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
                     value="paypal"
                     checked={preferredMethod === "paypal"}
                     onChange={() => setPreferredMethod("paypal")}
-                    className="mr-2"
+                    className="mr-2 align-middle"
                   />
-                  <span>PayPal</span>
+                  <span className="align-middle">PayPal</span>
                 </label>
               </div>
             </div>
@@ -167,7 +172,7 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
               />
             </div>
 
-            <div className="mb-6">
+            <div className="text-center">
               <button
                 type="submit"
                 className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
@@ -180,7 +185,5 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
         </div>
       </div>
     </div>
-
   )
 }
-
