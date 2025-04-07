@@ -9,6 +9,8 @@
         "lint": "next lint"
     },
     "dependencies": {
+                "framer-motion": "^12.6.3",
+        "html2canvas": "^1.4.1",
         "firebase": "^9.0.0",
                 "@fortawesome/fontawesome-svg-core": "^6.7.2",
         "@fortawesome/free-solid-svg-icons": "^6.7.2",
