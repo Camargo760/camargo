@@ -3,7 +3,7 @@ import Stripe from "stripe"
 import clientPromise from "../../../lib/mongodb"
 import { ObjectId } from "mongodb"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 export async function POST(request) {
   try {
@@ -25,6 +25,7 @@ export async function POST(request) {
       isCustomProduct,
       customText,
       quantity = 1,
+      designImageId, // New parameter for the image ID
     } = requestData
 
     // Validate required fields
@@ -89,9 +90,9 @@ export async function POST(request) {
       metadata.customText = customText
     }
 
-    // Add customImage to metadata if it exists (for custom products)
-    if (isCustomProduct && product.customImage) {
-      metadata.customImage = "true" // Just indicate it exists, we'll fetch from DB
+    // Add designImageId to metadata if it exists
+    if (designImageId) {
+      metadata.designImageId = designImageId
     }
 
     // Create the Stripe checkout session
@@ -99,8 +100,8 @@ export async function POST(request) {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/product/${productId}`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/product/${productId}`,
       customer_email: email,
       billing_address_collection: "required",
       shipping_address_collection: {
