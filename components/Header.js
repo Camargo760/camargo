@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
- 
+
 // Import FontAwesome icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons'
@@ -22,8 +22,8 @@ export default function Header() {
   return (
     <header className="header z-[10000000000]">
       <nav className="nav-container">
-        <Link href="/" className="logo">
-          <Image src='/assets/logo.png' width={150} height={20} alt="Logo" />
+        <Link href="/" className="logo h-[40px] w-[100px]">
+          <Image src='/assets/logo.png' alt="Logo" width={100} height={100}/>
         </Link>
 
         <button
@@ -42,12 +42,12 @@ export default function Header() {
           </Link>
           {session ? (
             <>
-              {session.user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
+              {session.user.email === 'camargo_co@outlook.com' && (
                 <Link href="/admin" className="nav-link">
                   Admin
                 </Link>
               )}
-              <button onClick={handleSignOut} className="btn sign-out">
+              <button onClick={handleSignOut} className="btn p-0 sign-out">
                 Sign Out
               </button>
             </>
@@ -56,7 +56,7 @@ export default function Header() {
               <Link href="/login" className="nav-link">
                 Login
               </Link>
-              <Link href="/signup" className="btn sign-up">
+              <Link href="/signup" className="btn p-0 sign-up">
                 Sign Up
               </Link>
             </>
@@ -65,12 +65,18 @@ export default function Header() {
       </nav>
 
       <style jsx>{`
+        .header {
+          height: 60px;
+          display: flex;
+          align-items: center;
+        }
+
         .nav-container {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 10px 20px;
           position: relative;
+          width: 100%;
         }
         
         .nav-links {
@@ -98,7 +104,7 @@ export default function Header() {
           .nav-links {
             display: none;
             position: absolute;
-            top: 90px;
+            top: 58px;
             right: 0;
             background: #000;
             width: 100%;
