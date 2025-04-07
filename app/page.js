@@ -6,7 +6,7 @@ export default async function Home() {
     <div className='overflow-hidden'>
       <Header />
       <main
-        style={{ height: 'calc(100vh - 100px)' }}
+        style={{ height: 'calc(100vh - 60px)' }}
         className='bg-black h-screen overflow-hidden'
       >
         {/* Banner Section */}
