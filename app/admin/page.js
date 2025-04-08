@@ -482,25 +482,7 @@ export default function Admin() {
                         {order.product.customText && order.product.customText !== "N/A" && (
                           <p>Text: {order.product.customText}</p>
                         )}
-                        {order.product.customImage && (
-                          <div className="mt-1">
-                            <a
-                              href={order.product.customImage}
-                              download={`custom-design-${order.id}.png`}
-                              title="Click to download image"
-                              className="cursor-pointer inline-block"
-                            >
-                              <Image
-                                src={order.product.customImage || "/placeholder.svg"}
-                                alt="Custom design"
-                                width={50}
-                                height={50}
-                                className="rounded border border-gray-200 hover:border-blue-500 transition-all"
-                              />
-                              <span className="text-xs text-blue-600 block mt-1">Download</span>
-                            </a>
-                          </div>
-                        )}
+                        
                         {/* Display final design image if available */}
                         {order.product.finalDesignImage && (
                           <div className="mt-3">
@@ -537,7 +519,7 @@ export default function Admin() {
                         <span
                           className={`capitalize ${order.paymentMethod === "delivery" ? "text-orange-600" : "text-blue-600"}`}
                         >
-                          {order.paymentMethod || "stripe"}
+                           {order.paymentMethod === "delivery" ? "" : "Stripe"}
                         </span>
                         {order.paymentMethod === "delivery" && order.preferredMethod && (
                           <span className="ml-2 text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded capitalize">
