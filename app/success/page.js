@@ -63,32 +63,6 @@ function SuccessContent() {
     }
   }, [searchParams])
 
-  const getStatusText = (status) => {
-    switch (status) {
-      case "received":
-        return "Order Received"
-      case "out_for_delivery":
-        return "Out for Delivery"
-      case "delivered":
-        return "Delivered"
-      default:
-        return "Pending"
-    }
-  }
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "received":
-        return "text-blue-600"
-      case "out_for_delivery":
-        return "text-yellow-600"
-      case "delivered":
-        return "text-green-600"
-      default:
-        return "text-orange-600"
-    }
-  }
-
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-90">
@@ -125,14 +99,6 @@ function SuccessContent() {
                 </span>
               )}
             </p>
-            {orderDetails.paymentMethod === "delivery" && (
-              <p className="text-gray-600 mt-2">
-                Status:{" "}
-                <span className={`font-medium ${getStatusColor(orderDetails.status)}`}>
-                  {getStatusText(orderDetails.status)}
-                </span>
-              </p>
-            )}
           </div>
           <div className="mb-4">
             <h3 className="text-xl font-semibold text-gray-800">Product Information</h3>
