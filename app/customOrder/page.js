@@ -346,11 +346,11 @@ export default function Home() {
                 <span className="font-semibold mb-3 block text-[#f0f0f0] text-sm uppercase tracking-wide">
                   T-SHIRT COLOR
                 </span>
-                <div className="flex gap-3 flex-wrap">
+                <div>
                   {colorOptions.map((option) => (
                     <button
                       key={option.color}
-                      className={`w-9 h-9 rounded-full cursor-pointer border-2 transition-transform hover:scale-110 ${
+                      className={`mr-2 mb-2 w-9 h-9 rounded-full cursor-pointer border-2 transition-transform hover:scale-110 ${
                         currentBgColor === option.color ? "border-[#ff3e00] scale-110" : "border-transparent"
                       }`}
                       style={{ backgroundColor: option.color }}
@@ -363,11 +363,11 @@ export default function Home() {
 
               <div className="mb-6">
                 <span className="font-semibold mb-3 block text-[#f0f0f0] text-sm uppercase tracking-wide">SIZE</span>
-                <div className="flex gap-3 flex-wrap">
+                <div>
                   {sizeOptions.map((size) => (
                     <button
                       key={size}
-                      className={`py-2 px-5 bg-[#2a2a2a] rounded cursor-pointer font-semibold border border-[#333] transition-all hover:bg-[#333] ${
+                      className={`text-white py-2 px-5 mr-2 mb-2 bg-[#2a2a2a] rounded cursor-pointer font-semibold border border-[#333] transition-all hover:bg-[#333] ${
                         selectedSize === size ? "bg-[#ff3e00] text-white border-[#ff3e00]" : ""
                       }`}
                       onClick={() => setSelectedSize(size)}
