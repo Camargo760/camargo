@@ -45,8 +45,7 @@ export default function AboutPage() {
 
                 <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8 mb-12">
                     <p className="text-lg text-gray-700 leading-relaxed">
-                        {aboutContent ||
-                            "Camargo Clothing Co. was established in 1989 with a passion for quality clothing and unique designs. We pride ourselves on creating comfortable, stylish apparel that stands the test of time. Our commitment to quality materials and ethical manufacturing processes sets us apart in the industry. Whether you're looking for everyday essentials or statement pieces, Camargo Clothing Co. has something for everyone."}
+                        {aboutContent}
                     </p>
                 </div>
 
