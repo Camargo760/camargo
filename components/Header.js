@@ -37,6 +37,12 @@ export default function Header() {
           <Link href="/" className="nav-link">
             Home
           </Link>
+          <Link href="/review" className="nav-link">
+            Review
+          </Link>
+          <Link href="/about" className="nav-link">
+            About Us
+          </Link>
           <Link href="/customOrder" className="nav-link">
             Custom Order
           </Link>
@@ -63,67 +69,6 @@ export default function Header() {
           )}
         </div>
       </nav>
-
-      <style jsx>{`
-        .header {
-          height: 60px;
-          display: flex;
-          align-items: center;
-        }
-
-        .nav-container {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          position: relative;
-          width: 100%;
-        }
-        
-        .nav-links {
-          display: flex;
-          gap: 60px;
-          text-align: right;
-        }
-
-        .hamburger-menu {
-          display: none;
-          background: none;
-          border: none;
-          cursor: pointer;
-          color: #fff;
-          font-size: 30px;
-        }
-
-        @media (max-width: 650px)  {              
-        .nav-links {
-          gap: 20px;
-           }
-        }
-
-        @media (max-width: 550px) {
-          .nav-links {
-            display: none;
-            position: absolute;
-            top: 58px;
-            right: 0;
-            background: #000;
-            width: 100%;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px;
-            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
-            padding: 40px 0;
-          }
-
-          .nav-links.open {
-            display: flex;
-          }
-
-          .hamburger-menu {
-            display: block;
-          }
-        }
-      `}</style>
     </header>
   )
 }
