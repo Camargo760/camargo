@@ -16,13 +16,19 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
   // Initialize Firebase on component mount
   useEffect(() => {
     const firebaseConfig = {
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAwgtSF2fU5YipJyztEpKkN_SPsi3QW1-4",
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "myproject-3c36e.firebaseapp.com",
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "myproject-3c36e",
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "myproject-3c36e.appspot.com",
-      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "599358717709",
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:599358717709:web:06a4f41082eb0f58277a44",
-      measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-NSS9CC7HD9",
+      // apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAwgtSF2fU5YipJyztEpKkN_SPsi3QW1-4",
+      // authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "myproject-3c36e.firebaseapp.com",
+      // projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "myproject-3c36e",
+      // storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "myproject-3c36e.appspot.com",
+      // messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "599358717709",
+      // appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:599358717709:web:06a4f41082eb0f58277a44",
+      // measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-NSS9CC7HD9",
+            apiKey: "AIzaSyAa2ypCdwLJfp88i1e0w-9GJE8iFnk6CuY",
+      authDomain: "camargosworld-38371.firebaseapp.com",
+      projectId: "camargosworld-38371",
+      storageBucket: "camargosworld-38371.firebasestorage.app",
+      messagingSenderId: "641311677825",
+      appId: "1:641311677825:web:097da69d25ce455fec1c80"
     }
 
     try {
