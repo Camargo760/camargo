@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Header from "../../components/Header"
-import { Download } from "lucide-react"
+import { Download, ChevronLeft, ChevronRight, Edit } from "lucide-react"
 
 export default function Admin() {
   const [products, setProducts] = useState([])
@@ -23,6 +23,22 @@ export default function Admin() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const ordersPerPage = 10
+
+  // Home page background state
+  const [homeBackground, setHomeBackground] = useState(null)
+  const [homeText, setHomeText] = useState("")
+  const [homeSubtext, setHomeSubtext] = useState("")
+  const [editingHome, setEditingHome] = useState(false)
+  const [homeBackgroundFile, setHomeBackgroundFile] = useState(null)
+
+  // About us content state
+  const [aboutContent, setAboutContent] = useState("")
+  const [editingAbout, setEditingAbout] = useState(false)
+
   useEffect(() => {
     if (status === "loading") return
     if (!session || session.user.email !== "camargo_co@outlook.com") {
@@ -30,6 +46,8 @@ export default function Admin() {
     } else {
       fetchProducts()
       fetchOrders()
+      fetchHomeContent()
+      fetchAboutContent()
     }
   }, [session, status, router])
 
@@ -57,9 +75,36 @@ export default function Admin() {
       const data = await res.json()
       console.log("Fetched orders:", data)
       setOrders(data)
+      setTotalPages(Math.ceil(data.length / ordersPerPage))
     } catch (err) {
       console.error("Error fetching orders:", err)
       setError("Failed to fetch orders. Please try again.")
+    }
+  }
+
+  const fetchHomeContent = async () => {
+    try {
+      const res = await fetch("/api/home-content")
+      if (res.ok) {
+        const data = await res.json()
+        setHomeBackground(data.backgroundImage || null)
+        setHomeText(data.mainText || "")
+        setHomeSubtext(data.subText || "")
+      }
+    } catch (err) {
+      console.error("Error fetching home content:", err)
+    }
+  }
+
+  const fetchAboutContent = async () => {
+    try {
+      const res = await fetch("/api/about-content")
+      if (res.ok) {
+        const data = await res.json()
+        setAboutContent(data.description || "")
+      }
+    } catch (err) {
+      console.error("Error fetching about content:", err)
     }
   }
 
@@ -154,6 +199,28 @@ export default function Admin() {
     }
   }
 
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        console.error("Error updating order status:", errorData)
+        throw new Error(errorData.error || "Failed to update order status")
+      }
+
+      // Refresh orders after status update
+      fetchOrders()
+    } catch (err) {
+      console.error("Error updating order status:", err)
+      setError("Failed to update order status. Please try again.")
+    }
+  }
+
   const handleSort = () => {
     const newSortOrder = sortOrder === "desc" ? "asc" : "desc"
     setSortOrder(newSortOrder)
@@ -193,6 +260,106 @@ export default function Admin() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  // Pagination handlers
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  // Get current orders for pagination
+  const indexOfLastOrder = currentPage * ordersPerPage
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
+  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder)
+
+  // Home content handlers
+  const handleHomeBackgroundChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setHomeBackgroundFile(file)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setHomeBackground(e.target.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const saveHomeContent = async () => {
+    try {
+      // First, upload the background image if there's a new one
+      let backgroundImageUrl = homeBackground
+
+      if (homeBackgroundFile) {
+        const formData = new FormData()
+        formData.append("file", homeBackgroundFile)
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!uploadRes.ok) {
+          throw new Error("Failed to upload background image")
+        }
+
+        const uploadData = await uploadRes.json()
+        backgroundImageUrl = uploadData.url
+      }
+
+      // Then save the home content
+      const res = await fetch("/api/home-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          backgroundImage: backgroundImageUrl,
+          mainText: homeText,
+          subText: homeSubtext,
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to save home content")
+      }
+
+      setEditingHome(false)
+      setHomeBackgroundFile(null)
+      alert("Home content saved successfully!")
+    } catch (err) {
+      console.error("Error saving home content:", err)
+      setError("Failed to save home content. Please try again.")
+    }
+  }
+
+  // About content handlers
+  const saveAboutContent = async () => {
+    try {
+      const res = await fetch("/api/about-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description: aboutContent,
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to save about content")
+      }
+
+      setEditingAbout(false)
+      alert("About content saved successfully!")
+    } catch (err) {
+      console.error("Error saving about content:", err)
+      setError("Failed to save about content. Please try again.")
+    }
   }
 
   if (status === "loading") {
@@ -392,8 +559,9 @@ export default function Admin() {
                   </button>
                   <button
                     onClick={() => handlePublish(product._id, !product.published)}
-                    className={`${product.published ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
-                      } text-white font-bold py-1 px-2 rounded text-sm`}
+                    className={`${
+                      product.published ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
+                    } text-white font-bold py-1 px-2 rounded text-sm`}
                   >
                     {product.published ? "Unpublish" : "Publish"}
                   </button>
@@ -413,132 +581,363 @@ export default function Admin() {
         {orders.length === 0 ? (
           <p>No recent orders.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-300">
-              <thead>
-                <tr>
-                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Order ID
-                  </th>
-                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Customer Name
-                  </th>
-                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Phone
-                  </th>
-                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Address
-                  </th>
-                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Product
-                  </th>
-                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Details
-                  </th>
-                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Quantity
-                  </th>
-                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Total
-                  </th>
-                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Payment Method
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id}>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">{order.id || "N/A"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                      {order.customer.name || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                      {order.customer.email || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                      {order.customer.phone || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                      {order.customer.address || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                      {order.product.name || "N/A"}
-                      {order.product.isCustomProduct && (
-                        <span className="ml-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Custom</span>
-                      )}
-                      <div className="text-xs text-gray-600 mt-1">Category: {order.product.category || "N/A"}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                      <div>
-                        <p>Color: {order.selectedColor || "N/A"}</p>
-                        <p>Size: {order.selectedSize || "N/A"}</p>
-                        {order.product.customText && order.product.customText !== "N/A" && (
-                          <p>Text: {order.product.customText}</p>
-                        )}
-                        
-                        {/* Display final design image if available */}
-                        {order.product.finalDesignImage && (
-                          <div className="mt-3">
-                            <p className="text-xs font-semibold text-gray-700">Final Design:</p>
-                            <div className="relative block group">
-                              <Image
-                                src={order.product.finalDesignImage || "/placeholder.svg"}
-                                alt="Final design"
-                                width={100}
-                                height={100}
-                                className="rounded border-2 border-orange-400 mt-1 hover:border-orange-600 transition-all"
-                              />
-                              <button
-                                onClick={() => downloadDesignImage(order.product.finalDesignImage, order.id)}
-                                className="bottom-2 mt-2 right-2 p-1 bg-green-500 rounded-md w-24"
-                                title="Download final design"
-                              >
-                                Download
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">{order.quantity || 1}</td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                      ${(order.amount_total / 100).toFixed(2) || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                      {new Date(order.created * 1000).toLocaleDateString() || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                      <div className="flex items-center">
-                        <span
-                          className={`capitalize ${order.paymentMethod === "delivery" ? "text-orange-600" : "text-blue-600"}`}
-                        >
-                           {order.paymentMethod === "delivery" ? "" : "Stripe"}
-                        </span>
-                        {order.paymentMethod === "delivery" && order.preferredMethod && (
-                          <span className="ml-2 text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded capitalize">
-                            {order.preferredMethod}
-                          </span>
-                        )}
-                      </div>
-                      {order.paymentMethod === "delivery" && order.additionalNotes && (
-                        <p className="mt-1 text-xs text-gray-600">
-                          <span className="font-semibold">Notes:</span> {order.additionalNotes}
-                        </p>
-                      )}
-                    </td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-300">
+                <thead>
+                  <tr>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Order ID
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Customer Name
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Phone
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Address
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Product
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Details
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Quantity
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Total
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Payment Method
+                    </th>
+                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Status
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {currentOrders.map((order) => (
+                    <tr key={order.id}>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">{order.id || "N/A"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                        {order.customer.name || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                        {order.customer.email || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                        {order.customer.phone || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                        {order.customer.address || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                        {order.product.name || "N/A"}
+                        {order.product.isCustomProduct && (
+                          <span className="ml-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Custom</span>
+                        )}
+                        <div className="text-xs text-gray-600 mt-1">Category: {order.product.category || "N/A"}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                        <div>
+                          <p>Color: {order.selectedColor || "N/A"}</p>
+                          <p>Size: {order.selectedSize || "N/A"}</p>
+                          {order.product.customText && order.product.customText !== "N/A" && (
+                            <p>Text: {order.product.customText}</p>
+                          )}
+                          {order.product.customImage && (
+                            <div className="mt-1">
+                              <a
+                                href={order.product.customImage}
+                                download={`custom-design-${order.id}.png`}
+                                title="Click to download image"
+                                className="cursor-pointer inline-block"
+                              >
+                                <Image
+                                  src={order.product.customImage || "/placeholder.svg"}
+                                  alt="Custom design"
+                                  width={50}
+                                  height={50}
+                                  className="rounded border border-gray-200 hover:border-blue-500 transition-all"
+                                />
+                                <span className="text-xs text-blue-600 block mt-1">Download</span>
+                              </a>
+                            </div>
+                          )}
+                          {/* Display final design image if available */}
+                          {order.product.finalDesignImage && (
+                            <div className="mt-3">
+                              <p className="text-xs font-semibold text-gray-700">Final Design:</p>
+                              <div className="relative group">
+                                <Image
+                                  src={order.product.finalDesignImage || "/placeholder.svg"}
+                                  alt="Final design"
+                                  width={100}
+                                  height={100}
+                                  className="rounded border-2 border-orange-400 mt-1 hover:border-orange-600 transition-all"
+                                />
+                                <button
+                                  onClick={() => downloadDesignImage(order.product.finalDesignImage, order.id)}
+                                  className="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Download final design"
+                                >
+                                  <Download size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">{order.quantity || 1}</td>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                        ${(order.amount_total / 100).toFixed(2) || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                        {new Date(order.created * 1000).toLocaleDateString() || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                        <div className="flex items-center">
+                          <span
+                            className={`capitalize ${order.paymentMethod === "delivery" ? "text-orange-600" : "text-blue-600"}`}
+                          >
+                            {order.paymentMethod || "stripe"}
+                          </span>
+                          {order.paymentMethod === "delivery" && order.preferredMethod && (
+                            <span className="ml-2 text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded capitalize">
+                              {order.preferredMethod}
+                            </span>
+                          )}
+                        </div>
+                        {order.paymentMethod === "delivery" && order.additionalNotes && (
+                          <p className="mt-1 text-xs text-gray-600">
+                            <span className="font-semibold">Notes:</span> {order.additionalNotes}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`inline-block px-2 py-1 text-xs font-semibold rounded-full 
+                            ${order.status === "pending" ? "bg-yellow-100 text-yellow-800" : ""}
+                            ${order.status === "received" ? "bg-blue-100 text-blue-800" : ""}
+                            ${order.status === "out_for_delivery" ? "bg-purple-100 text-purple-800" : ""}
+                            ${order.status === "delivered" ? "bg-green-100 text-green-800" : ""}
+                          `}
+                          >
+                            {order.status || "pending"}
+                          </span>
+                          <select
+                            className="text-sm border border-gray-300 rounded p-1"
+                            onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                            value={order.status || "pending"}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="received">Received</option>
+                            <option value="out_for_delivery">Out for Delivery</option>
+                            <option value="delivered">Delivered</option>
+                          </select>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination controls */}
+            <div className="flex justify-between items-center mt-4">
+              <div className="text-sm text-gray-700">
+                Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, orders.length)} of {orders.length} orders
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 rounded flex items-center ${
+                    currentPage === 1
+                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      : "bg-blue-500 text-white hover:bg-blue-600"
+                  }`}
+                >
+                  <ChevronLeft size={16} className="mr-1" /> Previous
+                </button>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-1 rounded flex items-center ${
+                    currentPage === totalPages
+                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                      : "bg-blue-500 text-white hover:bg-blue-600"
+                  }`}
+                >
+                  Next <ChevronRight size={16} className="ml-1" />
+                </button>
+              </div>
+            </div>
+          </>
         )}
+
+        {/* Home Page Content Management */}
+        <div className="mt-12 bg-white shadow-md rounded p-6">
+          <h2 className="text-2xl font-bold mb-4">Home Page Content</h2>
+
+          {editingHome ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">Background Image</label>
+                <div className="flex items-center space-x-4">
+                  {homeBackground && (
+                    <div className="relative w-40 h-24 bg-gray-200 rounded overflow-hidden">
+                      <Image
+                        src={homeBackground || "/placeholder.svg"}
+                        alt="Home background"
+                        fill
+                        style={{ objectFit: "cover" }}
+                      />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleHomeBackgroundChange}
+                    className="border rounded p-2"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">Main Text</label>
+                <input
+                  type="text"
+                  value={homeText}
+                  onChange={(e) => setHomeText(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  placeholder="Main heading text"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">Sub Text</label>
+                <textarea
+                  value={homeSubtext}
+                  onChange={(e) => setHomeSubtext(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  placeholder="Subheading or description text"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex space-x-2">
+                <button
+                  onClick={saveHomeContent}
+                  className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingHome(false)
+                    fetchHomeContent() // Reset to original values
+                  }}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-4">
+                {homeBackground ? (
+                  <div className="relative w-full h-40 bg-gray-200 rounded overflow-hidden mb-2">
+                    <Image
+                      src={homeBackground || "/placeholder.svg"}
+                      alt="Home background"
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-40 bg-gray-200 rounded flex items-center justify-center mb-2">
+                    <p className="text-gray-500">No background image set</p>
+                  </div>
+                )}
+
+                <div className="mt-2">
+                  <p className="font-bold text-lg">{homeText || "No main text set"}</p>
+                  <p className="text-gray-600">{homeSubtext || "No subtext set"}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setEditingHome(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center"
+              >
+                <Edit size={16} className="mr-2" /> Edit Home Content
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* About Page Content Management */}
+        <div className="mt-8 bg-white shadow-md rounded p-6">
+          <h2 className="text-2xl font-bold mb-4">About Page Content</h2>
+
+          {editingAbout ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">About Us Description</label>
+                <textarea
+                  value={aboutContent}
+                  onChange={(e) => setAboutContent(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  placeholder="Write a description about your business..."
+                  rows={6}
+                />
+              </div>
+
+              <div className="flex space-x-2">
+                <button
+                  onClick={saveAboutContent}
+                  className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingAbout(false)
+                    fetchAboutContent() // Reset to original values
+                  }}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-4 p-4 bg-gray-50 rounded">
+                <p className="text-gray-700">{aboutContent || "No about us description set"}</p>
+              </div>
+
+              <button
+                onClick={() => setEditingAbout(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center"
+              >
+                <Edit size={16} className="mr-2" /> Edit About Content
+              </button>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   )
