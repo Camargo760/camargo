@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import {
+  getAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  PhoneAuthProvider,
+  signInWithCredential,
+} from "firebase/auth";
 
 const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
   const [verificationId, setVerificationId] = useState(null);
@@ -13,53 +19,51 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
   const [recaptchaVerified, setRecaptchaVerified] = useState(false);
   const [recaptchaReady, setRecaptchaReady] = useState(false);
 
-  // Initialize Firebase on component mount
   useEffect(() => {
     const firebaseConfig = {
       apiKey: "AIzaSyAa2ypCdwLJfp88i1e0w-9GJE8iFnk6CuY",
       authDomain: "camargosworld-38371.firebaseapp.com",
       projectId: "camargosworld-38371",
-      storageBucket: "camargosworld-38371.firebasestorage.app",
+      storageBucket: "camargosworld-38371.appspot.com",
       messagingSenderId: "641311677825",
       appId: "1:641311677825:web:097da69d25ce455fec1c80",
     };
 
     try {
-      console.log("Initializing Firebase...");
       const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
       const auth = getAuth(app);
-      console.log("Firebase initialized:", app);
-      console.log("Auth initialized:", auth);
 
       if (window.recaptchaVerifier) {
-        console.log("Clearing existing reCAPTCHA...");
         window.recaptchaVerifier.clear();
       }
 
-      console.log("Creating new reCAPTCHA verifier...");
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+      // Important: Use actual DOM element here
+      const container = document.getElementById("recaptcha-container");
+      if (!container) {
+        console.error("Recaptcha container not found in DOM.");
+        setError("Failed to initialize verification. Please refresh the page.");
+        return;
+      }
+
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, container, {
         size: "normal",
         callback: () => {
-          console.log("reCAPTCHA verified!");
           setRecaptchaVerified(true);
         },
         "expired-callback": () => {
-          console.log("reCAPTCHA expired.");
           setRecaptchaVerified(false);
           setError("reCAPTCHA expired. Please solve it again.");
         },
       });
 
-      console.log("Rendering reCAPTCHA...");
       window.recaptchaVerifier
         .render()
         .then((widgetId) => {
           window.recaptchaWidgetId = widgetId;
           setRecaptchaReady(true);
-          console.log("reCAPTCHA rendered successfully!");
         })
-        .catch((error) => {
-          console.error("Error rendering reCAPTCHA:", error);
+        .catch((err) => {
+          console.error("Error rendering reCAPTCHA:", err);
           setError("Failed to load verification. Please refresh the page.");
         });
     } catch (error) {
@@ -93,10 +97,7 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
       const auth = getAuth();
       const appVerifier = window.recaptchaVerifier;
 
-      console.log("Sending verification code to:", formattedPhone);
       const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-      console.log("Verification code sent successfully!");
-
       setVerificationId(confirmationResult.verificationId);
       setIsCodeSent(true);
       setLoading(false);
@@ -108,29 +109,13 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
       } else if (err.code === "auth/quota-exceeded") {
         errorMessage = "Too many requests. Please try again later.";
       } else if (err.code === "auth/configuration-not-found") {
-        errorMessage = "Phone authentication isn't properly configured. Please contact support.";
+        errorMessage = "Phone authentication isn't properly configured.";
       } else if (err.code === "auth/network-request-failed") {
-        errorMessage = "Network error. Please check your internet connection and try again.";
+        errorMessage = "Network error. Please check your internet connection.";
       }
 
       setError(errorMessage);
       setLoading(false);
-
-      if (window.recaptchaVerifier) {
-        try {
-          window.recaptchaVerifier.clear();
-          const auth = getAuth();
-          window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-            size: "normal",
-            callback: () => {
-              setRecaptchaVerified(true);
-            },
-          });
-          window.recaptchaVerifier.render();
-        } catch (e) {
-          console.error("Error resetting recaptcha:", e);
-        }
-      }
     }
   };
 
@@ -139,16 +124,10 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
       setError(null);
       setLoading(true);
 
-      const { PhoneAuthProvider, signInWithCredential } = await import("firebase/auth");
-
       const auth = getAuth();
       const credential = PhoneAuthProvider.credential(verificationId, verificationCode);
 
-      console.log("Verifying code with ID:", verificationId);
-
       await signInWithCredential(auth, credential);
-      console.log("Phone verification successful!");
-
       setLoading(false);
       onVerificationComplete(true);
     } catch (err) {
@@ -157,92 +136,99 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
       if (err.code === "auth/code-expired") {
         errorMessage = "The verification code has expired. Please request a new one.";
       }
-
       setError(errorMessage);
       setLoading(false);
     }
   };
 
-  if (!isCodeSent) {
-    return (
-      <div className="mb-6">
-        <div className="flex items-center mb-4">
-          <div className="w-full">
-            <div className="text-sm text-gray-600 mb-2">We'll send a verification code to this phone number</div>
-            <div className="font-medium">{phone}</div>
-          </div>
-        </div>
-
-        <div id="recaptcha-container" className="mb-4"></div>
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-4 text-sm">{error}</div>
-        )}
-
-        <button
-          onClick={sendVerificationCode}
-          disabled={loading || !recaptchaReady || !recaptchaVerified}
-          className={`w-full py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
-            recaptchaReady && recaptchaVerified
-              ? "bg-blue-500 hover:bg-blue-700 text-white"
-              : "bg-gray-400 text-gray-200 cursor-not-allowed"
-          }`}
-        >
-          {loading ? "Sending..." : "Send Verification Code"}
-        </button>
-
-        {!recaptchaReady && (
-          <div className="text-sm text-gray-600 mt-2 text-center">Loading verification system...</div>
-        )}
-
-        {recaptchaReady && !recaptchaVerified && (
-          <div className="text-sm text-gray-600 mt-2 text-center">Please complete the reCAPTCHA verification above</div>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="mb-6">
-      <div className="text-sm text-gray-600 mb-2">Enter the 6-digit verification code sent to {phone}</div>
+      {!isCodeSent ? (
+        <>
+          <div className="mb-4">
+            <div className="text-sm text-gray-600 mb-2">
+              We'll send a verification code to this phone number:
+            </div>
+            <div className="font-medium">{phone}</div>
+          </div>
 
-      <input
-        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-4"
-        type="text"
-        placeholder="6-digit code"
-        value={verificationCode}
-        onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-        maxLength={6}
-      />
+          <div id="recaptcha-container" className="mb-4"></div>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-4 text-sm">{error}</div>
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-4 text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            onClick={sendVerificationCode}
+            disabled={loading || !recaptchaReady || !recaptchaVerified}
+            className={`w-full py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+              recaptchaReady && recaptchaVerified
+                ? "bg-blue-500 hover:bg-blue-700 text-white"
+                : "bg-gray-400 text-gray-200 cursor-not-allowed"
+            }`}
+          >
+            {loading ? "Sending..." : "Send Verification Code"}
+          </button>
+
+          {!recaptchaReady && (
+            <div className="text-sm text-gray-600 mt-2 text-center">Loading verification system...</div>
+          )}
+
+          {recaptchaReady && !recaptchaVerified && (
+            <div className="text-sm text-gray-600 mt-2 text-center">
+              Please complete the reCAPTCHA above
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="text-sm text-gray-600 mb-2">
+            Enter the 6-digit verification code sent to {phone}
+          </div>
+
+          <input
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-4"
+            type="text"
+            placeholder="6-digit code"
+            value={verificationCode}
+            onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            maxLength={6}
+          />
+
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-4 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex space-x-2">
+            <button
+              onClick={() => {
+                setIsCodeSent(false);
+                setVerificationCode("");
+                setError(null);
+              }}
+              className="py-2 px-4 border border-gray-300 rounded focus:outline-none hover:bg-gray-100"
+            >
+              Change Number
+            </button>
+
+            <button
+              onClick={verifyCode}
+              disabled={loading || verificationCode.length !== 6}
+              className={`flex-1 py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
+                verificationCode.length === 6
+                  ? "bg-blue-500 hover:bg-blue-700 text-white"
+                  : "bg-gray-400 text-gray-200 cursor-not-allowed"
+              }`}
+            >
+              {loading ? "Verifying..." : "Verify Code"}
+            </button>
+          </div>
+        </>
       )}
-
-      <div className="flex space-x-2">
-        <button
-          onClick={() => {
-            setIsCodeSent(false);
-            setVerificationCode("");
-            setError(null);
-          }}
-          className="py-2 px-4 border border-gray-300 rounded focus:outline-none hover:bg-gray-100"
-        >
-          Change Number
-        </button>
-
-        <button
-          onClick={verifyCode}
-          disabled={loading || verificationCode.length !== 6}
-          className={`flex-1 py-2 px-4 rounded focus:outline-none focus:shadow-outline ${
-            verificationCode.length === 6
-              ? "bg-blue-500 hover:bg-blue-700 text-white"
-              : "bg-gray-400 text-gray-200 cursor-not-allowed"
-          }`}
-        >
-          {loading ? "Verifying..." : "Verify Code"}
-        </button>
-      </div>
     </div>
   );
 };
