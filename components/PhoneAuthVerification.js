@@ -16,19 +16,12 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
   // Initialize Firebase on component mount
   useEffect(() => {
     const firebaseConfig = {
-      // apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAwgtSF2fU5YipJyztEpKkN_SPsi3QW1-4",
-      // authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "myproject-3c36e.firebaseapp.com",
-      // projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "myproject-3c36e",
-      // storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "myproject-3c36e.appspot.com",
-      // messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "599358717709",
-      // appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:599358717709:web:06a4f41082eb0f58277a44",
-      // measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "G-NSS9CC7HD9",
       apiKey: "AIzaSyAa2ypCdwLJfp88i1e0w-9GJE8iFnk6CuY",
-  authDomain: "camargosworld-38371.firebaseapp.com",
-  projectId: "camargosworld-38371",
-  storageBucket: "camargosworld-38371.firebasestorage.app",
-  messagingSenderId: "641311677825",
-  appId: "1:641311677825:web:097da69d25ce455fec1c80"
+      authDomain: "camargosworld-38371.firebaseapp.com",
+      projectId: "camargosworld-38371",
+      storageBucket: "camargosworld-38371.firebasestorage.app",
+      messagingSenderId: "641311677825",
+      appId: "1:641311677825:web:097da69d25ce455fec1c80"
     }
 
     try {
@@ -47,30 +40,17 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
       }
 
       // Create a new recaptcha verifier with correct options
-      // window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-      //   size: "normal",
-      //   callback: () => {
-      //     console.log("reCAPTCHA verified!")
-      //     setRecaptchaVerified(true)
-      //   },
-      //   "expired-callback": () => {
-      //     setRecaptchaVerified(false)
-      //     setError("reCAPTCHA expired. Please solve it again.")
-      //   },
-      // })
-
-      window.recaptchaVerifier = new RecaptchaVerifier("recaptcha-container", {
-  size: "normal",
-  callback: () => {
-    console.log("reCAPTCHA verified!")
-    setRecaptchaVerified(true)
-  },
-  "expired-callback": () => {
-    setRecaptchaVerified(false)
-    setError("reCAPTCHA expired. Please solve it again.")
-  },
-}, auth)
-
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: "normal",
+        callback: () => {
+          console.log("reCAPTCHA verified!")
+          setRecaptchaVerified(true)
+        },
+        'expired-callback': () => {
+          setRecaptchaVerified(false)
+          setError("reCAPTCHA expired. Please solve it again.")
+        },
+      })
 
       // Render the reCAPTCHA
       window.recaptchaVerifier
@@ -143,6 +123,8 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
         errorMessage = "Phone authentication isn't properly configured. Please contact support."
       } else if (err.code === "auth/network-request-failed") {
         errorMessage = "Network error. Please check your internet connection and try again."
+      } else if (err.code === "auth/captcha-check-failed") {
+        errorMessage = "reCAPTCHA verification failed. Your domain might not be authorized in Firebase settings."
       }
 
       setError(errorMessage)
@@ -153,10 +135,14 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
         try {
           window.recaptchaVerifier.clear()
           const auth = getAuth()
-          window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+          window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
             size: "normal",
             callback: () => {
               setRecaptchaVerified(true)
+            },
+            'expired-callback': () => {
+              setRecaptchaVerified(false)
+              setError("reCAPTCHA expired. Please solve it again.")
             },
           })
           window.recaptchaVerifier.render()
@@ -285,4 +271,3 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
 }
 
 export default PhoneAuthVerification
-
