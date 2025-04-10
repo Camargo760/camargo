@@ -21,203 +21,203 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
       projectId: "camargosworld-38371",
       storageBucket: "camargosworld-38371.firebasestorage.app",
       messagingSenderId: "641311677825",
-      appId: "1:641311677825:web:097da69d25ce455fec1c80"
+      appId: "1:641311677825:web:097da69d25ce455fec1c80",
     }
 
     // Initialize Firebase if not already initialized
-    let app, auth;
-    
+    let app, auth
+
     try {
-      app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-      auth = getAuth(app);
-      
+      app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
+      auth = getAuth(app)
+
       // Clear any existing recaptcha to prevent conflicts
       if (window.recaptchaVerifier) {
         try {
-          window.recaptchaVerifier.clear();
-          window.recaptchaVerifier = null;
+          window.recaptchaVerifier.clear()
+          window.recaptchaVerifier = null
         } catch (e) {
-          console.error("Error clearing existing recaptcha:", e);
+          console.error("Error clearing existing recaptcha:", e)
         }
       }
 
       // Debug: Check if the container element exists before proceeding
-      const containerElement = document.getElementById('recaptcha-container');
-      console.log("reCAPTCHA container exists:", !!containerElement);
-      
+      const containerElement = document.getElementById("recaptcha-container")
+      console.log("reCAPTCHA container exists:", !!containerElement)
+
       if (!containerElement) {
-        console.error("reCAPTCHA container not found in DOM");
-        setError("Verification system could not load. Please refresh the page.");
-        return;
+        console.error("reCAPTCHA container not found in DOM")
+        setError("Verification system could not load. Please refresh the page.")
+        return
       }
-            
+
       // Small delay to ensure DOM is fully ready
       setTimeout(() => {
         try {
           // Create and initialize the RecaptchaVerifier with the correct parameter order
-          window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          // FIX: Pass the element directly instead of the string ID
+          window.recaptchaVerifier = new RecaptchaVerifier(auth, containerElement, {
             size: "normal",
             callback: () => {
-              console.log("reCAPTCHA verified!");
-              setRecaptchaVerified(true);
+              console.log("reCAPTCHA verified!")
+              setRecaptchaVerified(true)
             },
-            'expired-callback': () => {
-              setRecaptchaVerified(false);
-              setError("reCAPTCHA expired. Please solve it again.");
-            }
-          });
-          
+            "expired-callback": () => {
+              setRecaptchaVerified(false)
+              setError("reCAPTCHA expired. Please solve it again.")
+            },
+          })
+
           // Render the reCAPTCHA
           window.recaptchaVerifier
             .render()
             .then((widgetId) => {
-              window.recaptchaWidgetId = widgetId;
-              setRecaptchaReady(true);
-              console.log("reCAPTCHA rendered successfully!");
+              window.recaptchaWidgetId = widgetId
+              setRecaptchaReady(true)
+              console.log("reCAPTCHA rendered successfully!")
             })
             .catch((error) => {
-              console.error("Error rendering reCAPTCHA:", error);
-              setError("Failed to load verification. Please refresh the page.");
-            });
-            
+              console.error("Error rendering reCAPTCHA:", error)
+              setError("Failed to load verification. Please refresh the page.")
+            })
         } catch (innerError) {
-          console.error("Error setting up reCAPTCHA:", innerError);
-          setError("Failed to initialize verification. Please refresh the page.");
+          console.error("Error setting up reCAPTCHA:", innerError)
+          setError("Failed to initialize verification. Please refresh the page.")
         }
-      }, 500);
-      
+      }, 500)
     } catch (error) {
-      console.error("Error initializing Firebase or reCAPTCHA:", error);
-      setError("Failed to initialize verification. Please refresh the page.");
+      console.error("Error initializing Firebase or reCAPTCHA:", error)
+      setError("Failed to initialize verification. Please refresh the page.")
     }
 
     return () => {
       // Clean up recaptcha when component unmounts
       if (window.recaptchaVerifier) {
         try {
-          window.recaptchaVerifier.clear();
-          window.recaptchaVerifier = null;
+          window.recaptchaVerifier.clear()
+          window.recaptchaVerifier = null
         } catch (e) {
-          console.error("Error clearing recaptcha:", e);
+          console.error("Error clearing recaptcha:", e)
         }
       }
-    };
-  }, []);
+    }
+  }, [])
 
   const sendVerificationCode = async () => {
     try {
-      setError(null);
-      setLoading(true);
+      setError(null)
+      setLoading(true)
 
       // Format phone number to E.164 format (required by Firebase)
-      let formattedPhone = phone.trim();
+      let formattedPhone = phone.trim()
       if (!formattedPhone.startsWith("+")) {
         // Check if it has a 1 at the start (US number)
         if (!/^1/.test(formattedPhone.replace(/\D/g, ""))) {
-          formattedPhone = "+1" + formattedPhone.replace(/\D/g, "");
+          formattedPhone = "+1" + formattedPhone.replace(/\D/g, "")
         } else {
-          formattedPhone = "+" + formattedPhone.replace(/\D/g, "");
+          formattedPhone = "+" + formattedPhone.replace(/\D/g, "")
         }
       } else {
         // Just clean the number but preserve the + sign
-        formattedPhone = "+" + formattedPhone.replace(/\D/g, "").slice(formattedPhone.startsWith("+") ? 0 : 1);
+        formattedPhone = "+" + formattedPhone.replace(/\D/g, "").slice(formattedPhone.startsWith("+") ? 0 : 1)
       }
 
-      const auth = getAuth();
-      const appVerifier = window.recaptchaVerifier;
+      const auth = getAuth()
+      const appVerifier = window.recaptchaVerifier
 
-      console.log("Sending verification code to:", formattedPhone);
-      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-      console.log("Verification code sent successfully!");
+      console.log("Sending verification code to:", formattedPhone)
+      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier)
+      console.log("Verification code sent successfully!")
 
-      setVerificationId(confirmationResult.verificationId);
-      setIsCodeSent(true);
-      setLoading(false);
+      setVerificationId(confirmationResult.verificationId)
+      setIsCodeSent(true)
+      setLoading(false)
     } catch (err) {
-      console.error("Error sending verification code:", err);
+      console.error("Error sending verification code:", err)
       // Provide more specific error messages
-      let errorMessage = "Failed to send verification code";
+      let errorMessage = "Failed to send verification code"
       if (err.code === "auth/invalid-phone-number") {
-        errorMessage = "The phone number is invalid. Please enter a valid phone number.";
+        errorMessage = "The phone number is invalid. Please enter a valid phone number."
       } else if (err.code === "auth/quota-exceeded") {
-        errorMessage = "Too many requests. Please try again later.";
+        errorMessage = "Too many requests. Please try again later."
       } else if (err.code === "auth/configuration-not-found") {
-        errorMessage = "Phone authentication isn't properly configured. Please contact support.";
+        errorMessage = "Phone authentication isn't properly configured. Please contact support."
       } else if (err.code === "auth/network-request-failed") {
-        errorMessage = "Network error. Please check your internet connection and try again.";
+        errorMessage = "Network error. Please check your internet connection and try again."
       } else if (err.code === "auth/captcha-check-failed") {
-        errorMessage = "reCAPTCHA verification failed. Your domain might not be authorized in Firebase settings.";
+        errorMessage = "reCAPTCHA verification failed. Your domain might not be authorized in Firebase settings."
       } else if (err.code === "auth/missing-verification-id") {
-        errorMessage = "Verification process failed. Please refresh and try again.";
+        errorMessage = "Verification process failed. Please refresh and try again."
       }
 
-      setError(errorMessage);
-      setLoading(false);
+      setError(errorMessage)
+      setLoading(false)
 
       // Reset recaptcha on error
       if (window.recaptchaVerifier) {
         try {
-          window.recaptchaVerifier.clear();
-          
-          const auth = getAuth();
-          const containerElement = document.getElementById('recaptcha-container');
-          
+          window.recaptchaVerifier.clear()
+
+          const auth = getAuth()
+          const containerElement = document.getElementById("recaptcha-container")
+
           if (containerElement) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            // FIX: Pass the element directly instead of the string ID
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, containerElement, {
               size: "normal",
               callback: () => {
-                setRecaptchaVerified(true);
+                setRecaptchaVerified(true)
               },
-              'expired-callback': () => {
-                setRecaptchaVerified(false);
-                setError("reCAPTCHA expired. Please solve it again.");
-              }
-            });
-            window.recaptchaVerifier.render();
+              "expired-callback": () => {
+                setRecaptchaVerified(false)
+                setError("reCAPTCHA expired. Please solve it again.")
+              },
+            })
+            window.recaptchaVerifier.render()
           } else {
-            console.error("Cannot reset reCAPTCHA: container not found");
+            console.error("Cannot reset reCAPTCHA: container not found")
           }
         } catch (e) {
-          console.error("Error resetting recaptcha:", e);
+          console.error("Error resetting recaptcha:", e)
         }
       }
     }
-  };
+  }
 
   const verifyCode = async () => {
     try {
-      setError(null);
-      setLoading(true);
+      setError(null)
+      setLoading(true)
 
       // Import PhoneAuthProvider dynamically to avoid issues
-      const { PhoneAuthProvider, signInWithCredential } = await import("firebase/auth");
+      const { PhoneAuthProvider, signInWithCredential } = await import("firebase/auth")
 
-      const auth = getAuth();
-      const credential = PhoneAuthProvider.credential(verificationId, verificationCode);
+      const auth = getAuth()
+      const credential = PhoneAuthProvider.credential(verificationId, verificationCode)
 
       // For debugging
-      console.log("Verifying code with ID:", verificationId);
+      console.log("Verifying code with ID:", verificationId)
 
-      await signInWithCredential(auth, credential);
-      console.log("Phone verification successful!");
+      await signInWithCredential(auth, credential)
+      console.log("Phone verification successful!")
 
-      setLoading(false);
-      onVerificationComplete(true);
+      setLoading(false)
+      onVerificationComplete(true)
     } catch (err) {
-      console.error("Error verifying code:", err);
+      console.error("Error verifying code:", err)
 
       // Provide more specific error messages
-      let errorMessage = "Invalid verification code";
+      let errorMessage = "Invalid verification code"
       if (err.code === "auth/code-expired") {
-        errorMessage = "The verification code has expired. Please request a new one.";
+        errorMessage = "The verification code has expired. Please request a new one."
       } else if (err.code === "auth/invalid-verification-code") {
-        errorMessage = "The verification code you entered is invalid. Please check and try again.";
+        errorMessage = "The verification code you entered is invalid. Please check and try again."
       }
 
-      setError(errorMessage);
-      setLoading(false);
+      setError(errorMessage)
+      setLoading(false)
     }
-  };
+  }
 
   if (!isCodeSent) {
     return (
@@ -255,7 +255,7 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
           <div className="text-sm text-gray-600 mt-2 text-center">Please complete the reCAPTCHA verification above</div>
         )}
       </div>
-    );
+    )
   }
 
   return (
@@ -278,9 +278,9 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
       <div className="flex space-x-2">
         <button
           onClick={() => {
-            setIsCodeSent(false);
-            setVerificationCode("");
-            setError(null);
+            setIsCodeSent(false)
+            setVerificationCode("")
+            setError(null)
           }}
           className="py-2 px-4 border border-gray-300 rounded focus:outline-none hover:bg-gray-100"
         >
@@ -300,7 +300,7 @@ const PhoneAuthVerification = ({ phone, onVerificationComplete }) => {
         </button>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default PhoneAuthVerification;
+export default PhoneAuthVerification
