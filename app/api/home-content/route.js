@@ -16,6 +16,14 @@ export async function GET() {
         backgroundImage: null,
         mainText: "",
         subText: "",
+        textStyles: {
+          mainTextSize: "text-4xl md:text-6xl",
+          mainTextColor: "text-white",
+          mainTextFont: "font-bold",
+          subtextSize: "text-xl md:text-2xl",
+          subtextColor: "text-white",
+          subtextFont: "font-normal",
+        },
       })
     }
 
@@ -34,7 +42,9 @@ export async function POST(request) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 })
     }
 
-    const { backgroundImage, mainText, subText } = await request.json()
+    const { backgroundImage, mainText, subText, textStyles } = await request.json()
+    
+    console.log("Saving home content with text styles:", textStyles) // Debug log
 
     const client = await clientPromise
     const db = client.db("ecommerce")
@@ -44,9 +54,11 @@ export async function POST(request) {
       { type: "home" },
       {
         $set: {
+          type: "home", // Ensure type is set
           backgroundImage,
           mainText,
           subText,
+          textStyles,
           updatedAt: new Date(),
         },
       },
