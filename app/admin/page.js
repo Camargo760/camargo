@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Header from "../../components/Header"
-import { Download, ChevronLeft, ChevronRight, Edit } from "lucide-react"
+import { Download, ChevronLeft, ChevronRight, Edit, Palette, Type, Save } from 'lucide-react'
 
 export default function Admin() {
   const [products, setProducts] = useState([])
@@ -35,9 +35,33 @@ export default function Admin() {
   const [editingHome, setEditingHome] = useState(false)
   const [homeBackgroundFile, setHomeBackgroundFile] = useState(null)
 
+  // Home page text customization
+  const [homeTextSize, setHomeTextSize] = useState("text-4xl md:text-6xl")
+  const [homeTextColor, setHomeTextColor] = useState("text-white")
+  const [homeTextFont, setHomeTextFont] = useState("font-bold")
+  const [homeSubtextSize, setHomeSubtextSize] = useState("text-xl md:text-2xl")
+  const [homeSubtextColor, setHomeSubtextColor] = useState("text-white")
+  const [homeSubtextFont, setHomeSubtextFont] = useState("font-normal")
+
   // About us content state
   const [aboutContent, setAboutContent] = useState("")
   const [editingAbout, setEditingAbout] = useState(false)
+
+  // About page text customization
+  const [aboutTextSize, setAboutTextSize] = useState("text-lg")
+  const [aboutTextColor, setAboutTextColor] = useState("text-gray-700")
+  const [aboutTextFont, setAboutTextFont] = useState("font-normal")
+
+  // Website theme settings
+  const [siteTheme, setSiteTheme] = useState({
+    bgColor: "#0a0a0a",
+    cardBgColor: "#1a1a1a",
+    accentColor: "#ff3e00",
+    textColor: "#f0f0f0",
+    secondaryBgColor: "#2a2a2a",
+    borderColor: "#333",
+  })
+  const [editingTheme, setEditingTheme] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
@@ -48,6 +72,7 @@ export default function Admin() {
       fetchOrders()
       fetchHomeContent()
       fetchAboutContent()
+      fetchSiteTheme()
     }
   }, [session, status, router])
 
@@ -90,6 +115,16 @@ export default function Admin() {
         setHomeBackground(data.backgroundImage || null)
         setHomeText(data.mainText || "")
         setHomeSubtext(data.subText || "")
+
+        // Set text customization if available
+        if (data.textStyles) {
+          setHomeTextSize(data.textStyles.mainTextSize || "text-4xl md:text-6xl")
+          setHomeTextColor(data.textStyles.mainTextColor || "text-white")
+          setHomeTextFont(data.textStyles.mainTextFont || "font-bold")
+          setHomeSubtextSize(data.textStyles.subtextSize || "text-xl md:text-2xl")
+          setHomeSubtextColor(data.textStyles.subtextColor || "text-white")
+          setHomeSubtextFont(data.textStyles.subtextFont || "font-normal")
+        }
       }
     } catch (err) {
       console.error("Error fetching home content:", err)
@@ -102,9 +137,30 @@ export default function Admin() {
       if (res.ok) {
         const data = await res.json()
         setAboutContent(data.description || "")
+
+        // Set text customization if available
+        if (data.textStyles) {
+          setAboutTextSize(data.textStyles.textSize || "text-lg")
+          setAboutTextColor(data.textStyles.textColor || "text-gray-700")
+          setAboutTextFont(data.textStyles.textFont || "font-normal")
+        }
       }
     } catch (err) {
       console.error("Error fetching about content:", err)
+    }
+  }
+
+  const fetchSiteTheme = async () => {
+    try {
+      const res = await fetch("/api/site-theme")
+      if (res.ok) {
+        const data = await res.json()
+        if (data && data.theme) {
+          setSiteTheme(data.theme)
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching site theme:", err)
     }
   }
 
@@ -315,7 +371,7 @@ export default function Admin() {
         backgroundImageUrl = uploadData.url
       }
 
-      // Then save the home content
+      // Then save the home content with text styles
       const res = await fetch("/api/home-content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -323,6 +379,14 @@ export default function Admin() {
           backgroundImage: backgroundImageUrl,
           mainText: homeText,
           subText: homeSubtext,
+          textStyles: {
+            mainTextSize: homeTextSize,
+            mainTextColor: homeTextColor,
+            mainTextFont: homeTextFont,
+            subtextSize: homeSubtextSize,
+            subtextColor: homeSubtextColor,
+            subtextFont: homeSubtextFont,
+          },
         }),
       })
 
@@ -347,6 +411,11 @@ export default function Admin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           description: aboutContent,
+          textStyles: {
+            textSize: aboutTextSize,
+            textColor: aboutTextColor,
+            textFont: aboutTextFont,
+          },
         }),
       })
 
@@ -362,6 +431,29 @@ export default function Admin() {
     }
   }
 
+  // Site theme handlers
+  const saveSiteTheme = async () => {
+    try {
+      const res = await fetch("/api/site-theme", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          theme: siteTheme,
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to save site theme")
+      }
+
+      setEditingTheme(false)
+      alert("Site theme saved successfully! Refresh the page to see changes.")
+    } catch (err) {
+      console.error("Error saving site theme:", err)
+      setError("Failed to save site theme. Please try again.")
+    }
+  }
+
   if (status === "loading") {
     return <div>Loading...</div>
   }
@@ -370,8 +462,46 @@ export default function Admin() {
     return <div>You do not have permission to access this page.</div>
   }
 
+  // Font options
+  const fontOptions = [
+    { value: "font-normal", label: "Normal" },
+    { value: "font-medium", label: "Medium" },
+    { value: "font-semibold", label: "Semi Bold" },
+    { value: "font-bold", label: "Bold" },
+    { value: "font-extrabold", label: "Extra Bold" },
+    { value: "italic", label: "Italic" },
+  ]
+
+  // Text size options
+  const textSizeOptions = [
+    { value: "text-sm", label: "Small" },
+    { value: "text-base", label: "Base" },
+    { value: "text-lg", label: "Large" },
+    { value: "text-xl", label: "Extra Large" },
+    { value: "text-2xl", label: "2XL" },
+    { value: "text-3xl", label: "3XL" },
+    { value: "text-4xl", label: "4XL" },
+    { value: "text-5xl", label: "5XL" },
+    { value: "text-6xl", label: "6XL" },
+  ]
+
+  // Text color options
+  const textColorOptions = [
+    { value: "text-white", label: "White", color: "#ffffff" },
+    { value: "text-gray-100", label: "Light Gray", color: "#f3f4f6" },
+    { value: "text-gray-700", label: "Dark Gray", color: "#374151" },
+    { value: "text-black", label: "Black", color: "#000000" },
+    { value: "text-blue-500", label: "Blue", color: "#3b82f6" },
+    { value: "text-red-500", label: "Red", color: "#ef4444" },
+    { value: "text-green-500", label: "Green", color: "#10b981" },
+    { value: "text-yellow-500", label: "Yellow", color: "#f59e0b" },
+    { value: "text-orange-500", label: "Orange", color: "#f97316" },
+    { value: "text-purple-500", label: "Purple", color: "#8b5cf6" },
+    { value: "text-pink-500", label: "Pink", color: "#ec4899" },
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
       <Header />
       <main className="container mx-auto mt-8 p-8">
         <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
@@ -380,13 +510,25 @@ export default function Admin() {
             <p>{error}</p>
           </div>
         )}
-        <form onSubmit={handleSubmit} className="mb-8 bg-white shadow-md rounded px-8 pt-6 pb-8">
+
+        {/* Site Theme Settings */}
+
+        <form
+          onSubmit={handleSubmit}
+          className="mb-8 p-6 rounded-lg"
+          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+        >
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+            <label className="block text-sm font-bold mb-2" htmlFor="name">
               Product Name
             </label>
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+              style={{
+                backgroundColor: siteTheme.secondaryBgColor,
+                color: siteTheme.textColor,
+                borderColor: siteTheme.borderColor,
+              }}
               id="name"
               type="text"
               placeholder="Product Name"
@@ -396,11 +538,16 @@ export default function Admin() {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="price">
+            <label className="block text-sm font-bold mb-2" htmlFor="price">
               Price
             </label>
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+              style={{
+                backgroundColor: siteTheme.secondaryBgColor,
+                color: siteTheme.textColor,
+                borderColor: siteTheme.borderColor,
+              }}
               id="price"
               type="number"
               placeholder="Price"
@@ -411,11 +558,16 @@ export default function Admin() {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+            <label className="block text-sm font-bold mb-2" htmlFor="description">
               Description
             </label>
             <textarea
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+              style={{
+                backgroundColor: siteTheme.secondaryBgColor,
+                color: siteTheme.textColor,
+                borderColor: siteTheme.borderColor,
+              }}
               id="description"
               placeholder="Product Description"
               value={description}
@@ -424,11 +576,16 @@ export default function Admin() {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="images">
+            <label className="block text-sm font-bold mb-2" htmlFor="images">
               Images
             </label>
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+              style={{
+                backgroundColor: siteTheme.secondaryBgColor,
+                color: siteTheme.textColor,
+                borderColor: siteTheme.borderColor,
+              }}
               id="images"
               type="file"
               multiple
@@ -450,7 +607,8 @@ export default function Admin() {
                 <button
                   type="button"
                   onClick={() => removeImage(index)}
-                  className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                  className="absolute top-0 right-0 rounded-full w-5 h-5 flex items-center justify-center"
+                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
                 >
                   &times;
                 </button>
@@ -458,11 +616,16 @@ export default function Admin() {
             ))}
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="category">
+            <label className="block text-sm font-bold mb-2" htmlFor="category">
               Category
             </label>
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+              style={{
+                backgroundColor: siteTheme.secondaryBgColor,
+                color: siteTheme.textColor,
+                borderColor: siteTheme.borderColor,
+              }}
               id="category"
               type="text"
               placeholder="Category"
@@ -472,11 +635,16 @@ export default function Admin() {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="availableColors">
+            <label className="block text-sm font-bold mb-2" htmlFor="availableColors">
               Available Colors (comma-separated)
             </label>
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+              style={{
+                backgroundColor: siteTheme.secondaryBgColor,
+                color: siteTheme.textColor,
+                borderColor: siteTheme.borderColor,
+              }}
               id="availableColors"
               type="text"
               placeholder="Red, Blue, Green"
@@ -486,11 +654,16 @@ export default function Admin() {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="availableSizes">
+            <label className="block text-sm font-bold mb-2" htmlFor="availableSizes">
               Available Sizes (comma-separated)
             </label>
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+              style={{
+                backgroundColor: siteTheme.secondaryBgColor,
+                color: siteTheme.textColor,
+                borderColor: siteTheme.borderColor,
+              }}
               id="availableSizes"
               type="text"
               placeholder="S, M, L, XL"
@@ -501,7 +674,8 @@ export default function Admin() {
           </div>
           <div className="flex items-center justify-between">
             <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              className="font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
               type="submit"
             >
               {editingProduct ? "Update Product" : "Add Product"}
@@ -510,7 +684,11 @@ export default function Admin() {
         </form>
 
         <h2 className="text-2xl font-bold mb-4">Products</h2>
-        <button onClick={handleSort} className="mb-4 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded">
+        <button
+          onClick={handleSort}
+          className="mb-4 px-4 py-2 rounded"
+          style={{ backgroundColor: siteTheme.secondaryBgColor, color: siteTheme.textColor }}
+        >
           Sort by Upload Time ({sortOrder === "desc" ? "Newest First" : "Oldest First"})
         </button>
         {products.length === 0 ? (
@@ -518,10 +696,18 @@ export default function Admin() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {products.map((product) => (
-              <div key={product._id} className="border bg-white rounded-lg shadow-md p-4">
+              <div
+                key={product._id}
+                className="rounded-lg p-4"
+                style={{
+                  backgroundColor: siteTheme.cardBgColor,
+                  borderColor: siteTheme.borderColor,
+                  borderWidth: "1px",
+                }}
+              >
                 <h3 className="text-xl font-bold mb-2">{product.name}</h3>
-                <p className="text-gray-600 mb-2">${product.price.toFixed(2)}</p>
-                <p className="text-sm text-gray-500 mb-2">{product.description}</p>
+                <p className="mb-2">${product.price.toFixed(2)}</p>
+                <p className="text-sm mb-2">{product.description}</p>
                 <p className="text-sm mb-2">
                   <span className="font-semibold">Category:</span> {product.category}
                 </p>
@@ -553,21 +739,25 @@ export default function Admin() {
                 <div className="mt-4 flex space-x-2">
                   <button
                     onClick={() => handleEdit(product)}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-2 rounded text-sm"
+                    className="font-bold py-1 px-2 rounded text-sm"
+                    style={{ backgroundColor: "#EAB308", color: "#000000" }}
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handlePublish(product._id, !product.published)}
-                    className={`${
-                      product.published ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
-                    } text-white font-bold py-1 px-2 rounded text-sm`}
+                    className="font-bold py-1 px-2 rounded text-sm"
+                    style={{
+                      backgroundColor: product.published ? "#EF4444" : "#10B981",
+                      color: "#FFFFFF",
+                    }}
                   >
                     {product.published ? "Unpublish" : "Publish"}
                   </button>
                   <button
                     onClick={() => handleDelete(product._id)}
-                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm"
+                    className="font-bold py-1 px-2 rounded text-sm"
+                    style={{ backgroundColor: "#EF4444", color: "#FFFFFF" }}
                   >
                     Delete
                   </button>
@@ -577,77 +767,137 @@ export default function Admin() {
           </div>
         )}
 
+
         <h2 className="text-2xl font-bold mb-4 mt-8">Recent Orders</h2>
         {orders.length === 0 ? (
           <p>No recent orders.</p>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border border-gray-300">
+              <table className="min-w-full border" style={{ borderColor: siteTheme.borderColor }}>
                 <thead>
-                  <tr>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <tr style={{ backgroundColor: siteTheme.secondaryBgColor }}>
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Order ID
                     </th>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Customer Name
                     </th>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Email
                     </th>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Phone
                     </th>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Address
                     </th>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Product
                     </th>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Details
                     </th>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Quantity
                     </th>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Total
                     </th>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Date
                     </th>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Payment Method
                     </th>
-                    <th className="px-6 py-3 border-b-2 border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th
+                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
                       Status
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentOrders.map((order) => (
-                    <tr key={order.id}>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">{order.id || "N/A"}</td>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                    <tr key={order.id} style={{ backgroundColor: siteTheme.cardBgColor }}>
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
+                        {order.id || "N/A"}
+                      </td>
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
                         {order.customer.name || "N/A"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
                         {order.customer.email || "N/A"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
                         {order.customer.phone || "N/A"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
                         {order.customer.address || "N/A"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
                         {order.product.name || "N/A"}
                         {order.product.isCustomProduct && (
                           <span className="ml-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Custom</span>
                         )}
-                        <div className="text-xs text-gray-600 mt-1">Category: {order.product.category || "N/A"}</div>
+                        <div className="text-xs mt-1">Category: {order.product.category || "N/A"}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
                         <div>
                           <p>Color: {order.selectedColor || "N/A"}</p>
                           <p>Size: {order.selectedSize || "N/A"}</p>
@@ -667,27 +917,32 @@ export default function Admin() {
                                   alt="Custom design"
                                   width={50}
                                   height={50}
-                                  className="rounded border border-gray-200 hover:border-blue-500 transition-all"
+                                  className="rounded border hover:border-blue-500 transition-all"
+                                  style={{ borderColor: siteTheme.borderColor }}
                                 />
-                                <span className="text-xs text-blue-600 block mt-1">Download</span>
+                                <span className="text-xs block mt-1" style={{ color: siteTheme.accentColor }}>
+                                  Download
+                                </span>
                               </a>
                             </div>
                           )}
                           {/* Display final design image if available */}
                           {order.product.finalDesignImage && (
                             <div className="mt-3">
-                              <p className="text-xs font-semibold text-gray-700">Final Design:</p>
+                              <p className="text-xs font-semibold">Final Design:</p>
                               <div className="relative group">
                                 <Image
                                   src={order.product.finalDesignImage || "/placeholder.svg"}
                                   alt="Final design"
                                   width={100}
                                   height={100}
-                                  className="rounded border-2 border-orange-400 mt-1 hover:border-orange-600 transition-all"
+                                  className="rounded mt-1 transition-all"
+                                  style={{ borderColor: siteTheme.accentColor, borderWidth: "2px" }}
                                 />
                                 <button
                                   onClick={() => downloadDesignImage(order.product.finalDesignImage, order.id)}
-                                  className="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="absolute bottom-2 right-2 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
                                   title="Download final design"
                                 >
                                   <Download size={16} />
@@ -697,46 +952,89 @@ export default function Admin() {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">{order.quantity || 1}</td>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
+                        {order.quantity || 1}
+                      </td>
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
                         ${(order.amount_total / 100).toFixed(2) || "N/A"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
                         {new Date(order.created * 1000).toLocaleDateString() || "N/A"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
                         <div className="flex items-center">
                           <span
-                            className={`capitalize ${order.paymentMethod === "delivery" ? "text-orange-600" : "text-blue-600"}`}
+                            className="capitalize"
+                            style={{ color: order.paymentMethod === "delivery" ? "#F97316" : "#3B82F6" }}
                           >
                             {order.paymentMethod || "stripe"}
                           </span>
                           {order.paymentMethod === "delivery" && order.preferredMethod && (
-                            <span className="ml-2 text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded capitalize">
+                            <span
+                              className="ml-2 text-xs px-2 py-1 rounded capitalize"
+                              style={{ backgroundColor: siteTheme.secondaryBgColor }}
+                            >
                               {order.preferredMethod}
                             </span>
                           )}
                         </div>
                         {order.paymentMethod === "delivery" && order.additionalNotes && (
-                          <p className="mt-1 text-xs text-gray-600">
+                          <p className="mt-1 text-xs">
                             <span className="font-semibold">Notes:</span> {order.additionalNotes}
                           </p>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap border-b border-gray-300">
+                      <td
+                        className="px-6 py-4 whitespace-nowrap border-b"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
                         <div className="flex items-center space-x-2">
                           <span
-                            className={`inline-block px-2 py-1 text-xs font-semibold rounded-full 
-                            ${order.status === "pending" ? "bg-yellow-100 text-yellow-800" : ""}
-                            ${order.status === "received" ? "bg-blue-100 text-blue-800" : ""}
-                            ${order.status === "out_for_delivery" ? "bg-purple-100 text-purple-800" : ""}
-                            ${order.status === "delivered" ? "bg-green-100 text-green-800" : ""}
-                          `}
+                            className="inline-block px-2 py-1 text-xs font-semibold rounded-full"
+                            style={{
+                              backgroundColor:
+                                order.status === "pending"
+                                  ? "#FEF3C7"
+                                  : order.status === "received"
+                                    ? "#DBEAFE"
+                                    : order.status === "out_for_delivery"
+                                      ? "#F3E8FF"
+                                      : order.status === "delivered"
+                                        ? "#DCFCE7"
+                                        : "#F3F4F6",
+                              color:
+                                order.status === "pending"
+                                  ? "#92400E"
+                                  : order.status === "received"
+                                    ? "#1E40AF"
+                                    : order.status === "out_for_delivery"
+                                      ? "#6B21A8"
+                                      : order.status === "delivered"
+                                        ? "#166534"
+                                        : "#1F2937",
+                            }}
                           >
                             {order.status || "pending"}
                           </span>
                           <select
-                            className="text-sm border border-gray-300 rounded p-1"
+                            className="text-sm border rounded p-1"
+                            style={{
+                              backgroundColor: siteTheme.secondaryBgColor,
+                              color: siteTheme.textColor,
+                              borderColor: siteTheme.borderColor,
+                            }}
                             onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
                             value={order.status || "pending"}
                           >
@@ -755,29 +1053,33 @@ export default function Admin() {
 
             {/* Pagination controls */}
             <div className="flex justify-between items-center mt-4">
-              <div className="text-sm text-gray-700">
+              <div className="text-sm">
                 Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, orders.length)} of {orders.length} orders
               </div>
               <div className="flex space-x-2">
                 <button
                   onClick={handlePreviousPage}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded flex items-center ${
-                    currentPage === 1
-                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      : "bg-blue-500 text-white hover:bg-blue-600"
-                  }`}
+                  className="px-3 py-1 rounded flex items-center"
+                  style={{
+                    backgroundColor: currentPage === 1 ? "#9CA3AF" : siteTheme.accentColor,
+                    color: siteTheme.textColor,
+                    opacity: currentPage === 1 ? 0.5 : 1,
+                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                  }}
                 >
                   <ChevronLeft size={16} className="mr-1" /> Previous
                 </button>
                 <button
                   onClick={handleNextPage}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded flex items-center ${
-                    currentPage === totalPages
-                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      : "bg-blue-500 text-white hover:bg-blue-600"
-                  }`}
+                  className="px-3 py-1 rounded flex items-center"
+                  style={{
+                    backgroundColor: currentPage === totalPages ? "#9CA3AF" : siteTheme.accentColor,
+                    color: siteTheme.textColor,
+                    opacity: currentPage === totalPages ? 0.5 : 1,
+                    cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                  }}
                 >
                   Next <ChevronRight size={16} className="ml-1" />
                 </button>
@@ -786,14 +1088,322 @@ export default function Admin() {
           </>
         )}
 
+
+        {/* Theme Setting */}
+
+        <div
+          className="my-12 p-6 rounded-lg"
+          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold flex items-center">
+              <Palette className="mr-2" size={24} />
+              Site Theme Settings
+            </h2>
+            <button
+              onClick={() => setEditingTheme(!editingTheme)}
+              className="flex items-center px-4 py-2 rounded"
+              style={{
+                backgroundColor: editingTheme ? "#4B5563" : siteTheme.accentColor,
+                color: siteTheme.textColor,
+              }}
+            >
+              {editingTheme ? "Cancel" : "Edit Theme"}
+            </button>
+          </div>
+
+          {editingTheme ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Background Color</label>
+                  <div className="flex items-center">
+                    <input
+                      type="color"
+                      value={siteTheme.bgColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, bgColor: e.target.value })}
+                      className="h-10 w-10 rounded mr-2"
+                    />
+                    <input
+                      type="text"
+                      value={siteTheme.bgColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, bgColor: e.target.value })}
+                      className="flex-1 p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Card Background Color</label>
+                  <div className="flex items-center">
+                    <input
+                      type="color"
+                      value={siteTheme.cardBgColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, cardBgColor: e.target.value })}
+                      className="h-10 w-10 rounded mr-2"
+                    />
+                    <input
+                      type="text"
+                      value={siteTheme.cardBgColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, cardBgColor: e.target.value })}
+                      className="flex-1 p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Secondary Background Color</label>
+                  <div className="flex items-center">
+                    <input
+                      type="color"
+                      value={siteTheme.secondaryBgColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, secondaryBgColor: e.target.value })}
+                      className="h-10 w-10 rounded mr-2"
+                    />
+                    <input
+                      type="text"
+                      value={siteTheme.secondaryBgColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, secondaryBgColor: e.target.value })}
+                      className="flex-1 p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Accent Color</label>
+                  <div className="flex items-center">
+                    <input
+                      type="color"
+                      value={siteTheme.accentColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, accentColor: e.target.value })}
+                      className="h-10 w-10 rounded mr-2"
+                    />
+                    <input
+                      type="text"
+                      value={siteTheme.accentColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, accentColor: e.target.value })}
+                      className="flex-1 p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Text Color</label>
+                  <div className="flex items-center">
+                    <input
+                      type="color"
+                      value={siteTheme.textColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, textColor: e.target.value })}
+                      className="h-10 w-10 rounded mr-2"
+                    />
+                    <input
+                      type="text"
+                      value={siteTheme.textColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, textColor: e.target.value })}
+                      className="flex-1 p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Border Color</label>
+                  <div className="flex items-center">
+                    <input
+                      type="color"
+                      value={siteTheme.borderColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, borderColor: e.target.value })}
+                      className="h-10 w-10 rounded mr-2"
+                    />
+                    <input
+                      type="text"
+                      value={siteTheme.borderColor}
+                      onChange={(e) => setSiteTheme({ ...siteTheme, borderColor: e.target.value })}
+                      className="flex-1 p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-2">Preview</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div
+                    className="p-4 rounded"
+                    style={{
+                      backgroundColor: siteTheme.bgColor,
+                      color: siteTheme.textColor,
+                      borderColor: siteTheme.borderColor,
+                      borderWidth: "1px",
+                    }}
+                  >
+                    <p>Background</p>
+                  </div>
+                  <div
+                    className="p-4 rounded"
+                    style={{
+                      backgroundColor: siteTheme.cardBgColor,
+                      color: siteTheme.textColor,
+                      borderColor: siteTheme.borderColor,
+                      borderWidth: "1px",
+                    }}
+                  >
+                    <p>Card Background</p>
+                  </div>
+                  <div
+                    className="p-4 rounded"
+                    style={{
+                      backgroundColor: siteTheme.secondaryBgColor,
+                      color: siteTheme.textColor,
+                      borderColor: siteTheme.borderColor,
+                      borderWidth: "1px",
+                    }}
+                  >
+                    <p>Secondary Background</p>
+                  </div>
+                  <div
+                    className="p-4 rounded"
+                    style={{
+                      backgroundColor: siteTheme.accentColor,
+                      color: siteTheme.textColor,
+                      borderColor: siteTheme.borderColor,
+                      borderWidth: "1px",
+                    }}
+                  >
+                    <p>Accent Color</p>
+                  </div>
+                  <div
+                    className="p-4 rounded"
+                    style={{
+                      backgroundColor: siteTheme.cardBgColor,
+                      borderColor: siteTheme.borderColor,
+                      borderWidth: "1px",
+                    }}
+                  >
+                    <p style={{ color: siteTheme.textColor }}>Text Color</p>
+                  </div>
+                  <div
+                    className="p-4 rounded"
+                    style={{
+                      backgroundColor: siteTheme.cardBgColor,
+                      color: siteTheme.textColor,
+                      borderColor: siteTheme.borderColor,
+                      borderWidth: "1px",
+                    }}
+                  >
+                    <button className="px-4 py-2 rounded" style={{ backgroundColor: siteTheme.accentColor }}>
+                      Button
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-4 space-x-3">
+                <button
+                  onClick={() => {
+                    setSiteTheme({
+                      bgColor: "#0a0a0a",
+                      cardBgColor: "#1a1a1a",
+                      accentColor: "#ff3e00",
+                      textColor: "#f0f0f0",
+                      secondaryBgColor: "#2a2a2a",
+                      borderColor: "#333",
+                    })
+                  }}
+                  className="flex items-center px-4 py-2 rounded"
+                  style={{ backgroundColor: "#4B5563" }}
+                >
+                  Reset to Default
+                </button>
+                <button
+                  onClick={saveSiteTheme}
+                  className="flex items-center px-4 py-2 rounded"
+                  style={{ backgroundColor: siteTheme.accentColor }}
+                >
+                  <Save className="mr-2" size={16} />
+                  Save Theme
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded mb-2" style={{ backgroundColor: siteTheme.bgColor }}></div>
+                <span className="text-sm">Background</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded mb-2" style={{ backgroundColor: siteTheme.cardBgColor }}></div>
+                <span className="text-sm">Card BG</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded mb-2" style={{ backgroundColor: siteTheme.secondaryBgColor }}></div>
+                <span className="text-sm">Secondary BG</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded mb-2" style={{ backgroundColor: siteTheme.accentColor }}></div>
+                <span className="text-sm">Accent</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div
+                  className="w-16 h-16 rounded mb-2 flex items-center justify-center"
+                  style={{ backgroundColor: siteTheme.cardBgColor }}
+                >
+                  <span style={{ color: siteTheme.textColor }}>T</span>
+                </div>
+                <span className="text-sm">Text</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded mb-2" style={{ backgroundColor: siteTheme.borderColor }}></div>
+                <span className="text-sm">Border</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+
         {/* Home Page Content Management */}
-        <div className="mt-12 bg-white shadow-md rounded p-6">
-          <h2 className="text-2xl font-bold mb-4">Home Page Content</h2>
+        <div
+          className="mt-12 rounded-lg p-6"
+          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+        >
+          <h2 className="text-2xl font-bold mb-4 flex items-center">
+            <Type className="mr-2" size={24} />
+            Home Page Content
+          </h2>
 
           {editingHome ? (
             <div className="space-y-4">
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">Background Image</label>
+                <label className="block text-sm font-medium mb-2">Background Image</label>
                 <div className="flex items-center space-x-4">
                   {homeBackground && (
                     <div className="relative w-40 h-24 bg-gray-200 rounded overflow-hidden">
@@ -810,36 +1420,178 @@ export default function Admin() {
                     accept="image/*"
                     onChange={handleHomeBackgroundChange}
                     className="border rounded p-2"
+                    style={{
+                      backgroundColor: siteTheme.secondaryBgColor,
+                      color: siteTheme.textColor,
+                      borderColor: siteTheme.borderColor,
+                    }}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">Main Text</label>
+                <label className="block text-sm font-medium mb-2">Main Text</label>
                 <input
                   type="text"
                   value={homeText}
                   onChange={(e) => setHomeText(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                  }}
                   placeholder="Main heading text"
                 />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Size</label>
+                    <select
+                      value={homeTextSize}
+                      onChange={(e) => setHomeTextSize(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textSizeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                      <option value="text-4xl md:text-6xl">Responsive (4XL to 6XL)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Color</label>
+                    <select
+                      value={homeTextColor}
+                      onChange={(e) => setHomeTextColor(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textColorOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Font Style</label>
+                    <select
+                      value={homeTextFont}
+                      onChange={(e) => setHomeTextFont(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {fontOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">Sub Text</label>
+                <label className="block text-sm font-medium mb-2">Sub Text</label>
                 <textarea
                   value={homeSubtext}
                   onChange={(e) => setHomeSubtext(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                  }}
                   placeholder="Subheading or description text"
                   rows={3}
                 />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Size</label>
+                    <select
+                      value={homeSubtextSize}
+                      onChange={(e) => setHomeSubtextSize(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textSizeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                      <option value="text-xl md:text-2xl">Responsive (XL to 2XL)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Color</label>
+                    <select
+                      value={homeSubtextColor}
+                      onChange={(e) => setHomeSubtextColor(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textColorOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Font Style</label>
+                    <select
+                      value={homeSubtextFont}
+                      onChange={(e) => setHomeSubtextFont(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {fontOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div className="flex space-x-2">
                 <button
                   onClick={saveHomeContent}
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+                  className="font-bold py-2 px-4 rounded"
+                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
                 >
                   Save Changes
                 </button>
@@ -848,7 +1600,8 @@ export default function Admin() {
                     setEditingHome(false)
                     fetchHomeContent() // Reset to original values
                   }}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
+                  className="font-bold py-2 px-4 rounded"
+                  style={{ backgroundColor: "#4B5563", color: siteTheme.textColor }}
                 >
                   Cancel
                 </button>
@@ -867,20 +1620,26 @@ export default function Admin() {
                     />
                   </div>
                 ) : (
-                  <div className="w-full h-40 bg-gray-200 rounded flex items-center justify-center mb-2">
-                    <p className="text-gray-500">No background image set</p>
+                  <div
+                    className="w-full h-40 rounded flex items-center justify-center mb-2"
+                    style={{ backgroundColor: siteTheme.secondaryBgColor }}
+                  >
+                    <p>No background image set</p>
                   </div>
                 )}
 
                 <div className="mt-2">
-                  <p className="font-bold text-lg">{homeText || "No main text set"}</p>
-                  <p className="text-gray-600">{homeSubtext || "No subtext set"}</p>
+                  <p className={`${homeTextSize} ${homeTextColor} ${homeTextFont}`}>{homeText || "No main text set"}</p>
+                  <p className={`${homeSubtextSize} ${homeSubtextColor} ${homeSubtextFont}`}>
+                    {homeSubtext || "No subtext set"}
+                  </p>
                 </div>
               </div>
 
               <button
                 onClick={() => setEditingHome(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center"
+                className="font-bold py-2 px-4 rounded flex items-center"
+                style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
               >
                 <Edit size={16} className="mr-2" /> Edit Home Content
               </button>
@@ -889,26 +1648,100 @@ export default function Admin() {
         </div>
 
         {/* About Page Content Management */}
-        <div className="mt-8 bg-white shadow-md rounded p-6">
-          <h2 className="text-2xl font-bold mb-4">About Page Content</h2>
+        <div
+          className="mt-8 rounded-lg p-6"
+          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+        >
+          <h2 className="text-2xl font-bold mb-4 flex items-center">
+            <Type className="mr-2" size={24} />
+            About Page Content
+          </h2>
 
           {editingAbout ? (
             <div className="space-y-4">
               <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">About Us Description</label>
+                <label className="block text-sm font-medium mb-2">About Us Description</label>
                 <textarea
                   value={aboutContent}
                   onChange={(e) => setAboutContent(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                  }}
                   placeholder="Write a description about your business..."
                   rows={6}
                 />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Size</label>
+                    <select
+                      value={aboutTextSize}
+                      onChange={(e) => setAboutTextSize(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textSizeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Color</label>
+                    <select
+                      value={aboutTextColor}
+                      onChange={(e) => setAboutTextColor(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textColorOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Font Style</label>
+                    <select
+                      value={aboutTextFont}
+                      onChange={(e) => setAboutTextFont(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {fontOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div className="flex space-x-2">
                 <button
                   onClick={saveAboutContent}
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
+                  className="font-bold py-2 px-4 rounded"
+                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
                 >
                   Save Changes
                 </button>
@@ -917,7 +1750,8 @@ export default function Admin() {
                     setEditingAbout(false)
                     fetchAboutContent() // Reset to original values
                   }}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
+                  className="font-bold py-2 px-4 rounded"
+                  style={{ backgroundColor: "#4B5563", color: siteTheme.textColor }}
                 >
                   Cancel
                 </button>
@@ -925,13 +1759,16 @@ export default function Admin() {
             </div>
           ) : (
             <div>
-              <div className="mb-4 p-4 bg-gray-50 rounded">
-                <p className="text-gray-700">{aboutContent || "No about us description set"}</p>
+              <div className="mb-4 p-4 rounded" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
+                <p className={`${aboutTextSize} ${aboutTextColor} ${aboutTextFont}`}>
+                  {aboutContent || "No about us description set"}
+                </p>
               </div>
 
               <button
                 onClick={() => setEditingAbout(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center"
+                className="font-bold py-2 px-4 rounded flex items-center"
+                style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
               >
                 <Edit size={16} className="mr-2" /> Edit About Content
               </button>
