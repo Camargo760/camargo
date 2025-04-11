@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Truck, X } from "lucide-react"
 
@@ -9,7 +9,33 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
   const [additionalNotes, setAdditionalNotes] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [siteTheme, setSiteTheme] = useState({
+    bgColor: "#0a0a0a",
+    cardBgColor: "#1a1a1a",
+    accentColor: "#ff3e00",
+    textColor: "#f0f0f0",
+    secondaryBgColor: "#2a2a2a",
+    borderColor: "#333",
+  })
   const router = useRouter()
+
+  useEffect(() => {
+    const fetchSiteTheme = async () => {
+      try {
+        const res = await fetch("/api/site-theme")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.theme) {
+            setSiteTheme(data.theme)
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching site theme:", err)
+      }
+    }
+
+    fetchSiteTheme()
+  }, [])
 
   if (!isOpen) return null
 
@@ -40,13 +66,13 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
           address: customerInfo.address,
           color: productDetails.color,
           size: productDetails.size,
-          isCustomProduct: productDetails.isCustomProduct || false,
+          isCustomProduct: productDetails.isCustomProduct || false, // Ensure this is explicitly set
           customText: productDetails.customText,
           quantity: productDetails.quantity,
           preferredMethod,
           additionalNotes,
           price: productDetails.price,
-          designImageId: productDetails.designImageId || null,
+          designImageId: productDetails.designImageId || null, // Pass the image ID
         }),
       })
 
@@ -76,95 +102,99 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 p-4" style={{ textAlign: "center" }}>
-      {/* Using inline-block for centering */}
-      <div style={{ display: "inline-block", verticalAlign: "middle", height: "100%", width: "0" }}></div>
-      <div className="mt-20 bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden inline-block align-middle text-left">
-        <div className="p-6 border-b relative">
-          <h2 className="text-lg md:text-xl font-bold text-gray-800 inline-block">Pay at Delivery</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors absolute right-6 top-6"
-          >
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div
+        className="rounded-lg shadow-xl w-full max-w-md overflow-hidden max-h-[90vh]"
+        style={{ backgroundColor: siteTheme.cardBgColor, color: siteTheme.textColor }}
+      >
+        <div className="flex justify-between items-center p-6 border-b" style={{ borderColor: siteTheme.borderColor }}>
+          <h2 className="text-xl font-bold">Pay at Delivery</h2>
+          <button onClick={onClose} className="transition-colors" style={{ color: siteTheme.textColor }}>
             <X size={24} />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto" style={{ maxHeight: "350px" }}>
-          <div className="mb-6 text-center">
-            <div className="bg-green-100 p-3 rounded-full inline-block">
-              <Truck className="text-green-600" size={32} />
+        <div className="p-6 overflow-y-auto" style={{ maxHeight: "calc(90vh - 80px)" }}>
+          <div className="flex items-center justify-center mb-6">
+            <div className="p-3 rounded-full" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
+              <Truck style={{ color: "#10b981" }} size={32} />
             </div>
           </div>
 
-          <p className="text-center text-gray-700 mb-6">
-            Please provide additional information for your delivery payment.
-          </p>
+          <p className="text-center mb-6">Please provide additional information for your delivery payment.</p>
 
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <div
+              className="border px-4 py-3 rounded mb-4"
+              style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", borderColor: "#ef4444", color: "#ef4444" }}
+            >
               <p>{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">Preferred Payment Method</label>
+              <label className="block text-sm font-bold mb-2">Preferred Payment Method</label>
               <div className="space-y-2">
-                <label className="block">
+                <label className="flex items-center">
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="cash"
                     checked={preferredMethod === "cash"}
                     onChange={() => setPreferredMethod("cash")}
-                    className="mr-2 align-middle"
+                    className="mr-2"
                   />
-                  <span className="align-middle">Cash</span>
+                  <span>Cash</span>
                 </label>
-                <label className="block">
+                <label className="flex items-center">
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="cashapp"
                     checked={preferredMethod === "cashapp"}
                     onChange={() => setPreferredMethod("cashapp")}
-                    className="mr-2 align-middle"
+                    className="mr-2"
                   />
-                  <span className="align-middle">Cash App Pay</span>
+                  <span>Cash App Pay</span>
                 </label>
-                <label className="block">
+                <label className="flex items-center">
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="zelle"
                     checked={preferredMethod === "zelle"}
                     onChange={() => setPreferredMethod("zelle")}
-                    className="mr-2 align-middle"
+                    className="mr-2"
                   />
-                  <span className="align-middle">Zelle</span>
+                  <span>Zelle</span>
                 </label>
-                <label className="block">
+                <label className="flex items-center">
                   <input
                     type="radio"
                     name="paymentMethod"
                     value="paypal"
                     checked={preferredMethod === "paypal"}
                     onChange={() => setPreferredMethod("paypal")}
-                    className="mr-2 align-middle"
+                    className="mr-2"
                   />
-                  <span className="align-middle">PayPal</span>
+                  <span>PayPal</span>
                 </label>
               </div>
             </div>
 
             <div className="mb-6">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="notes">
+              <label className="block text-sm font-bold mb-2" htmlFor="notes">
                 Additional Notes
               </label>
               <textarea
                 id="notes"
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                style={{
+                  backgroundColor: siteTheme.secondaryBgColor,
+                  color: siteTheme.textColor,
+                  borderColor: siteTheme.borderColor,
+                }}
                 rows="3"
                 placeholder="Any special instructions for delivery or payment"
                 value={additionalNotes}
@@ -172,10 +202,11 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
               />
             </div>
 
-            <div className="text-center">
+            <div className="flex items-center justify-between">
               <button
                 type="submit"
-                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+                className="font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+                style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
                 disabled={loading}
               >
                 {loading ? "Processing..." : "Place Order"}
