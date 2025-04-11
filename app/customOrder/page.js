@@ -2,22 +2,54 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Upload } from "lucide-react"
+import { Upload, Type } from "lucide-react"
 import DraggableElement from "../../components/DraggableElement"
 import html2canvas from "html2canvas"
 
-export default function Home() {
+export default function CustomOrder() {
   const [currentBgColor, setCurrentBgColor] = useState("#1a1a1a")
   const [selectedSize, setSelectedSize] = useState("S")
   const [customText, setCustomText] = useState("")
+  const [customTextColor, setCustomTextColor] = useState("#ffffff")
+  const [customTextFont, setCustomTextFont] = useState("font-['Kanit']")
+  const [customTextSize, setCustomTextSize] = useState("text-4xl")
   const [uploadedImage, setUploadedImage] = useState(null)
   const [fileName, setFileName] = useState("No file chosen")
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(false)
   const [designElements, setDesignElements] = useState([])
   const [finalDesignImage, setFinalDesignImage] = useState(null)
+  const [showTextOptions, setShowTextOptions] = useState(false)
+  const [siteTheme, setSiteTheme] = useState({
+    bgColor: "#0a0a0a",
+    cardBgColor: "#1a1a1a",
+    accentColor: "#ff3e00",
+    textColor: "#f0f0f0",
+    secondaryBgColor: "#2a2a2a",
+    borderColor: "#333",
+  })
   const router = useRouter()
   const canvasRef = useRef(null)
+
+  useEffect(() => {
+    const fetchSiteTheme = async () => {
+      try {
+        const res = await fetch("/api/site-theme")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.theme) {
+            setSiteTheme(data.theme)
+            // Set the current background color to the card background color from the theme
+            setCurrentBgColor(data.theme.cardBgColor)
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching site theme:", err)
+      }
+    }
+
+    fetchSiteTheme()
+  }, [])
 
   const colorOptions = [
     { color: "#1a1a1a", title: "Black" },
@@ -32,6 +64,38 @@ export default function Home() {
     { color: "#5e5ce6", title: "Purple" },
     { color: "#FFD700", title: "Gold" },
     { color: "#FF1493", title: "Pink" },
+  ]
+
+  const textColorOptions = [
+    { color: "#ffffff", title: "White" },
+    { color: "#000000", title: "Black" },
+    { color: "#ff3e00", title: "Orange" },
+    { color: "#0a84ff", title: "Blue" },
+    { color: "#30d158", title: "Green" },
+    { color: "#5e5ce6", title: "Purple" },
+    { color: "#FFD700", title: "Gold" },
+    { color: "#FF1493", title: "Pink" },
+    { color: "#ff0000", title: "Red" },
+    { color: "#ffff00", title: "Yellow" },
+  ]
+
+  const fontOptions = [
+    { value: "font-['Kanit']", label: "Kanit" },
+    { value: "font-['Arial']", label: "Arial" },
+    { value: "font-['Helvetica']", label: "Helvetica" },
+    { value: "font-['Times_New_Roman']", label: "Times New Roman" },
+    { value: "font-['Georgia']", label: "Georgia" },
+    { value: "font-['Courier_New']", label: "Courier New" },
+    { value: "font-['Verdana']", label: "Verdana" },
+    { value: "font-['Tahoma']", label: "Tahoma" },
+  ]
+
+  const textSizeOptions = [
+    { value: "text-xl", label: "Small" },
+    { value: "text-2xl", label: "Medium" },
+    { value: "text-3xl", label: "Large" },
+    { value: "text-4xl", label: "Extra Large" },
+    { value: "text-5xl", label: "Huge" },
   ]
 
   const sizeOptions = ["S", "M", "L", "XL", "XXL"]
@@ -65,11 +129,14 @@ export default function Home() {
         position: { x: 0.5, y: 0.5 }, // Center position (relative)
         id: "text-element",
         zIndex: 20, // Higher z-index for text so it appears on top
+        textColor: customTextColor,
+        textFont: customTextFont,
+        textSize: customTextSize,
       })
     }
 
     setDesignElements(newElements)
-  }, [customText, uploadedImage])
+  }, [customText, uploadedImage, customTextColor, customTextFont, customTextSize])
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -219,6 +286,11 @@ export default function Home() {
         customImage: uploadedImage,
         // We'll store the image ID instead of the full image data
         designElements: designElements, // Store element positions for potential future editing
+        textCustomization: {
+          color: customTextColor,
+          font: customTextFont,
+          size: customTextSize,
+        },
       }
 
       // Create the custom product first
@@ -272,17 +344,28 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0a0a0a] text-[#f0f0f0]">
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}
+    >
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto my-12 px-4 md:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-[#1a1a1a] p-8 rounded-lg border border-[#333] shadow-xl text-center relative overflow-hidden">
+            <div
+              className="p-8 rounded-lg text-center relative overflow-hidden"
+              style={{
+                backgroundColor: siteTheme.cardBgColor,
+                borderColor: siteTheme.borderColor,
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+              }}
+            >
               <div
                 ref={canvasRef}
-                className="w-full h-[400px] md:h-[500px] bg-[#2a2a2a] mb-6 flex items-center justify-center relative overflow-hidden rounded border border-[#333]"
+                className="w-full h-[400px] md:h-[500px] mb-6 flex items-center justify-center relative overflow-hidden rounded border"
                 style={{
                   backgroundColor: currentBgColor,
                   minHeight: "400px", // Ensure minimum height
+                  borderColor: siteTheme.borderColor,
                 }}
               >
                 {/* Add a helper message when elements are present */}
@@ -312,8 +395,9 @@ export default function Home() {
                       />
                     ) : (
                       <div
-                        className="font-['Kanit'] text-4xl font-bold text-white pointer-events-auto"
+                        className={`${element.textFont} ${element.textSize} font-bold pointer-events-auto`}
                         style={{
+                          color: element.textColor,
                           textShadow: "2px 2px 4px rgba(0, 0, 0, 0.7)",
                           padding: "5px",
                           borderRadius: "4px",
@@ -330,47 +414,79 @@ export default function Home() {
                   <div className="font-['Kanit'] text-4xl font-bold text-white text-shadow">YOUR DESIGN</div>
                 )}
               </div>
-              <h2 className="font-['Kanit'] text-2xl text-[#ff3e00] uppercase tracking-wide mt-0 mb-4">
+              <h2
+                className="font-['Kanit'] text-2xl uppercase tracking-wide mt-0 mb-4"
+                style={{ color: siteTheme.accentColor }}
+              >
                 YOUR CUSTOM TEE
               </h2>
               <p className="mb-4">Premium quality custom t-shirt with your unique design</p>
-              <p className="text-2xl font-bold text-[#ff3e00] my-4">$29.99</p>
+              <p className="text-2xl font-bold my-4" style={{ color: siteTheme.accentColor }}>
+                $29.99
+              </p>
             </div>
 
-            <div className="bg-[#1a1a1a] p-8 rounded-lg border border-[#333] shadow-xl">
-              <h2 className="font-['Kanit'] text-2xl text-[#ff3e00] uppercase tracking-wide mt-0 mb-6">
+            <div
+              className="p-8 rounded-lg"
+              style={{
+                backgroundColor: siteTheme.cardBgColor,
+                borderColor: siteTheme.borderColor,
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+              }}
+            >
+              <h2
+                className="font-['Kanit'] text-2xl uppercase tracking-wide mt-0 mb-6"
+                style={{ color: siteTheme.accentColor }}
+              >
                 CUSTOMIZE YOUR TEE
               </h2>
 
               <div className="mb-6">
-                <span className="font-semibold mb-3 block text-[#f0f0f0] text-sm uppercase tracking-wide">
+                <span
+                  className="font-semibold mb-3 block text-sm uppercase tracking-wide"
+                  style={{ color: siteTheme.textColor }}
+                >
                   T-SHIRT COLOR
                 </span>
-                <div>
+                <div className="flex gap-3 flex-wrap">
                   {colorOptions.map((option) => (
                     <button
                       key={option.color}
-                      className={`mr-2 mb-2 w-9 h-9 rounded-full cursor-pointer border-2 transition-transform hover:scale-110 ${
-                        currentBgColor === option.color ? "border-[#ff3e00] scale-110" : "border-transparent"
+                      className={`w-9 h-9 rounded-full cursor-pointer border-2 transition-transform hover:scale-110 ${
+                        currentBgColor === option.color ? "scale-110" : "border-transparent"
                       }`}
-                      style={{ backgroundColor: option.color }}
+                      style={{
+                        backgroundColor: option.color,
+                        borderColor: currentBgColor === option.color ? siteTheme.accentColor : "transparent",
+                      }}
                       onClick={() => setCurrentBgColor(option.color)}
                       title={option.title}
                     />
                   ))}
                 </div>
+                <div className="mt-2 text-sm">
+                  Selected: <span className="font-medium">{getColorTitle(currentBgColor)}</span>
+                </div>
               </div>
 
               <div className="mb-6">
-                <span className="font-semibold mb-3 block text-[#f0f0f0] text-sm uppercase tracking-wide">SIZE</span>
-                <div>
+                <span
+                  className="font-semibold mb-3 block text-sm uppercase tracking-wide"
+                  style={{ color: siteTheme.textColor }}
+                >
+                  SIZE
+                </span>
+                <div className="flex gap-3 flex-wrap">
                   {sizeOptions.map((size) => (
                     <button
                       key={size}
-                      className={`text-white py-2 px-5 mr-2 mb-2 bg-[#2a2a2a] rounded cursor-pointer font-semibold border border-[#333] transition-all hover:bg-[#333] ${
-                        selectedSize === size ? "bg-[#ff3e00] text-white border-[#ff3e00]" : ""
-                      }`}
+                      className={`py-2 px-5 rounded cursor-pointer font-semibold border transition-all`}
                       onClick={() => setSelectedSize(size)}
+                      style={{
+                        backgroundColor: selectedSize === size ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: selectedSize === size ? siteTheme.accentColor : siteTheme.borderColor,
+                      }}
                     >
                       {size}
                     </button>
@@ -379,29 +495,139 @@ export default function Home() {
               </div>
 
               <div className="mb-6">
-                <span className="font-semibold mb-3 block text-[#f0f0f0] text-sm uppercase tracking-wide">
-                  CUSTOM TEXT
-                </span>
+                <div className="flex justify-between items-center">
+                  <span
+                    className="font-semibold mb-3 block text-sm uppercase tracking-wide"
+                    style={{ color: siteTheme.textColor }}
+                  >
+                    CUSTOM TEXT
+                  </span>
+                  <button
+                    onClick={() => setShowTextOptions(!showTextOptions)}
+                    className="text-sm flex items-center gap-1 mb-3 px-2 py-1 rounded"
+                    style={{
+                      backgroundColor: showTextOptions ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+                      color: siteTheme.textColor,
+                    }}
+                  >
+                    <Type size={14} />
+                    {showTextOptions ? "Hide Options" : "Text Options"}
+                  </button>
+                </div>
                 <input
                   type="text"
-                  className="w-full p-3 bg-[#2a2a2a] border border-[#333] rounded text-[#f0f0f0] text-base transition-colors focus:outline-none focus:border-[#ff3e00]"
+                  className="w-full p-3 rounded text-base transition-colors focus:outline-none"
                   placeholder="Enter your custom text here"
                   value={customText}
                   onChange={(e) => setCustomText(e.target.value)}
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    borderColor: siteTheme.borderColor,
+                    color: siteTheme.textColor,
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                  }}
                 />
-                <p className="text-xs text-[#b0b0b0] mt-2">
+
+                {showTextOptions && customText && (
+                  <div className="mt-3 p-3 rounded" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium mb-1">Text Color</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {textColorOptions.map((option) => (
+                          <button
+                            key={option.color}
+                            className={`w-8 h-8 rounded-full cursor-pointer border-2 transition-transform hover:scale-110 ${
+                              customTextColor === option.color ? "scale-110" : "border-transparent"
+                            }`}
+                            style={{
+                              backgroundColor: option.color,
+                              borderColor: customTextColor === option.color ? siteTheme.accentColor : "transparent",
+                            }}
+                            onClick={() => setCustomTextColor(option.color)}
+                            title={option.title}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium mb-1">Font</label>
+                      <select
+                        value={customTextFont}
+                        onChange={(e) => setCustomTextFont(e.target.value)}
+                        className="w-full p-2 rounded"
+                        style={{
+                          backgroundColor: siteTheme.bgColor,
+                          color: siteTheme.textColor,
+                          borderColor: siteTheme.borderColor,
+                          borderWidth: "1px",
+                          borderStyle: "solid",
+                        }}
+                      >
+                        {fontOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Text Size</label>
+                      <select
+                        value={customTextSize}
+                        onChange={(e) => setCustomTextSize(e.target.value)}
+                        className="w-full p-2 rounded"
+                        style={{
+                          backgroundColor: siteTheme.bgColor,
+                          color: siteTheme.textColor,
+                          borderColor: siteTheme.borderColor,
+                          borderWidth: "1px",
+                          borderStyle: "solid",
+                        }}
+                      >
+                        {textSizeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="mt-3 p-2 rounded" style={{ backgroundColor: siteTheme.bgColor }}>
+                      <p className="text-sm mb-1">Preview:</p>
+                      <div
+                        className={`${customTextFont} ${customTextSize} font-bold text-center p-2`}
+                        style={{ color: customTextColor }}
+                      >
+                        {customText}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs mt-2" style={{ color: "#b0b0b0" }}>
                   Drag and position your text anywhere on the t-shirt design
                 </p>
               </div>
 
               <div className="mb-6">
-                <span className="font-semibold mb-3 block text-[#f0f0f0] text-sm uppercase tracking-wide">
+                <span
+                  className="font-semibold mb-3 block text-sm uppercase tracking-wide"
+                  style={{ color: siteTheme.textColor }}
+                >
                   UPLOAD YOUR DESIGN
                 </span>
                 <div className="flex flex-col gap-3">
                   <label
                     htmlFor="designUpload"
-                    className="inline-block p-3 bg-[#2a2a2a] rounded cursor-pointer text-center font-semibold border border-[#333] transition-all hover:bg-[#333] hover:border-[#ff3e00] hover:text-[#ff3e00] uppercase text-sm tracking-wide"
+                    className="inline-block p-3 rounded cursor-pointer text-center font-semibold border transition-all uppercase text-sm tracking-wide"
+                    style={{
+                      backgroundColor: siteTheme.secondaryBgColor,
+                      borderColor: siteTheme.borderColor,
+                      color: siteTheme.textColor,
+                    }}
                   >
                     <Upload className="inline-block w-4 h-4 mr-2" /> CHOOSE IMAGE FILE
                     <input
@@ -412,22 +638,36 @@ export default function Home() {
                       onChange={handleFileChange}
                     />
                   </label>
-                  <div className="text-sm text-[#b0b0b0]">{fileName}</div>
-                  <div className="text-xs text-[#b0b0b0]">JPG, PNG or GIF (Max 5MB)</div>
-                  <p className="text-xs text-[#b0b0b0]">Drag and position your image anywhere on the t-shirt design</p>
+                  <div className="text-sm" style={{ color: "#b0b0b0" }}>
+                    {fileName}
+                  </div>
+                  <div className="text-xs" style={{ color: "#b0b0b0" }}>
+                    JPG, PNG or GIF (Max 5MB)
+                  </div>
+                  <p className="text-xs" style={{ color: "#b0b0b0" }}>
+                    Drag and position your image anywhere on the t-shirt design
+                  </p>
                 </div>
               </div>
 
               <div className="mb-6">
-                <span className="font-semibold mb-3 block text-[#f0f0f0] text-sm uppercase tracking-wide">
+                <span
+                  className="font-semibold mb-3 block text-sm uppercase tracking-wide"
+                  style={{ color: siteTheme.textColor }}
+                >
                   QUANTITY
                 </span>
                 <select
-                  className="w-full p-3 bg-[#2a2a2a] border border-[#333] rounded text-[#f0f0f0] text-base appearance-none bg-no-repeat bg-right pr-10"
+                  className="w-full p-3 rounded text-base appearance-none bg-no-repeat bg-right pr-10"
                   style={{
                     backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e")`,
                     backgroundPosition: "right 0.8rem center",
                     backgroundSize: "1rem",
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    borderColor: siteTheme.borderColor,
+                    color: siteTheme.textColor,
+                    borderWidth: "1px",
+                    borderStyle: "solid",
                   }}
                   value={quantity}
                   onChange={(e) => setQuantity(Number(e.target.value))}
@@ -441,9 +681,10 @@ export default function Home() {
               </div>
 
               <button
-                className="w-full bg-[#ff3e00] text-white border-none py-4 text-base font-bold rounded cursor-pointer mt-4 transition-colors hover:bg-[#ff5e24] uppercase tracking-wide flex items-center justify-center"
+                className="w-full text-white border-none py-4 text-base font-bold rounded cursor-pointer mt-4 transition-colors uppercase tracking-wide flex items-center justify-center"
                 onClick={handlePlaceOrder}
                 disabled={loading}
+                style={{ backgroundColor: siteTheme.accentColor }}
               >
                 {loading ? "Processing..." : "PLACE ORDER"}
               </button>
@@ -454,4 +695,3 @@ export default function Home() {
     </div>
   )
 }
-
