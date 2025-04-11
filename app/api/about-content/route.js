@@ -14,6 +14,11 @@ export async function GET() {
     if (!content) {
       return NextResponse.json({
         description: "",
+        textStyles: {
+          textSize: "text-lg",
+          textColor: "text-gray-700",
+          textFont: "font-normal",
+        },
       })
     }
 
@@ -32,7 +37,9 @@ export async function POST(request) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 })
     }
 
-    const { description } = await request.json()
+    const { description, textStyles } = await request.json()
+    
+    console.log("Saving about content with text styles:", textStyles) // Debug log
 
     const client = await clientPromise
     const db = client.db("ecommerce")
@@ -42,7 +49,9 @@ export async function POST(request) {
       { type: "about" },
       {
         $set: {
+          type: "about", // Ensure type is set
           description,
+          textStyles,
           updatedAt: new Date(),
         },
       },
