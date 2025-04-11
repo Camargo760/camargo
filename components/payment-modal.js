@@ -1,10 +1,36 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, CreditCard, Truck, DollarSign, Send } from "lucide-react"
 
 export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, productDetails }) {
   const [selectedMethod, setSelectedMethod] = useState(null)
+  const [siteTheme, setSiteTheme] = useState({
+    bgColor: "#0a0a0a",
+    cardBgColor: "#1a1a1a",
+    accentColor: "#ff3e00",
+    textColor: "#f0f0f0",
+    secondaryBgColor: "#2a2a2a",
+    borderColor: "#333",
+  })
+
+  useEffect(() => {
+    const fetchSiteTheme = async () => {
+      try {
+        const res = await fetch("/api/site-theme")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.theme) {
+            setSiteTheme(data.theme)
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching site theme:", err)
+      }
+    }
+
+    fetchSiteTheme()
+  }, [])
 
   if (!isOpen) return null
 
@@ -15,29 +41,27 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 p-4" style={{ textAlign: "center" }}>
-      {/* Using inline-block for centering */}
-      <div style={{ display: "inline-block", verticalAlign: "middle", height: "100%", width: "0" }}></div>
-      <div className="mt-[50px] relative bg-white rounded-lg shadow-xl w-full max-w-md inline-block align-middle text-left">
-        <div className="py-6 px-8 border-b relative">
-        <h2 className="text-lg md:text-xl font-bold text-gray-800 inline-block">Select Payment Method</h2>
-          <button
-            onClick={onClose}
-            className="absolute top-1/2 transform -translate-y-1/2 right-8 text-gray-500 hover:text-gray-700 transition-colors"
-          >
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div
+        className="rounded-lg shadow-xl w-full max-w-md overflow-hidden"
+        style={{ backgroundColor: siteTheme.cardBgColor, color: siteTheme.textColor }}
+      >
+        <div className="flex justify-between items-center p-6 border-b" style={{ borderColor: siteTheme.borderColor }}>
+          <h2 className="text-xl font-bold">Select Payment Method</h2>
+          <button onClick={onClose} className="transition-colors" style={{ color: siteTheme.textColor }}>
             <X size={24} />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto" style={{maxHeight: "360px"}}>
+        <div className="p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Order Summary</h3>
-            <div className="bg-gray-50 p-3 rounded-md">
+            <h3 className="text-lg font-semibold mb-2">Order Summary</h3>
+            <div className="p-3 rounded-md" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
               <p className="font-medium">{productDetails.name}</p>
-              {productDetails.color && <p className="text-sm text-gray-600">Color: {productDetails.color}</p>}
-              {productDetails.size && <p className="text-sm text-gray-600">Size: {productDetails.size}</p>}
-              <p className="text-sm text-gray-600">Quantity: {productDetails.quantity || 1}</p>
-              <p className="font-bold mt-2">
+              {productDetails.color && <p className="text-sm">Color: {productDetails.color}</p>}
+              {productDetails.size && <p className="text-sm">Size: {productDetails.size}</p>}
+              <p className="text-sm">Quantity: {productDetails.quantity || 1}</p>
+              <p className="font-bold mt-2" style={{ color: siteTheme.accentColor }}>
                 Total: ${(productDetails.price * (productDetails.quantity || 1)).toFixed(2)}
               </p>
             </div>
@@ -46,49 +70,51 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
           <div className="space-y-3">
             <button
               onClick={() => handleSelectMethod("stripe")}
-              className={`w-full p-4 border rounded-lg hover:border-blue-500 transition-colors ${selectedMethod === "stripe" ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
+              className="w-full flex items-center justify-between p-4 border rounded-lg transition-colors"
+              style={{
+                borderColor: selectedMethod === "stripe" ? siteTheme.accentColor : siteTheme.borderColor,
+                backgroundColor: selectedMethod === "stripe" ? siteTheme.secondaryBgColor : "transparent",
+              }}
             >
-              <div className="inline-block align-middle float-left">
-                <CreditCard className="text-blue-600 mr-3 inline-block" size={24} />
-                <span className="font-medium inline-block">Pay with Card</span>
+              <div className="flex items-center">
+                <CreditCard style={{ color: "#3b82f6" }} className="mr-3" size={24} />
+                <span className="font-medium">Pay with Card</span>
               </div>
-              <span className="text-sm text-gray-500 inline-block ml-3 align-middle float-right">Visa, Mastercard, etc.</span>
+              <span className="text-sm opacity-70">Visa, Mastercard, etc.</span>
             </button>
 
             <button
               onClick={() => handleSelectMethod("delivery")}
-              className={`w-full p-4 border rounded-lg hover:border-blue-500 transition-colors ${selectedMethod === "delivery" ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
+              className="w-full flex items-center justify-between p-4 border rounded-lg transition-colors"
+              style={{
+                borderColor: selectedMethod === "delivery" ? siteTheme.accentColor : siteTheme.borderColor,
+                backgroundColor: selectedMethod === "delivery" ? siteTheme.secondaryBgColor : "transparent",
+              }}
             >
-              <div className="inline-block align-middle float-left">
-                <Truck className="text-green-600 mr-3 inline-block" size={24} />
-                <span className="font-medium inline-block">Pay at Delivery Time</span>
+              <div className="flex items-center">
+                <Truck style={{ color: "#10b981" }} className="mr-3" size={24} />
+                <span className="font-medium">Pay at Delivery Time</span>
               </div>
-              <span className="text-sm text-gray-500 inline-block ml-3 align-middle float-right">Cash on delivery</span>
+              <span className="text-sm opacity-70">Cash on delivery</span>
             </button>
           </div>
 
-          <div className="mt-6 pt-4 border-t text-center">
-            <p className="text-sm text-gray-600 mb-2">We accept</p>
-            <div className="text-center">
-              <div className="inline-block mr-4">
-                <div className="inline-block">
-                  <DollarSign className="text-green-600 mr-1 inline-block align-middle" size={16} />
-                  <span className="text-sm inline-block align-middle">Cash App Pay</span>
-                </div>
+          <div className="mt-6 pt-4 border-t text-center" style={{ borderColor: siteTheme.borderColor }}>
+            <p className="text-sm mb-2 opacity-80">We accept</p>
+            <div className="flex justify-center items-center space-x-4">
+              <div className="flex items-center">
+                <DollarSign style={{ color: "#10b981" }} className="mr-1" size={16} />
+                <span className="text-sm">Cash App Pay</span>
               </div>
-              <div className="inline-block mr-4">
-                <div className="inline-block">
-                  <Send className="text-blue-600 mr-1 inline-block align-middle" size={16} />
-                  <span className="text-sm inline-block align-middle">Zelle</span>
-                </div>
+              <div className="flex items-center">
+                <Send style={{ color: "#3b82f6" }} className="mr-1" size={16} />
+                <span className="text-sm">Zelle</span>
               </div>
-              <div className="inline-block">
-                <div className="inline-block">
-                  <svg className="w-4 h-4 mr-1 text-blue-700 inline-block align-middle" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.384a.641.641 0 0 1 .634-.546h4.778a.641.641 0 0 1 .633.738l-3.278 17.21a.641.641 0 0 1-.635.55zm7.348-11.1L13.3 14.862a.32.32 0 0 0 .318.276h2.745c.272 0 .553-.249.623-.51l1.235-4.303a.32.32 0 0 0-.318-.276h-2.745c-.272 0-.553.25-.623.51zm-1.25 6.394l1.944-6.83c.163-.583.688-1.007 1.297-1.007h3.858c.82 0 1.39.786 1.25 1.595l-1.961 6.835c-.163.583-.688 1.006-1.297 1.006h-3.843c-.82 0-1.39-.785-1.25-1.595l.002-.004z" />
-                  </svg>
-                  <span className="text-sm inline-block align-middle">PayPal</span>
-                </div>
+              <div className="flex items-center">
+                <svg className="w-4 h-4 mr-1" style={{ color: "#4169e1" }} viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.384a.641.641 0 0 1 .634-.546h4.778a.641.641 0 0 1 .633.738l-3.278 17.21a.641.641 0 0 1-.635.55zm7.348-11.1L13.3 14.862a.32.32 0 0 0 .318.276h2.745c.272 0 .553-.249.623-.51l1.235-4.303a.32.32 0 0 0-.318-.276h-2.745c-.272 0-.553.25-.623.51zm-1.25 6.394l1.944-6.83c.163-.583.688-1.007 1.297-1.007h3.858c.82 0 1.39.786 1.25 1.595l-1.961 6.835c-.163.583-.688 1.006-1.297 1.006h-3.843c-.82 0-1.39-.785-1.25-1.595l.002-.004z" />
+                </svg>
+                <span className="text-sm">PayPal</span>
               </div>
             </div>
           </div>
