@@ -19,9 +19,34 @@ export default function ReviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [userHasReview, setUserHasReview] = useState(false)
+  const [siteTheme, setSiteTheme] = useState({
+    bgColor: "#0a0a0a",
+    cardBgColor: "#1a1a1a",
+    accentColor: "#ff3e00",
+    textColor: "#f0f0f0",
+    secondaryBgColor: "#2a2a2a",
+    borderColor: "#333",
+  })
 
   useEffect(() => {
-    fetchReviews()
+    const fetchData = async () => {
+      try {
+        await fetchReviews()
+
+        // Fetch site theme
+        const themeRes = await fetch("/api/site-theme")
+        if (themeRes.ok) {
+          const themeData = await themeRes.json()
+          if (themeData.theme) {
+            setSiteTheme(themeData.theme)
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err)
+      }
+    }
+
+    fetchData()
   }, [])
 
   const fetchReviews = async () => {
@@ -37,6 +62,13 @@ export default function ReviewPage() {
       if (status === "authenticated" && session?.user?.email) {
         const userReview = data.find((review) => review.user.email === session.user.email)
         setUserHasReview(!!userReview)
+
+        // If user has a review and we're not already editing, set it up for editing
+        if (userReview && !isEditing) {
+          setRating(userReview.rating)
+          setReviewText(userReview.text)
+          setEditingReviewId(userReview._id)
+        }
       }
 
       setReviews(data)
@@ -68,6 +100,8 @@ export default function ReviewPage() {
 
     try {
       setLoading(true)
+      setError(null)
+
       const url = isEditing ? `/api/reviews/${editingReviewId}` : "/api/reviews"
       const method = isEditing ? "PUT" : "POST"
 
@@ -87,14 +121,21 @@ export default function ReviewPage() {
         throw new Error(errorData.error || "Failed to submit review")
       }
 
-      // Reset form
-      setRating(0)
-      setReviewText("")
+      // Reset form if not editing or if editing was successful
+      if (!isEditing) {
+        setRating(0)
+        setReviewText("")
+      }
+
+      // Reset editing state
       setIsEditing(false)
       setEditingReviewId(null)
 
       // Refresh reviews
       fetchReviews()
+
+      // Show success message
+      alert(isEditing ? "Review updated successfully!" : "Review submitted successfully!")
     } catch (err) {
       console.error("Error submitting review:", err)
       setError(err.message || "Failed to submit review. Please try again.")
@@ -151,10 +192,12 @@ export default function ReviewPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
       <Header />
       <main className="container mx-auto py-8 px-4 max-w-4xl">
-        <h1 className="text-3xl font-bold mb-8 text-center">Customer Reviews</h1>
+        <h1 className="text-3xl font-bold mb-8 text-center" style={{ color: siteTheme.textColor }}>
+          Customer Reviews
+        </h1>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -163,11 +206,18 @@ export default function ReviewPage() {
         )}
 
         {(!userHasReview || isEditing) && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">{isEditing ? "Edit Your Review" : "Write a Review"}</h2>
+          <div
+            className="rounded-lg shadow-md p-6 mb-8"
+            style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+          >
+            <h2 className="text-xl font-semibold mb-4" style={{ color: siteTheme.textColor }}>
+              {isEditing ? "Edit Your Review" : "Write a Review"}
+            </h2>
             <form onSubmit={handleSubmitReview}>
               <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">Rating</label>
+                <label className="block text-sm font-bold mb-2" style={{ color: siteTheme.textColor }}>
+                  Rating
+                </label>
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -188,12 +238,17 @@ export default function ReviewPage() {
                 </div>
               </div>
               <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="review">
+                <label className="block text-sm font-bold mb-2" htmlFor="review" style={{ color: siteTheme.textColor }}>
                   Your Review
                 </label>
                 <textarea
                   id="review"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                  }}
                   rows="4"
                   placeholder="Share your experience with our products..."
                   value={reviewText}
@@ -204,7 +259,8 @@ export default function ReviewPage() {
               <div className="flex space-x-2">
                 <button
                   type="submit"
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  className="font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
                   disabled={loading}
                 >
                   {loading ? "Submitting..." : isEditing ? "Update Review" : "Submit Review"}
@@ -213,7 +269,8 @@ export default function ReviewPage() {
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    className="font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    style={{ backgroundColor: "#4B5563", color: siteTheme.textColor }}
                   >
                     Cancel
                   </button>
@@ -223,14 +280,24 @@ export default function ReviewPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">All Reviews</h2>
+        <div
+          className="rounded-lg shadow-md p-6"
+          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+        >
+          <h2 className="text-xl font-semibold mb-4" style={{ color: siteTheme.textColor }}>
+            All Reviews
+          </h2>
           {loading && !reviews.length ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              <div
+                className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2"
+                style={{ borderColor: siteTheme.accentColor }}
+              ></div>
             </div>
           ) : reviews.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No reviews yet. Be the first to leave a review!</p>
+            <p className="text-center py-8" style={{ color: siteTheme.textColor }}>
+              No reviews yet. Be the first to leave a review!
+            </p>
           ) : (
             <div className="space-y-6">
               {sortedReviews.map((review) => {
@@ -239,15 +306,24 @@ export default function ReviewPage() {
                 return (
                   <div
                     key={review._id}
-                    className={`border-b pb-6 last:border-b-0 ${isUserReview ? "bg-blue-50 p-4 rounded-lg" : ""}`}
+                    className={`border-b pb-6 last:border-b-0 ${isUserReview ? "p-4 rounded-lg" : ""}`}
+                    style={{
+                      borderColor: siteTheme.borderColor,
+                      backgroundColor: isUserReview ? siteTheme.secondaryBgColor : "transparent",
+                    }}
                   >
                     {isUserReview && (
-                      <div className="mb-2 text-blue-600 font-semibold flex items-center">
-                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">Your Review</span>
+                      <div className="mb-2 font-semibold flex items-center">
+                        <span
+                          className="px-2 py-1 rounded text-sm"
+                          style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+                        >
+                          Your Review
+                        </span>
                       </div>
                     )}
                     <div className="flex items-start">
-                      <div className="bg-gray-200 rounded-full p-2 mr-3">
+                      <div className="rounded-full p-2 mr-3" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
                         {review.user.image ? (
                           <Image
                             src={review.user.image || "/placeholder.svg"}
@@ -257,13 +333,15 @@ export default function ReviewPage() {
                             className="rounded-full"
                           />
                         ) : (
-                          <User size={24} className="text-gray-500" />
+                          <User size={24} style={{ color: siteTheme.textColor }} />
                         )}
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-semibold">{review.user.name}</p>
+                            <p className="font-semibold" style={{ color: siteTheme.textColor }}>
+                              {review.user.name}
+                            </p>
                             <div className="flex items-center mt-1">
                               {[1, 2, 3, 4, 5].map((star) => (
                                 <Star
@@ -273,7 +351,7 @@ export default function ReviewPage() {
                                   size={16}
                                 />
                               ))}
-                              <span className="ml-2 text-sm text-gray-500">
+                              <span className="ml-2 text-sm" style={{ color: siteTheme.textColor }}>
                                 {new Date(review.createdAt).toLocaleDateString()}
                               </span>
                             </div>
@@ -282,7 +360,7 @@ export default function ReviewPage() {
                             <div className="flex space-x-2">
                               <button
                                 onClick={() => handleEditReview(review)}
-                                className="text-blue-500 hover:text-blue-700"
+                                style={{ color: siteTheme.accentColor }}
                                 title="Edit review"
                               >
                                 <Edit size={16} />
@@ -297,7 +375,9 @@ export default function ReviewPage() {
                             </div>
                           )}
                         </div>
-                        <p className="mt-2 text-gray-700">{review.text}</p>
+                        <p className="mt-2" style={{ color: siteTheme.textColor }}>
+                          {review.text}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -311,19 +391,25 @@ export default function ReviewPage() {
       {/* Login Modal */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Login Required</h2>
-            <p className="mb-6">You need to be logged in to submit a review.</p>
+          <div className="rounded-lg p-8 max-w-md w-full" style={{ backgroundColor: siteTheme.cardBgColor }}>
+            <h2 className="text-xl font-bold mb-4" style={{ color: siteTheme.textColor }}>
+              Login Required
+            </h2>
+            <p className="mb-6" style={{ color: siteTheme.textColor }}>
+              You need to be logged in to submit a review.
+            </p>
             <div className="flex space-x-4">
               <Link
                 href="/login"
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex-1 text-center"
+                className="font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex-1 text-center"
+                style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
               >
                 Log In
               </Link>
               <button
                 onClick={() => setShowLoginModal(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex-1"
+                className="font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex-1"
+                style={{ backgroundColor: "#4B5563", color: siteTheme.textColor }}
               >
                 Cancel
               </button>
