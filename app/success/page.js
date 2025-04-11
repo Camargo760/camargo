@@ -4,14 +4,39 @@ import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Header from "../../components/Header"
 import Link from "next/link"
+import Image from "next/image"
 
 function SuccessContent() {
   const [orderDetails, setOrderDetails] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [siteTheme, setSiteTheme] = useState({
+    bgColor: "#0a0a0a",
+    cardBgColor: "#1a1a1a",
+    accentColor: "#ff3e00",
+    textColor: "#f0f0f0",
+    secondaryBgColor: "#2a2a2a",
+    borderColor: "#333",
+  })
   const searchParams = useSearchParams()
 
   useEffect(() => {
+    const fetchSiteTheme = async () => {
+      try {
+        const res = await fetch("/api/site-theme")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.theme) {
+            setSiteTheme(data.theme)
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching site theme:", err)
+      }
+    }
+
+    fetchSiteTheme()
+
     const fetchOrderDetails = async () => {
       // Check if we have a Stripe session ID or a delivery order ID
       const sessionId = searchParams.get("session_id")
@@ -63,6 +88,34 @@ function SuccessContent() {
     }
   }, [searchParams])
 
+  // Find the getStatusText function and make sure it's defined correctly
+  const getStatusText = (status) => {
+    switch (status) {
+      case "received":
+        return "Order Received"
+      case "out_for_delivery":
+        return "Out for Delivery"
+      case "delivered":
+        return "Delivered"
+      default:
+        return "Pending"
+    }
+  }
+
+  // Find the getStatusColor function and make sure it's defined correctly
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "received":
+        return "#3b82f6" // blue
+      case "out_for_delivery":
+        return "#eab308" // yellow
+      case "delivered":
+        return "#10b981" // green
+      default:
+        return "#f97316" // orange
+    }
+  }
+
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-90">
@@ -72,93 +125,143 @@ function SuccessContent() {
   }
 
   if (error) {
-    return <div className="text-center text-lg font-medium text-red-600 py-8">Error: {error}</div>
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
+        <Header />
+        <div className="container mx-auto py-16 px-4">
+          <div className="text-center text-lg font-medium py-8" style={{ color: "#ef4444" }}>
+            Error: {error}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (!orderDetails) {
-    return <div className="text-center text-lg font-medium text-red-600 py-8">No order details found.</div>
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
+        <Header />
+        <div className="container mx-auto py-16 px-4">
+          <div className="text-center text-lg font-medium py-8" style={{ color: "#ef4444" }}>
+            No order details found.
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
       <Header />
       <main className="container mx-auto py-16 px-4 md:px-8">
-        <h1 className="text-3xl font-bold mb-8 text-center text-green-600">Thank You for Your Order!</h1>
-        <div className="bg-white shadow-lg rounded-lg p-8 space-y-4">
+        <h1 className="text-3xl font-bold mb-8 text-center" style={{ color: siteTheme.accentColor }}>
+          Thank You for Your Order!
+        </h1>
+        <div
+          className="shadow-lg rounded-lg p-8 space-y-4"
+          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+        >
           <div className="mb-4">
-            <h2 className="text-2xl font-semibold text-gray-800">Order Details</h2>
-            <p className="text-gray-600 mt-2">
-              Order ID: <span className="font-medium text-gray-800">{orderDetails.id}</span>
+            <h2 className="text-2xl font-semibold">Order Details</h2>
+            <p className="mt-2">
+              Order ID: <span className="font-medium">{orderDetails.id}</span>
             </p>
-            <p className="text-gray-600 mt-2">
-              Payment Method:{" "}
-              <span className="font-medium text-gray-800 capitalize">{orderDetails.paymentMethod || "Stripe"}</span>
+            <p className="mt-2">
+              Payment Method: <span className="font-medium capitalize">{orderDetails.paymentMethod || "Stripe"}</span>
               {orderDetails.paymentMethod === "delivery" && orderDetails.preferredMethod && (
-                <span className="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded capitalize">
+                <span
+                  className="ml-2 text-xs px-2 py-1 rounded capitalize"
+                  style={{ backgroundColor: siteTheme.secondaryBgColor }}
+                >
                   {orderDetails.preferredMethod}
                 </span>
               )}
             </p>
+            <p className="mt-2">
+              Status:{" "}
+              <span className="font-medium" style={{ color: getStatusColor(orderDetails.status) }}>
+                {getStatusText(orderDetails.status)}
+              </span>
+            </p>
           </div>
           <div className="mb-4">
-            <h3 className="text-xl font-semibold text-gray-800">Product Information</h3>
-            <p className="text-gray-600">
-              Name: <span className="font-medium text-gray-800">{orderDetails.product?.name || "N/A"}</span>
+            <h3 className="text-xl font-semibold">Product Information</h3>
+            <p>
+              Name: <span className="font-medium">{orderDetails.product?.name || "N/A"}</span>
             </p>
-            <p className="text-gray-600">
-              Description:{" "}
-              <span className="font-medium text-gray-800">{orderDetails.product?.description || "N/A"}</span>
+            <p>
+              Description: <span className="font-medium">{orderDetails.product?.description || "N/A"}</span>
             </p>
-            <p className="text-gray-600">
-              Category: <span className="font-medium text-gray-800">{orderDetails.product?.category || "N/A"}</span>
+            <p>
+              Category: <span className="font-medium">{orderDetails.product?.category || "N/A"}</span>
             </p>
-            <p className="text-gray-600">
-              Color: <span className="font-medium text-gray-800">{orderDetails.product?.selectedColor || "N/A"}</span>
+            <p>
+              Color: <span className="font-medium">{orderDetails.product?.selectedColor || "N/A"}</span>
             </p>
-            <p className="text-gray-600">
-              Size: <span className="font-medium text-gray-800">{orderDetails.product?.selectedSize || "N/A"}</span>
+            <p>
+              Size: <span className="font-medium">{orderDetails.product?.selectedSize || "N/A"}</span>
             </p>
 
             {/* Display custom text if it exists */}
             {orderDetails.product?.customText && (
-              <p className="text-gray-600">
-                Custom Text: <span className="font-medium text-gray-800">{orderDetails.product.customText}</span>
+              <p>
+                Custom Text: <span className="font-medium">{orderDetails.product.customText}</span>
               </p>
             )}
 
             {/* Display if this is a custom product */}
             {orderDetails.isCustomProduct && (
-              <p className="text-gray-600">
-                Type: <span className="font-medium text-gray-800">Custom Product</span>
+              <p>
+                Type: <span className="font-medium">Custom Product</span>
               </p>
+            )}
+
+            {/* Display final design image if available */}
+            {orderDetails.product?.finalDesignImage && (
+              <div className="mt-4">
+                <p className="mb-2">Your Custom Design:</p>
+                <div
+                  className="relative w-full max-w-md h-64 border rounded-lg overflow-hidden"
+                  style={{ borderColor: siteTheme.borderColor }}
+                >
+                  <Image
+                    src={orderDetails.product.finalDesignImage || "/placeholder.svg"}
+                    alt="Your custom design"
+                    fill
+                    style={{ objectFit: "contain" }}
+                  />
+                </div>
+              </div>
             )}
           </div>
           <div className="mb-4">
-            <p className="text-gray-600">
-              Price: <span className="font-medium text-gray-800">${(orderDetails.product?.price || 0).toFixed(2)}</span>
+            <p>
+              Price: <span className="font-medium">${(orderDetails.product?.price || 0).toFixed(2)}</span>
             </p>
-            <p className="text-gray-600">
+            <p>
               Quantity:{" "}
-              <span className="font-medium text-gray-800">
+              <span className="font-medium">
                 {orderDetails.quantity || orderDetails.line_items?.[0]?.quantity || 1}
               </span>
             </p>
-            <p className="text-gray-600">
+            <p>
               Total:{" "}
-              <span className="font-medium text-gray-800">${((orderDetails.amount_total || 0) / 100).toFixed(2)}</span>
+              <span className="font-medium" style={{ color: siteTheme.accentColor }}>
+                ${((orderDetails.amount_total || 0) / 100).toFixed(2)}
+              </span>
             </p>
           </div>
           <div className="mb-4">
-            <h3 className="text-xl font-semibold text-gray-800">Shipping Information</h3>
-            <p className="text-gray-600">
-              Name: <span className="font-medium text-gray-800">{orderDetails.customer_details?.name || "N/A"}</span>
+            <h3 className="text-xl font-semibold">Shipping Information</h3>
+            <p>
+              Name: <span className="font-medium">{orderDetails.customer_details?.name || "N/A"}</span>
             </p>
-            <p className="text-gray-600">
-              Email: <span className="font-medium text-gray-800">{orderDetails.customer_details?.email || "N/A"}</span>
+            <p>
+              Email: <span className="font-medium">{orderDetails.customer_details?.email || "N/A"}</span>
             </p>
-            <p className="text-gray-600">
+            <p>
               Address:{" "}
-              <span className="font-medium text-gray-800">
+              <span className="font-medium">
                 {orderDetails.customer_details?.address?.line1 ? (
                   <>
                     {orderDetails.customer_details?.address?.line1 || ""},
@@ -176,15 +279,16 @@ function SuccessContent() {
 
           {orderDetails.paymentMethod === "delivery" && orderDetails.additionalNotes && (
             <div className="mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">Additional Notes</h3>
-              <p className="text-gray-600 italic">"{orderDetails.additionalNotes}"</p>
+              <h3 className="text-xl font-semibold">Additional Notes</h3>
+              <p className="italic">"{orderDetails.additionalNotes}"</p>
             </div>
           )}
 
           <div className="mt-8 text-center">
             <Link
               href="/"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+              className="font-bold py-2 px-6 rounded-lg transition-colors"
+              style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
             >
               Continue Shopping
             </Link>
@@ -202,4 +306,3 @@ export default function Success() {
     </Suspense>
   )
 }
-
