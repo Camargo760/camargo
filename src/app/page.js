@@ -145,10 +145,10 @@ export default function Home() {
               {homeContent.subText || "Discover our latest collection of premium clothing and accessories."}
             </p>
             <div className="flex flex-col md:flex-row gap-8 justify-center">
-              <Link
+                            <Link
                 href="/products"
-                className="px-4 py-2 rounded-md font-semibold text-sm transition-colors"
-                style={{ backgroundColor: "#ffffff", color: "#000000" }}
+                className="px-4 py-2 rounded-md font-semibold text-sm transition-colors border-2"
+                style={{ borderColor: "#ffffff", color: "#ffffff", backgroundColor: "transparent" }}
               >
                 Shop Now
               </Link>
