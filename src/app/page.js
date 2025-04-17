@@ -121,7 +121,7 @@ export default function Home() {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <div className="relative w-full h-[70vh] flex items-center justify-center">
+        <div className="relative w-full h-[calc(100vh-60px)] flex items-center justify-center">
           {backgroundImage ? (
             <div className="absolute inset-0 z-0">
               <Image
@@ -144,32 +144,22 @@ export default function Home() {
             <p className={`${subtextSize} ${subtextColor} ${subtextFont} mb-8`}>
               {homeContent.subText || "Discover our latest collection of premium clothing and accessories."}
             </p>
-            <div className="flex flex-col xs:flex-row gap-4 justify-center">
+            <div className="flex flex-col md:flex-row gap-4 justify-center">
               <Link
                 href="/products"
-                className="px-8 py-3 rounded-md font-semibold text-lg transition-colors"
+                className="px-8 py-3 rounded-md font-semibold text-sm transition-colors"
                 style={{ backgroundColor: "#ffffff", color: "#000000" }}
               >
                 Shop Now
               </Link>
               <Link
                 href="/customOrder"
-                className="px-8 py-3 rounded-md font-semibold text-lg transition-colors border-2"
+                className="px-8 py-3 rounded-md font-semibold text-sm transition-colors border-2"
                 style={{ borderColor: "#ffffff", color: "#ffffff", backgroundColor: "transparent" }}
               >
                 Custom Orders
               </Link>
             </div>
-          </div>
-        </div>
-
-        {/* Featured Products Section */}
-        <div className="py-16 px-4" style={{ backgroundColor: siteTheme.bgColor }}>
-          <div className="container mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12" style={{ color: siteTheme.textColor }}>
-              Featured Products
-            </h2>
-            {/* Featured products will be loaded here */}
           </div>
         </div>
       </main>
