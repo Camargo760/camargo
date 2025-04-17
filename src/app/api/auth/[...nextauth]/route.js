@@ -1,12 +1,19 @@
-// api/[...nextauth]/route.js
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 import clientPromise from '../../../../lib/mongodb';
 
+// Debug the imports
+console.log("NextAuth type:", typeof NextAuth);
+console.log("CredentialsProvider type:", typeof CredentialsProvider);
+
+// Handle potential ESM default exports
+const Auth = NextAuth.default || NextAuth;
+const Provider = CredentialsProvider.default || CredentialsProvider;
+
 export const authOptions = {
   providers: [
-    CredentialsProvider({
+    Provider({
       name: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'text' },
@@ -61,13 +68,13 @@ export const authOptions = {
   session: {
     strategy: 'jwt',
   },
-  secret: process.env.NEXTAUTH_SECRET,
-  secret: 'thisisthesecrectauthkey',
+  secret: process.env.NEXTAUTH_SECRET || 'thisisthesecrectauthkey',
   pages: {
     signIn: '/login',
   },
 };
 
-const handler = NextAuth(authOptions);
+// Create the NextAuth handler
+const handler = Auth(authOptions);
 
 export { handler as GET, handler as POST };
