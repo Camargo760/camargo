@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Header from "../../components/Header"
-import { Download, ChevronLeft, ChevronRight, Edit, Palette, Type, Save } from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit, Palette, Type, Save, Trash2, Upload, Star } from "lucide-react"
 
 export default function Admin() {
   const [products, setProducts] = useState([])
@@ -22,18 +22,31 @@ export default function Admin() {
   const [sortOrder, setSortOrder] = useState("desc")
   const { data: session, status } = useSession()
   const router = useRouter()
+  const productImagesRefs = useRef({})
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  // Pagination state for orders
+  const [currentOrderPage, setCurrentOrderPage] = useState(1)
+  const [totalOrderPages, setTotalOrderPages] = useState(1)
   const ordersPerPage = 10
+
+  // Pagination state for reviews
+  const [currentReviewPage, setCurrentReviewPage] = useState(1)
+  const [totalReviewPages, setTotalReviewPages] = useState(1)
+  const reviewsPerPage = 10
 
   // Home page background state
   const [homeBackground, setHomeBackground] = useState(null)
+  const [homeBackgroundMobile, setHomeBackgroundMobile] = useState(null)
   const [homeText, setHomeText] = useState("")
   const [homeSubtext, setHomeSubtext] = useState("")
   const [editingHome, setEditingHome] = useState(false)
   const [homeBackgroundFile, setHomeBackgroundFile] = useState(null)
+  const [homeBackgroundMobileFile, setHomeBackgroundMobileFile] = useState(null)
+
+  // Logo state
+  const [logoUrl, setLogoUrl] = useState("/assets/logo.png")
+  const [logoFile, setLogoFile] = useState(null)
+  const [editingLogo, setEditingLogo] = useState(false)
 
   // Home page text customization
   const [homeTextSize, setHomeTextSize] = useState("text-4xl md:text-6xl")
@@ -51,6 +64,10 @@ export default function Admin() {
   const [aboutTextSize, setAboutTextSize] = useState("text-lg")
   const [aboutTextColor, setAboutTextColor] = useState("text-gray-700")
   const [aboutTextFont, setAboutTextFont] = useState("font-normal")
+
+  // Reviews management
+  const [reviews, setReviews] = useState([])
+  const [loadingReviews, setLoadingReviews] = useState(false)
 
   // Website theme settings
   const [siteTheme, setSiteTheme] = useState({
@@ -88,7 +105,7 @@ export default function Admin() {
       const data = await res.json()
       console.log("Fetched orders:", data)
       setOrders(data)
-      setTotalPages(Math.ceil(data.length / ordersPerPage))
+      setTotalOrderPages(Math.ceil(data.length / ordersPerPage))
     } catch (err) {
       console.error("Error fetching orders:", err)
       setError("Failed to fetch orders. Please try again.")
@@ -101,6 +118,7 @@ export default function Admin() {
       if (res.ok) {
         const data = await res.json()
         setHomeBackground(data.backgroundImage || null)
+        setHomeBackgroundMobile(data.backgroundImageMobile || null)
         setHomeText(data.mainText || "")
         setHomeSubtext(data.subText || "")
 
@@ -116,6 +134,20 @@ export default function Admin() {
       }
     } catch (err) {
       console.error("Error fetching home content:", err)
+    }
+  }
+
+  const fetchSiteSettings = async () => {
+    try {
+      const res = await fetch("/api/site-settings")
+      if (res.ok) {
+        const data = await res.json()
+        if (data.logoUrl) {
+          setLogoUrl(data.logoUrl)
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching site settings:", err)
     }
   }
 
@@ -135,6 +167,24 @@ export default function Admin() {
       }
     } catch (err) {
       console.error("Error fetching about content:", err)
+    }
+  }
+
+  const fetchReviews = async () => {
+    try {
+      setLoadingReviews(true)
+      const res = await fetch("/api/reviews")
+      if (!res.ok) {
+        throw new Error("Failed to fetch reviews")
+      }
+      const data = await res.json()
+      setReviews(data)
+      setTotalReviewPages(Math.ceil(data.length / reviewsPerPage))
+    } catch (err) {
+      console.error("Error fetching reviews:", err)
+      setError("Failed to fetch reviews. Please try again.")
+    } finally {
+      setLoadingReviews(false)
     }
   }
 
@@ -162,6 +212,8 @@ export default function Admin() {
       fetchHomeContent()
       fetchAboutContent()
       fetchSiteTheme()
+      fetchSiteSettings()
+      fetchReviews()
     }
   }, [session, status, router, sortOrder]) // Removed fetchProducts from dependencies and added sortOrder instead
 
@@ -256,6 +308,26 @@ export default function Admin() {
     }
   }
 
+  const handleDeleteReview = async (reviewId) => {
+    if (window.confirm("Are you sure you want to delete this review?")) {
+      try {
+        const res = await fetch(`/api/reviews/${reviewId}`, {
+          method: "DELETE",
+        })
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}))
+          console.error("Error deleting review:", errorData)
+          throw new Error(errorData.error || "Failed to delete review")
+        }
+        fetchReviews()
+        alert("Review deleted successfully!")
+      } catch (err) {
+        console.error("Error deleting review:", err)
+        setError("Failed to delete review. Please try again.")
+      }
+    }
+  }
+
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
       const res = await fetch(`/api/orders/${orderId}/status`, {
@@ -319,23 +391,52 @@ export default function Admin() {
     document.body.removeChild(link)
   }
 
-  // Pagination handlers
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1)
+  // Pagination handlers for orders
+  const handlePreviousOrderPage = () => {
+    if (currentOrderPage > 1) {
+      setCurrentOrderPage(currentOrderPage - 1)
     }
   }
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1)
+  const handleNextOrderPage = () => {
+    if (currentOrderPage < totalOrderPages) {
+      setCurrentOrderPage(currentOrderPage + 1)
+    }
+  }
+
+  // Pagination handlers for reviews
+  const handlePreviousReviewPage = () => {
+    if (currentReviewPage > 1) {
+      setCurrentReviewPage(currentReviewPage - 1)
+    }
+  }
+
+  const handleNextReviewPage = () => {
+    if (currentReviewPage < totalReviewPages) {
+      setCurrentReviewPage(currentReviewPage + 1)
     }
   }
 
   // Get current orders for pagination
-  const indexOfLastOrder = currentPage * ordersPerPage
+  const indexOfLastOrder = currentOrderPage * ordersPerPage
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
   const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder)
+
+  // Get current reviews for pagination
+  const indexOfLastReview = currentReviewPage * reviewsPerPage
+  const indexOfFirstReview = indexOfLastReview - reviewsPerPage
+  const currentReviews = reviews.slice(indexOfFirstReview, indexOfLastReview)
+
+  const scrollProductImages = (productId, direction) => {
+    if (productImagesRefs.current[productId]) {
+      const scrollAmount = 110 // Adjust based on image width + gap
+      if (direction === "left") {
+        productImagesRefs.current[productId].scrollBy({ left: -scrollAmount, behavior: "smooth" })
+      } else {
+        productImagesRefs.current[productId].scrollBy({ left: scrollAmount, behavior: "smooth" })
+      }
+    }
+  }
 
   // Home content handlers
   const handleHomeBackgroundChange = (e) => {
@@ -350,10 +451,35 @@ export default function Admin() {
     }
   }
 
+  const handleHomeBackgroundMobileChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setHomeBackgroundMobileFile(file)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setHomeBackgroundMobile(e.target.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setLogoFile(file)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setLogoUrl(e.target.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const saveHomeContent = async () => {
     try {
-      // First, upload the background image if there's a new one
+      // First, upload the background images if there are new ones
       let backgroundImageUrl = homeBackground
+      let backgroundImageMobileUrl = homeBackgroundMobile
 
       if (homeBackgroundFile) {
         const formData = new FormData()
@@ -365,11 +491,28 @@ export default function Admin() {
         })
 
         if (!uploadRes.ok) {
-          throw new Error("Failed to upload background image")
+          throw new Error("Failed to upload desktop background image")
         }
 
         const uploadData = await uploadRes.json()
         backgroundImageUrl = uploadData.url
+      }
+
+      if (homeBackgroundMobileFile) {
+        const formData = new FormData()
+        formData.append("file", homeBackgroundMobileFile)
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!uploadRes.ok) {
+          throw new Error("Failed to upload mobile background image")
+        }
+
+        const uploadData = await uploadRes.json()
+        backgroundImageMobileUrl = uploadData.url
       }
 
       // Then save the home content with text styles
@@ -378,6 +521,7 @@ export default function Admin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           backgroundImage: backgroundImageUrl,
+          backgroundImageMobile: backgroundImageMobileUrl,
           mainText: homeText,
           subText: homeSubtext,
           textStyles: {
@@ -397,10 +541,54 @@ export default function Admin() {
 
       setEditingHome(false)
       setHomeBackgroundFile(null)
+      setHomeBackgroundMobileFile(null)
       alert("Home content saved successfully!")
     } catch (err) {
       console.error("Error saving home content:", err)
       setError("Failed to save home content. Please try again.")
+    }
+  }
+
+  const saveLogo = async () => {
+    try {
+      if (logoFile) {
+        const formData = new FormData()
+        formData.append("file", logoFile)
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!uploadRes.ok) {
+          throw new Error("Failed to upload logo image")
+        }
+
+        const uploadData = await uploadRes.json()
+        const logoUrlFromServer = uploadData.url
+
+        // Save the logo URL to site settings
+        const res = await fetch("/api/site-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            logoUrl: logoUrlFromServer,
+          }),
+        })
+
+        if (!res.ok) {
+          throw new Error("Failed to save logo settings")
+        }
+
+        setEditingLogo(false)
+        setLogoFile(null)
+        alert("Logo updated successfully!")
+      } else {
+        alert("No new logo selected")
+      }
+    } catch (err) {
+      console.error("Error saving logo:", err)
+      setError("Failed to save logo. Please try again.")
     }
   }
 
@@ -512,13 +700,15 @@ export default function Admin() {
           </div>
         )}
 
-        {/* Site Theme Settings */}
-
+        {/* Product Form */}
         <form
           onSubmit={handleSubmit}
           className="mb-8 p-6 rounded-lg"
           style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
         >
+          <h2 className="text-2xl font-bold mb-4">
+            {editingProduct ? `Edit Product: ${editingProduct.name}` : "Add New Product"}
+          </h2>
           <div className="mb-4">
             <label className="block text-sm font-bold mb-2" htmlFor="name">
               Product Name
@@ -684,6 +874,7 @@ export default function Admin() {
           </div>
         </form>
 
+        {/* Products List */}
         <h2 className="text-2xl font-bold mb-4">Products</h2>
         <button
           onClick={handleSort}
@@ -724,17 +915,51 @@ export default function Admin() {
                   <span className="font-semibold">Uploaded:</span> {new Date(product.uploadTime).toLocaleString()}
                 </p>
                 {product.images && product.images.length > 0 && (
-                  <div className="mb-2 flex flex-wrap gap-2">
-                    {product.images.map((image, index) => (
-                      <Image
-                        key={index}
-                        src={image || "/placeholder.svg"}
-                        alt={`${product.name} - Image ${index + 1}`}
-                        width={100}
-                        height={100}
-                        className="rounded-md"
-                      />
-                    ))}
+                  <div className="mb-2 relative">
+                    {product.images.length > 3 && (
+                      <button
+                        onClick={() => scrollProductImages(product._id, "left")}
+                        className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+                      >
+                        <ChevronLeft size={16} color="white" />
+                      </button>
+                    )}
+
+                    <div
+                      ref={(el) => (productImagesRefs.current[product._id] = el)}
+                      className="flex gap-2 overflow-x-auto px-10 py-2 scrollbar-hide"
+                      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                    >
+                      {product.images.map((image, index) => (
+                        <div
+                          key={index}
+                          className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden"
+                          style={{
+                            backgroundColor: siteTheme.secondaryBgColor,
+                            borderColor: siteTheme.borderColor,
+                            borderWidth: "1px",
+                          }}
+                        >
+                          <Image
+                            src={image || "/placeholder.svg"}
+                            alt={`${product.name} - Image ${index + 1}`}
+                            fill
+                            style={{ objectFit: "cover" }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    {product.images.length > 3 && (
+                      <button
+                        onClick={() => scrollProductImages(product._id, "right")}
+                        className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+                      >
+                        <ChevronRight size={16} color="white" />
+                      </button>
+                    )}
                   </div>
                 )}
                 <div className="mt-4 flex space-x-2">
@@ -768,6 +993,7 @@ export default function Admin() {
           </div>
         )}
 
+        {/* Recent Orders */}
         <h2 className="text-2xl font-bold mb-4 mt-8">Recent Orders</h2>
         {orders.length === 0 ? (
           <p>No recent orders.</p>
@@ -989,41 +1215,41 @@ export default function Admin() {
                             <span className="font-semibold">Notes:</span> {order.additionalNotes}
                           </p>
                         )}
-                      </td>                     
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            {/* Pagination controls */}
+            {/* Pagination controls for orders */}
             <div className="flex justify-between items-center mt-4">
               <div className="text-sm">
                 Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, orders.length)} of {orders.length} orders
               </div>
               <div className="flex space-x-2">
                 <button
-                  onClick={handlePreviousPage}
-                  disabled={currentPage === 1}
+                  onClick={handlePreviousOrderPage}
+                  disabled={currentOrderPage === 1}
                   className="px-3 py-1 rounded flex items-center"
                   style={{
-                    backgroundColor: currentPage === 1 ? "#9CA3AF" : siteTheme.accentColor,
+                    backgroundColor: currentOrderPage === 1 ? "#9CA3AF" : siteTheme.accentColor,
                     color: siteTheme.textColor,
-                    opacity: currentPage === 1 ? 0.5 : 1,
-                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                    opacity: currentOrderPage === 1 ? 0.5 : 1,
+                    cursor: currentOrderPage === 1 ? "not-allowed" : "pointer",
                   }}
                 >
                   <ChevronLeft size={16} className="mr-1" /> Previous
                 </button>
                 <button
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
+                  onClick={handleNextOrderPage}
+                  disabled={currentOrderPage === totalOrderPages}
                   className="px-3 py-1 rounded flex items-center"
                   style={{
-                    backgroundColor: currentPage === totalPages ? "#9CA3AF" : siteTheme.accentColor,
+                    backgroundColor: currentOrderPage === totalOrderPages ? "#9CA3AF" : siteTheme.accentColor,
                     color: siteTheme.textColor,
-                    opacity: currentPage === totalPages ? 0.5 : 1,
-                    cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                    opacity: currentOrderPage === totalOrderPages ? 0.5 : 1,
+                    cursor: currentOrderPage === totalOrderPages ? "not-allowed" : "pointer",
                   }}
                 >
                   Next <ChevronRight size={16} className="ml-1" />
@@ -1033,10 +1259,621 @@ export default function Admin() {
           </>
         )}
 
-        {/* Theme Setting */}
-
+        {/* Logo Settings */}
         <div
-          className="my-12 p-6 rounded-lg"
+          className="mt-8 p-6 rounded-lg"
+          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+        >
+          <h2 className="text-2xl font-bold mb-4 flex items-center">
+            <Upload className="mr-2" size={24} />
+            Site Logo
+          </h2>
+
+          {editingLogo ? (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <div className="relative w-40 h-16 bg-gray-200 rounded overflow-hidden">
+                  <Image src={logoUrl || "/assets/logo.png"} alt="Site Logo" fill style={{ objectFit: "contain" }} />
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="border rounded p-2"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                  }}
+                />
+              </div>
+
+              <div className="flex space-x-2">
+                <button
+                  onClick={saveLogo}
+                  className="font-bold py-2 px-4 rounded"
+                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+                >
+                  Save Logo
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingLogo(false)
+                    fetchSiteSettings() // Reset to original values
+                  }}
+                  className="font-bold py-2 px-4 rounded"
+                  style={{ backgroundColor: "#4B5563", color: siteTheme.textColor }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-4">
+                <div className="relative w-40 h-16 bg-gray-200 rounded overflow-hidden mb-2">
+                  <Image src={logoUrl || "/assets/logo.png"} alt="Site Logo" fill style={{ objectFit: "contain" }} />
+                </div>
+              </div>
+
+              <button
+                onClick={() => setEditingLogo(true)}
+                className="font-bold py-2 px-4 rounded flex items-center"
+                style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+              >
+                <Edit size={16} className="mr-2" /> Change Logo
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Reviews Management */}
+        <div
+          className="mt-8 rounded-lg p-6"
+          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+        >
+          <h2 className="text-2xl font-bold mb-4 flex items-center">
+            <Type className="mr-2" size={24} />
+            Reviews Management
+          </h2>
+
+          {loadingReviews ? (
+            <div className="text-center py-8">Loading reviews...</div>
+          ) : reviews.length === 0 ? (
+            <div className="text-center py-8">No reviews found.</div>
+          ) : (
+            <>
+              <div className="space-y-4">
+                {currentReviews.map((review) => (
+                  <div
+                    key={review._id}
+                    className="p-4 rounded-lg"
+                    style={{ backgroundColor: siteTheme.secondaryBgColor }}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center">
+                          <div className="font-semibold">{review.user.name}</div>
+                          <div className="ml-2 text-sm opacity-70">{review.user.email}</div>
+                        </div>
+                        <div className="flex mt-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              fill={star <= review.rating ? "#FFD700" : "none"}
+                              color={star <= review.rating ? "#FFD700" : "#D1D5DB"}
+                              size={16}
+                            />
+                          ))}
+                          <span className="ml-2 text-sm">{new Date(review.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteReview(review._id)}
+                        className="text-red-500 hover:text-red-700"
+                        title="Delete review"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <p className="mt-2">{review.text}</p>
+                    {review.images && review.images.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {review.images.map((image, index) => (
+                          <div key={index} className="relative w-20 h-20">
+                            <Image
+                              src={image || "/placeholder.svg"}
+                              alt={`Review image ${index + 1}`}
+                              fill
+                              className="rounded object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Pagination controls for reviews */}
+              <div className="flex justify-between items-center mt-4">
+                <div className="text-sm">
+                  Showing {indexOfFirstReview + 1} to {Math.min(indexOfLastReview, reviews.length)} of {reviews.length}{" "}
+                  reviews
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={handlePreviousReviewPage}
+                    disabled={currentReviewPage === 1}
+                    className="px-3 py-1 rounded flex items-center"
+                    style={{
+                      backgroundColor: currentReviewPage === 1 ? "#9CA3AF" : siteTheme.accentColor,
+                      color: siteTheme.textColor,
+                      opacity: currentReviewPage === 1 ? 0.5 : 1,
+                      cursor: currentReviewPage === 1 ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    <ChevronLeft size={16} className="mr-1" /> Previous 10
+                  </button>
+                  <button
+                    onClick={handleNextReviewPage}
+                    disabled={currentReviewPage === totalReviewPages}
+                    className="px-3 py-1 rounded flex items-center"
+                    style={{
+                      backgroundColor: currentReviewPage === totalReviewPages ? "#9CA3AF" : siteTheme.accentColor,
+                      color: siteTheme.textColor,
+                      opacity: currentReviewPage === totalReviewPages ? 0.5 : 1,
+                      cursor: currentReviewPage === totalReviewPages ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    Next 10 <ChevronRight size={16} className="ml-1" />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Home Page Content Management */}
+        <div
+          className="mt-8 rounded-lg p-6"
+          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+        >
+          <h2 className="text-2xl font-bold mb-4 flex items-center">
+            <Type className="mr-2" size={24} />
+            Home Page Content
+          </h2>
+
+          {editingHome ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Desktop Background Image</label>
+                <div className="flex items-center space-x-4">
+                  {homeBackground && (
+                    <div className="relative w-40 h-24 bg-gray-200 rounded overflow-hidden">
+                      <Image
+                        src={homeBackground || "/placeholder.svg"}
+                        alt="Home background"
+                        fill
+                        style={{ objectFit: "cover" }}
+                      />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleHomeBackgroundChange}
+                    className="border rounded p-2"
+                    style={{
+                      backgroundColor: siteTheme.secondaryBgColor,
+                      color: siteTheme.textColor,
+                      borderColor: siteTheme.borderColor,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Mobile Background Image</label>
+                <div className="flex items-center space-x-4">
+                  {homeBackgroundMobile && (
+                    <div className="relative w-24 h-40 bg-gray-200 rounded overflow-hidden">
+                      <Image
+                        src={homeBackgroundMobile || "/placeholder.svg"}
+                        alt="Home mobile background"
+                        fill
+                        style={{ objectFit: "cover" }}
+                      />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleHomeBackgroundMobileChange}
+                    className="border rounded p-2"
+                    style={{
+                      backgroundColor: siteTheme.secondaryBgColor,
+                      color: siteTheme.textColor,
+                      borderColor: siteTheme.borderColor,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Main Text</label>
+                <input
+                  type="text"
+                  value={homeText}
+                  onChange={(e) => setHomeText(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                  }}
+                  placeholder="Main heading text"
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Size</label>
+                    <select
+                      value={homeTextSize}
+                      onChange={(e) => setHomeTextSize(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textSizeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                      <option value="text-4xl md:text-6xl">Responsive (4XL to 6XL)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Color</label>
+                    <select
+                      value={homeTextColor}
+                      onChange={(e) => setHomeTextColor(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textColorOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Font Style</label>
+                    <select
+                      value={homeTextFont}
+                      onChange={(e) => setHomeTextFont(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {fontOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Sub Text</label>
+                <textarea
+                  value={homeSubtext}
+                  onChange={(e) => setHomeSubtext(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                  }}
+                  placeholder="Subheading or description text"
+                  rows={3}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Size</label>
+                    <select
+                      value={homeSubtextSize}
+                      onChange={(e) => setHomeSubtextSize(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textSizeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                      <option value="text-xl md:text-2xl">Responsive (XL to 2XL)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Color</label>
+                    <select
+                      value={homeSubtextColor}
+                      onChange={(e) => setHomeSubtextColor(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textColorOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Font Style</label>
+                    <select
+                      value={homeSubtextFont}
+                      onChange={(e) => setHomeSubtextFont(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {fontOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-2">
+                <button
+                  onClick={saveHomeContent}
+                  className="font-bold py-2 px-4 rounded"
+                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingHome(false)
+                    fetchHomeContent() // Reset to original values
+                  }}
+                  className="font-bold py-2 px-4 rounded"
+                  style={{ backgroundColor: "#4B5563", color: siteTheme.textColor }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Desktop Background</h3>
+                  {homeBackground ? (
+                    <div className="relative w-full h-40 bg-gray-200 rounded overflow-hidden mb-2">
+                      <Image
+                        src={homeBackground || "/placeholder.svg"}
+                        alt="Home background"
+                        fill
+                        style={{ objectFit: "cover" }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="w-full h-40 rounded flex items-center justify-center mb-2"
+                      style={{ backgroundColor: siteTheme.secondaryBgColor }}
+                    >
+                      <p>No desktop background image set</p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium mb-2">Mobile Background</h3>
+                  {homeBackgroundMobile ? (
+                    <div className="relative w-32 h-40 bg-gray-200 rounded overflow-hidden mb-2 mx-auto">
+                      <Image
+                        src={homeBackgroundMobile || "/placeholder.svg"}
+                        alt="Home mobile background"
+                        fill
+                        style={{ objectFit: "cover" }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="w-32 h-40 rounded flex items-center justify-center mb-2 mx-auto"
+                      style={{ backgroundColor: siteTheme.secondaryBgColor }}
+                    >
+                      <p className="text-center text-sm">No mobile background image set</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <p className={`${homeTextSize} ${homeTextColor} ${homeTextFont}`}>{homeText || "No main text set"}</p>
+                <p className={`${homeSubtextSize} ${homeSubtextColor} ${homeSubtextFont}`}>
+                  {homeSubtext || "No subtext set"}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setEditingHome(true)}
+                className="mt-4 font-bold py-2 px-4 rounded flex items-center"
+                style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+              >
+                <Edit size={16} className="mr-2" /> Edit Home Content
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* About Page Content Management */}
+        <div
+          className="mt-8 rounded-lg p-6"
+          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+        >
+          <h2 className="text-2xl font-bold mb-4 flex items-center">
+            <Type className="mr-2" size={24} />
+            About Page Content
+          </h2>
+
+          {editingAbout ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">About Us Description</label>
+                <textarea
+                  value={aboutContent}
+                  onChange={(e) => setAboutContent(e.target.value)}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                  }}
+                  placeholder="Write a description about your business..."
+                  rows={6}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Size</label>
+                    <select
+                      value={aboutTextSize}
+                      onChange={(e) => setAboutTextSize(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textSizeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Text Color</label>
+                    <select
+                      value={aboutTextColor}
+                      onChange={(e) => setAboutTextColor(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {textColorOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Font Style</label>
+                    <select
+                      value={aboutTextFont}
+                      onChange={(e) => setAboutTextFont(e.target.value)}
+                      className="w-full p-2 rounded"
+                      style={{
+                        backgroundColor: siteTheme.secondaryBgColor,
+                        color: siteTheme.textColor,
+                        borderColor: siteTheme.borderColor,
+                      }}
+                    >
+                      {fontOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-2">
+                <button
+                  onClick={saveAboutContent}
+                  className="font-bold py-2 px-4 rounded"
+                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingAbout(false)
+                    fetchAboutContent() // Reset to original values
+                  }}
+                  className="font-bold py-2 px-4 rounded"
+                  style={{ backgroundColor: "#4B5563", color: siteTheme.textColor }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-4 p-4 rounded" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
+                <p className={`${aboutTextSize} ${aboutTextColor} ${aboutTextFont}`}>
+                  {aboutContent || "No about us description set"}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setEditingAbout(true)}
+                className="font-bold py-2 px-4 rounded flex items-center"
+                style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+              >
+                <Edit size={16} className="mr-2" /> Edit About Content
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Theme Setting */}
+        <div
+          className="my-8 p-6 rounded-lg"
           style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
         >
           <div className="flex justify-between items-center mb-4">
@@ -1329,392 +2166,6 @@ export default function Admin() {
                 <div className="w-16 h-16 rounded mb-2" style={{ backgroundColor: siteTheme.borderColor }}></div>
                 <span className="text-sm">Border</span>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* Home Page Content Management */}
-        <div
-          className="mt-12 rounded-lg p-6"
-          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
-        >
-          <h2 className="text-2xl font-bold mb-4 flex items-center">
-            <Type className="mr-2" size={24} />
-            Home Page Content
-          </h2>
-
-          {editingHome ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Background Image</label>
-                <div className="flex items-center space-x-4">
-                  {homeBackground && (
-                    <div className="relative w-40 h-24 bg-gray-200 rounded overflow-hidden">
-                      <Image
-                        src={homeBackground || "/placeholder.svg"}
-                        alt="Home background"
-                        fill
-                        style={{ objectFit: "cover" }}
-                      />
-                    </div>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleHomeBackgroundChange}
-                    className="border rounded p-2"
-                    style={{
-                      backgroundColor: siteTheme.secondaryBgColor,
-                      color: siteTheme.textColor,
-                      borderColor: siteTheme.borderColor,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Main Text</label>
-                <input
-                  type="text"
-                  value={homeText}
-                  onChange={(e) => setHomeText(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
-                  style={{
-                    backgroundColor: siteTheme.secondaryBgColor,
-                    color: siteTheme.textColor,
-                    borderColor: siteTheme.borderColor,
-                  }}
-                  placeholder="Main heading text"
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Text Size</label>
-                    <select
-                      value={homeTextSize}
-                      onChange={(e) => setHomeTextSize(e.target.value)}
-                      className="w-full p-2 rounded"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                      }}
-                    >
-                      {textSizeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                      <option value="text-4xl md:text-6xl">Responsive (4XL to 6XL)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Text Color</label>
-                    <select
-                      value={homeTextColor}
-                      onChange={(e) => setHomeTextColor(e.target.value)}
-                      className="w-full p-2 rounded"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                      }}
-                    >
-                      {textColorOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Font Style</label>
-                    <select
-                      value={homeTextFont}
-                      onChange={(e) => setHomeTextFont(e.target.value)}
-                      className="w-full p-2 rounded"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                      }}
-                    >
-                      {fontOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Sub Text</label>
-                <textarea
-                  value={homeSubtext}
-                  onChange={(e) => setHomeSubtext(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
-                  style={{
-                    backgroundColor: siteTheme.secondaryBgColor,
-                    color: siteTheme.textColor,
-                    borderColor: siteTheme.borderColor,
-                  }}
-                  placeholder="Subheading or description text"
-                  rows={3}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Text Size</label>
-                    <select
-                      value={homeSubtextSize}
-                      onChange={(e) => setHomeSubtextSize(e.target.value)}
-                      className="w-full p-2 rounded"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                      }}
-                    >
-                      {textSizeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                      <option value="text-xl md:text-2xl">Responsive (XL to 2XL)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Text Color</label>
-                    <select
-                      value={homeSubtextColor}
-                      onChange={(e) => setHomeSubtextColor(e.target.value)}
-                      className="w-full p-2 rounded"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                      }}
-                    >
-                      {textColorOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Font Style</label>
-                    <select
-                      value={homeSubtextFont}
-                      onChange={(e) => setHomeSubtextFont(e.target.value)}
-                      className="w-full p-2 rounded"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                      }}
-                    >
-                      {fontOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-2">
-                <button
-                  onClick={saveHomeContent}
-                  className="font-bold py-2 px-4 rounded"
-                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
-                >
-                  Save Changes
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingHome(false)
-                    fetchHomeContent() // Reset to original values
-                  }}
-                  className="font-bold py-2 px-4 rounded"
-                  style={{ backgroundColor: "#4B5563", color: siteTheme.textColor }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div className="mb-4">
-                {homeBackground ? (
-                  <div className="relative w-full h-40 bg-gray-200 rounded overflow-hidden mb-2">
-                    <Image
-                      src={homeBackground || "/placeholder.svg"}
-                      alt="Home background"
-                      fill
-                      style={{ objectFit: "cover" }}
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className="w-full h-40 rounded flex items-center justify-center mb-2"
-                    style={{ backgroundColor: siteTheme.secondaryBgColor }}
-                  >
-                    <p>No background image set</p>
-                  </div>
-                )}
-
-                <div className="mt-2">
-                  <p className={`${homeTextSize} ${homeTextColor} ${homeTextFont}`}>{homeText || "No main text set"}</p>
-                  <p className={`${homeSubtextSize} ${homeSubtextColor} ${homeSubtextFont}`}>
-                    {homeSubtext || "No subtext set"}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setEditingHome(true)}
-                className="font-bold py-2 px-4 rounded flex items-center"
-                style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
-              >
-                <Edit size={16} className="mr-2" /> Edit Home Content
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* About Page Content Management */}
-        <div
-          className="mt-8 rounded-lg p-6"
-          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
-        >
-          <h2 className="text-2xl font-bold mb-4 flex items-center">
-            <Type className="mr-2" size={24} />
-            About Page Content
-          </h2>
-
-          {editingAbout ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">About Us Description</label>
-                <textarea
-                  value={aboutContent}
-                  onChange={(e) => setAboutContent(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
-                  style={{
-                    backgroundColor: siteTheme.secondaryBgColor,
-                    color: siteTheme.textColor,
-                    borderColor: siteTheme.borderColor,
-                  }}
-                  placeholder="Write a description about your business..."
-                  rows={6}
-                />
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Text Size</label>
-                    <select
-                      value={aboutTextSize}
-                      onChange={(e) => setAboutTextSize(e.target.value)}
-                      className="w-full p-2 rounded"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                      }}
-                    >
-                      {textSizeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Text Color</label>
-                    <select
-                      value={aboutTextColor}
-                      onChange={(e) => setAboutTextColor(e.target.value)}
-                      className="w-full p-2 rounded"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                      }}
-                    >
-                      {textColorOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Font Style</label>
-                    <select
-                      value={aboutTextFont}
-                      onChange={(e) => setAboutTextFont(e.target.value)}
-                      className="w-full p-2 rounded"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                      }}
-                    >
-                      {fontOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-2">
-                <button
-                  onClick={saveAboutContent}
-                  className="font-bold py-2 px-4 rounded"
-                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
-                >
-                  Save Changes
-                </button>
-                <button
-                  onClick={() => {
-                    setEditingAbout(false)
-                    fetchAboutContent() // Reset to original values
-                  }}
-                  className="font-bold py-2 px-4 rounded"
-                  style={{ backgroundColor: "#4B5563", color: siteTheme.textColor }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div className="mb-4 p-4 rounded" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
-                <p className={`${aboutTextSize} ${aboutTextColor} ${aboutTextFont}`}>
-                  {aboutContent || "No about us description set"}
-                </p>
-              </div>
-
-              <button
-                onClick={() => setEditingAbout(true)}
-                className="font-bold py-2 px-4 rounded flex items-center"
-                style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
-              >
-                <Edit size={16} className="mr-2" /> Edit About Content
-              </button>
             </div>
           )}
         </div>
