@@ -4,19 +4,18 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import Header from "../components/Header"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faInstagram, faFacebook } from "@fortawesome/free-brands-svg-icons"
 
 export default function Home() {
   const [homeContent, setHomeContent] = useState({
     backgroundImage: null,
+    backgroundImageMobile: null,
     mainText: "Welcome to Camargo Clothing Co.",
     subText: "Discover our latest collection of premium clothing and accessories.",
     textStyles: {
-      mainTextSize: "text-3xl md:text-5xl lg:text-6xl", // Smaller font size
+      mainTextSize: "text-4xl md:text-6xl",
       mainTextColor: "text-white",
       mainTextFont: "font-bold",
-      subtextSize: "text-sm md:text-xl lg:text-2xl", // Smaller font size
+      subtextSize: "text-xl md:text-2xl",
       subtextColor: "text-white",
       subtextFont: "font-normal",
     },
@@ -30,6 +29,23 @@ export default function Home() {
     borderColor: "#333",
   })
   const [loading, setLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    // Check if we're on a mobile device
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    // Initial check
+    checkMobile()
+
+    // Add event listener for window resize
+    window.addEventListener("resize", checkMobile)
+
+    // Cleanup
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -44,6 +60,7 @@ export default function Home() {
           const mergedContent = {
             ...homeContent,
             backgroundImage: homeData.backgroundImage || null,
+            backgroundImageMobile: homeData.backgroundImageMobile || null,
             mainText: homeData.mainText || homeContent.mainText,
             subText: homeData.subText || homeContent.subText,
             textStyles: homeData.textStyles || homeContent.textStyles,
@@ -83,85 +100,76 @@ export default function Home() {
 
   // Destructure textStyles with fallbacks
   const {
-    mainTextSize = "text-3xl md:text-5xl lg:text-6xl",
+    mainTextSize = "text-4xl md:text-6xl",
     mainTextColor = "text-white",
     mainTextFont = "font-bold",
-    subtextSize = "text-sm md:text-xl lg:text-2xl",
+    subtextSize = "text-xl md:text-2xl",
     subtextColor = "text-white",
     subtextFont = "font-normal",
   } = homeContent.textStyles || {}
 
+  // Determine which background image to use based on screen size
+  const backgroundImage =
+    isMobile && homeContent.backgroundImageMobile ? homeContent.backgroundImageMobile : homeContent.backgroundImage
+
   return (
     <div
-      className="min-h-screen w-full flex flex-col overflow-hidden"
+      className="min-h-screen flex flex-col"
       style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}
     >
       <Header />
 
-      <main className="flex-grow relative">
-        {/* Hero Section - Fixed calculation with proper fallback */}
-        <div
-          className="w-full flex items-center justify-center md:overflow-hidden sm:overflow-y-auto"
-          style={{ height: "calc(100vh - 60px)" }}
-        >
-          {homeContent.backgroundImage ? (
+      <main className="flex-grow">
+        {/* Hero Section */}
+        <div className="relative w-full h-[70vh] flex items-center justify-center">
+          {backgroundImage ? (
             <div className="absolute inset-0 z-0">
               <Image
-                src={homeContent.backgroundImage || "/placeholder.svg"}
+                src={backgroundImage || "/placeholder.svg"}
                 alt="Hero background"
                 fill
-                style={{ objectFit: "cover", objectPosition: "center" }}
+                style={{ objectFit: "cover" }}
                 priority
-                sizes="100vw"
-                quality={90}
               />
-              <div className="absolute inset-0 bg-black/80"></div>
+              <div className="absolute inset-0"></div>
             </div>
           ) : (
             <div className="absolute inset-0 z-0" style={{ backgroundColor: siteTheme.secondaryBgColor }}></div>
           )}
 
-          <div className="relative z-10 text-center px-4 md:px-6 max-w-4xl">
-            <h1 className={`${mainTextSize} ${mainTextColor} ${mainTextFont} mb-3`}>
+          <div className="relative z-10 text-center px-4 max-w-4xl">
+            <h1 className={`${mainTextSize} ${mainTextColor} ${mainTextFont} mb-4`}>
               {homeContent.mainText || "Welcome to Camargo Clothing Co."}
             </h1>
-            <p className={`${subtextSize} ${subtextColor} ${subtextFont} mb-6 max-w-2xl mx-auto`}>
+            <p className={`${subtextSize} ${subtextColor} ${subtextFont} mb-8`}>
               {homeContent.subText || "Discover our latest collection of premium clothing and accessories."}
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
+            <div className="flex flex-col xs:flex-row gap-4 justify-center">
               <Link
                 href="/products"
-                className="px-6 py-2 rounded-md font-semibold text-sm transition-colors border-2 bg-white"
-                style={{ borderColor: "#ffffff", color: "#000000" }}
+                className="px-8 py-3 rounded-md font-semibold text-lg transition-colors"
+                style={{ backgroundColor: "#ffffff", color: "#000000" }}
               >
-                Custom Orders
+                Shop Now
               </Link>
               <Link
                 href="/customOrder"
-                className="px-6 py-2 rounded-md font-semibold text-sm transition-colors border-2"
+                className="px-8 py-3 rounded-md font-semibold text-lg transition-colors border-2"
                 style={{ borderColor: "#ffffff", color: "#ffffff", backgroundColor: "transparent" }}
               >
                 Custom Orders
               </Link>
             </div>
-            <div className="flex justify-center gap-4">
-              <Link
-                href="https://www.instagram.com/camargo_clothing_co"
-                target="_blank"
-                className="text-white"
-              >
-                <FontAwesomeIcon icon={faInstagram} fontSize={20} />
+          </div>
+        </div>
 
-              </Link>
-              <Link
-                href="https://www.facebook.com/CamargoClothingCo"
-                target="_blank"
-                className="text-white"
-              >
-                <FontAwesomeIcon icon={faFacebook} fontSize={20} />
-
-              </Link>
-            </div>
+        {/* Featured Products Section */}
+        <div className="py-16 px-4" style={{ backgroundColor: siteTheme.bgColor }}>
+          <div className="container mx-auto">
+            <h2 className="text-3xl font-bold text-center mb-12" style={{ color: siteTheme.textColor }}>
+              Featured Products
+            </h2>
+            {/* Featured products will be loaded here */}
           </div>
         </div>
       </main>
