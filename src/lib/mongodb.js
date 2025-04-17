@@ -1,12 +1,6 @@
-const uri = 'mongodb://localhost:27017/ecommerce';
-// const uri = 'mongodb+srv://ecommerce:ecommerce@camargo.fu1m0.mongodb.net/ecommerce?retryWrites=true&w=majority&appName=camargo'
-// const uri = 'mongodb+srv://camargo:camargo@camargo.fzgutlv.mongodb.net/ecommerce?retryWrites=true&w=majority';
-
 import { MongoClient } from 'mongodb'
 
-// const uri = 'mongodb+srv://camargo2:camargo2@camargo.fzgutlv.mongodb.net/ecommerce'
-
-// const uri = process.env.MONGODB_URI;
+const uri = process.env.MONGODB_URI;
 const options = {}
 
 let client
