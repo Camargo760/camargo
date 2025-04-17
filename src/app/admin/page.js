@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Header from "../../components/Header"
-import { Download, ChevronLeft, ChevronRight, Edit, Palette, Type, Save } from 'lucide-react'
+import { Download, ChevronLeft, ChevronRight, Edit, Palette, Type, Save } from "lucide-react"
 
 export default function Admin() {
   const [products, setProducts] = useState([])
@@ -63,19 +63,7 @@ export default function Admin() {
   })
   const [editingTheme, setEditingTheme] = useState(false)
 
-  useEffect(() => {
-    if (status === "loading") return
-    if (!session || session.user.email !== "camargo_co@outlook.com") {
-      router.push("/")
-    } else {
-      fetchProducts()
-      fetchOrders()
-      fetchHomeContent()
-      fetchAboutContent()
-      fetchSiteTheme()
-    }
-  }, [session, status, router])
-
+  // Define fetchProducts function before using it in useEffect
   const fetchProducts = async () => {
     try {
       const res = await fetch(`/api/products?sort=${sortOrder}`)
@@ -163,6 +151,19 @@ export default function Admin() {
       console.error("Error fetching site theme:", err)
     }
   }
+
+  useEffect(() => {
+    if (status === "loading") return
+    if (!session || session.user.email !== "camargo_co@outlook.com") {
+      router.push("/")
+    } else {
+      fetchProducts()
+      fetchOrders()
+      fetchHomeContent()
+      fetchAboutContent()
+      fetchSiteTheme()
+    }
+  }, [session, status, router, sortOrder]) // Removed fetchProducts from dependencies and added sortOrder instead
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -280,7 +281,7 @@ export default function Admin() {
   const handleSort = () => {
     const newSortOrder = sortOrder === "desc" ? "asc" : "desc"
     setSortOrder(newSortOrder)
-    fetchProducts()
+    // fetchProducts will be called via the useEffect when sortOrder changes
   }
 
   const handleImageChange = (e) => {
@@ -767,7 +768,6 @@ export default function Admin() {
           </div>
         )}
 
-
         <h2 className="text-2xl font-bold mb-4 mt-8">Recent Orders</h2>
         {orders.length === 0 ? (
           <p>No recent orders.</p>
@@ -842,12 +842,6 @@ export default function Admin() {
                       style={{ borderColor: siteTheme.borderColor }}
                     >
                       Payment Method
-                    </th>
-                    <th
-                      className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
-                      style={{ borderColor: siteTheme.borderColor }}
-                    >
-                      Status
                     </th>
                   </tr>
                 </thead>
@@ -941,11 +935,11 @@ export default function Admin() {
                                 />
                                 <button
                                   onClick={() => downloadDesignImage(order.product.finalDesignImage, order.id)}
-                                  className="absolute bottom-2 right-2 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="mt-2 right-2 p-1 rounded "
                                   style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
                                   title="Download final design"
                                 >
-                                  <Download size={16} />
+                                  Download
                                 </button>
                               </div>
                             </div>
@@ -979,11 +973,11 @@ export default function Admin() {
                             className="capitalize"
                             style={{ color: order.paymentMethod === "delivery" ? "#F97316" : "#3B82F6" }}
                           >
-                            {order.paymentMethod || "stripe"}
+                            {order.paymentMethod === "delivery" ? "" : "Stripe"}
                           </span>
                           {order.paymentMethod === "delivery" && order.preferredMethod && (
                             <span
-                              className="ml-2 text-xs px-2 py-1 rounded capitalize"
+                              className="text-xs px-2 py-1 rounded capitalize"
                               style={{ backgroundColor: siteTheme.secondaryBgColor }}
                             >
                               {order.preferredMethod}
@@ -995,56 +989,7 @@ export default function Admin() {
                             <span className="font-semibold">Notes:</span> {order.additionalNotes}
                           </p>
                         )}
-                      </td>
-                      <td
-                        className="px-6 py-4 whitespace-nowrap border-b"
-                        style={{ borderColor: siteTheme.borderColor }}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <span
-                            className="inline-block px-2 py-1 text-xs font-semibold rounded-full"
-                            style={{
-                              backgroundColor:
-                                order.status === "pending"
-                                  ? "#FEF3C7"
-                                  : order.status === "received"
-                                    ? "#DBEAFE"
-                                    : order.status === "out_for_delivery"
-                                      ? "#F3E8FF"
-                                      : order.status === "delivered"
-                                        ? "#DCFCE7"
-                                        : "#F3F4F6",
-                              color:
-                                order.status === "pending"
-                                  ? "#92400E"
-                                  : order.status === "received"
-                                    ? "#1E40AF"
-                                    : order.status === "out_for_delivery"
-                                      ? "#6B21A8"
-                                      : order.status === "delivered"
-                                        ? "#166534"
-                                        : "#1F2937",
-                            }}
-                          >
-                            {order.status || "pending"}
-                          </span>
-                          <select
-                            className="text-sm border rounded p-1"
-                            style={{
-                              backgroundColor: siteTheme.secondaryBgColor,
-                              color: siteTheme.textColor,
-                              borderColor: siteTheme.borderColor,
-                            }}
-                            onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                            value={order.status || "pending"}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="received">Received</option>
-                            <option value="out_for_delivery">Out for Delivery</option>
-                            <option value="delivered">Delivered</option>
-                          </select>
-                        </div>
-                      </td>
+                      </td>                     
                     </tr>
                   ))}
                 </tbody>
@@ -1087,7 +1032,6 @@ export default function Admin() {
             </div>
           </>
         )}
-
 
         {/* Theme Setting */}
 
@@ -1388,7 +1332,6 @@ export default function Admin() {
             </div>
           )}
         </div>
-
 
         {/* Home Page Content Management */}
         <div

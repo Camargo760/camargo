@@ -1,3 +1,11 @@
 @import "tailwindcss";
 
-
+body,
+button,
+a,
+input,
+textarea,
+select,
+img {
+    cursor: url('/assets/alien-cursor.png'), auto;
+}

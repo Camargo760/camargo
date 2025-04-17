@@ -145,7 +145,7 @@ export default function Login() {
 
           <div className="text-center mt-4">
             <p style={{ color: siteTheme.textColor }}>
-              Don't have an account?{" "}
+              Do not have an account?{" "}
               <Link href="/signup" className="hover:underline" style={{ color: siteTheme.accentColor }}>
                 Sign Up
               </Link>

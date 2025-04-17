@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
-import { Star, Edit, Trash, User } from "lucide-react"
+import { Star, Edit, Trash, User, X, Upload, ChevronLeft, ChevronRight } from "lucide-react"
 import Header from "../../components/Header"
 import Link from "next/link"
 import Image from "next/image"
@@ -19,6 +19,16 @@ export default function ReviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [userHasReview, setUserHasReview] = useState(false)
+  const [reviewImages, setReviewImages] = useState([])
+  const [imagePreviewUrls, setImagePreviewUrls] = useState([])
+  const fileInputRef = useRef(null)
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxImage, setLightboxImage] = useState("")
+  const [lightboxImages, setLightboxImages] = useState([])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -49,6 +59,24 @@ export default function ReviewPage() {
     fetchData()
   }, [])
 
+  // Handle keyboard navigation for lightbox
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!lightboxOpen) return
+
+      if (e.key === "Escape") {
+        closeLightbox()
+      } else if (e.key === "ArrowRight") {
+        showNextImage()
+      } else if (e.key === "ArrowLeft") {
+        showPrevImage()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [lightboxOpen, currentImageIndex, lightboxImages])
+
   const fetchReviews = async () => {
     try {
       setLoading(true)
@@ -68,6 +96,13 @@ export default function ReviewPage() {
           setRating(userReview.rating)
           setReviewText(userReview.text)
           setEditingReviewId(userReview._id)
+
+          // Set review images if they exist
+          if (userReview.images && userReview.images.length > 0) {
+            setImagePreviewUrls(userReview.images)
+          } else {
+            setImagePreviewUrls([])
+          }
         }
       }
 
@@ -77,6 +112,34 @@ export default function ReviewPage() {
       setError("Failed to load reviews. Please try again later.")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    // Limit to 3 images max
+    const totalImages = imagePreviewUrls.length + files.length
+    if (totalImages > 3) {
+      setError("You can upload a maximum of 3 images per review")
+      return
+    }
+
+    setReviewImages((prevImages) => [...prevImages, ...files])
+
+    // Create preview URLs for the images
+    const newImageUrls = files.map((file) => URL.createObjectURL(file))
+    setImagePreviewUrls((prevUrls) => [...prevUrls, ...newImageUrls])
+  }
+
+  const handleRemoveImage = (index) => {
+    // Remove the image from the preview
+    setImagePreviewUrls((prevUrls) => prevUrls.filter((_, i) => i !== index))
+
+    // Remove the image from the files array if it's a new upload
+    if (index < reviewImages.length) {
+      setReviewImages((prevImages) => prevImages.filter((_, i) => i !== index))
     }
   }
 
@@ -102,18 +165,29 @@ export default function ReviewPage() {
       setLoading(true)
       setError(null)
 
+      // Create FormData to handle file uploads
+      const formData = new FormData()
+      formData.append("rating", rating)
+      formData.append("text", reviewText)
+
+      // Add existing image URLs that weren't removed
+      if (isEditing && imagePreviewUrls.length > 0) {
+        // Filter out blob URLs (new uploads) and keep only existing URLs
+        const existingImages = imagePreviewUrls.filter((url) => !url.startsWith("blob:"))
+        formData.append("existingImages", JSON.stringify(existingImages))
+      }
+
+      // Add new image files
+      reviewImages.forEach((file) => {
+        formData.append("images", file)
+      })
+
       const url = isEditing ? `/api/reviews/${editingReviewId}` : "/api/reviews"
       const method = isEditing ? "PUT" : "POST"
 
       const res = await fetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          rating,
-          text: reviewText,
-        }),
+        body: formData, // No Content-Type header needed for FormData
       })
 
       if (!res.ok) {
@@ -125,6 +199,8 @@ export default function ReviewPage() {
       if (!isEditing) {
         setRating(0)
         setReviewText("")
+        setReviewImages([])
+        setImagePreviewUrls([])
       }
 
       // Reset editing state
@@ -149,6 +225,16 @@ export default function ReviewPage() {
     setReviewText(review.text)
     setIsEditing(true)
     setEditingReviewId(review._id)
+
+    // Set image previews if the review has images
+    if (review.images && review.images.length > 0) {
+      setImagePreviewUrls(review.images)
+    } else {
+      setImagePreviewUrls([])
+    }
+
+    // Reset new image uploads
+    setReviewImages([])
   }
 
   const handleDeleteReview = async (reviewId) => {
@@ -182,6 +268,43 @@ export default function ReviewPage() {
     setReviewText("")
     setIsEditing(false)
     setEditingReviewId(null)
+    setReviewImages([])
+    setImagePreviewUrls([])
+  }
+
+  // Lightbox functions
+  const openLightbox = (imageUrl, allImages, index) => {
+    setLightboxImage(imageUrl)
+    setLightboxImages(allImages)
+    setCurrentImageIndex(index)
+    setLightboxOpen(true)
+
+    // Prevent scrolling when lightbox is open
+    document.body.style.overflow = "hidden"
+  }
+
+  const closeLightbox = () => {
+    setLightboxOpen(false)
+    setLightboxImage("")
+
+    // Re-enable scrolling
+    document.body.style.overflow = "auto"
+  }
+
+  const showNextImage = () => {
+    if (lightboxImages.length <= 1) return
+
+    const nextIndex = (currentImageIndex + 1) % lightboxImages.length
+    setCurrentImageIndex(nextIndex)
+    setLightboxImage(lightboxImages[nextIndex])
+  }
+
+  const showPrevImage = () => {
+    if (lightboxImages.length <= 1) return
+
+    const prevIndex = (currentImageIndex - 1 + lightboxImages.length) % lightboxImages.length
+    setCurrentImageIndex(prevIndex)
+    setLightboxImage(lightboxImages[prevIndex])
   }
 
   // Sort reviews to put the current user's review at the top
@@ -256,6 +379,73 @@ export default function ReviewPage() {
                   required
                 ></textarea>
               </div>
+
+              {/* Image Upload Section */}
+              <div className="mb-4">
+                <label className="block text-sm font-bold mb-2" style={{ color: siteTheme.textColor }}>
+                  Add Images (Optional)
+                </label>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-wrap gap-4">
+                    {imagePreviewUrls.map((url, index) => (
+                      <div
+                        key={index}
+                        className="relative w-24 h-24 border rounded overflow-hidden"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
+                        <div
+                          className="w-full h-full cursor-pointer"
+                          onClick={() => openLightbox(url, imagePreviewUrls, index)}
+                        >
+                          <Image
+                            src={url || "/placeholder.svg"}
+                            alt={`Review image ${index + 1}`}
+                            width={96}
+                            height={96}
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute top-1 right-1 bg-black bg-opacity-50 rounded-full p-1"
+                          aria-label="Remove image"
+                        >
+                          <X size={14} color="white" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {imagePreviewUrls.length < 3 && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current.click()}
+                        className="w-24 h-24 border-2 border-dashed rounded flex flex-col items-center justify-center"
+                        style={{ borderColor: siteTheme.borderColor }}
+                      >
+                        <Upload size={24} style={{ color: siteTheme.textColor }} />
+                        <span className="text-xs mt-1" style={{ color: siteTheme.textColor }}>
+                          Add Image
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+
+                  <p className="text-xs" style={{ color: siteTheme.textColor }}>
+                    You can upload up to 3 images (JPG, PNG). Max 5MB each.
+                  </p>
+                </div>
+              </div>
+
               <div className="flex flex-row flex-wrap sm:flex-nowrap gap-2">
                 <button
                   type="submit"
@@ -381,6 +571,30 @@ export default function ReviewPage() {
                         <p className="mt-2" style={{ color: siteTheme.textColor }}>
                           {review.text}
                         </p>
+
+                        {/* Review Images */}
+                        {review.images && review.images.length > 0 && (
+                          <div className="mt-4">
+                            <div className="flex flex-wrap gap-2">
+                              {review.images.map((imageUrl, index) => (
+                                <div
+                                  key={index}
+                                  className="border rounded overflow-hidden cursor-pointer"
+                                  style={{ borderColor: siteTheme.borderColor }}
+                                  onClick={() => openLightbox(imageUrl, review.images, index)}
+                                >
+                                  <Image
+                                    src={imageUrl || "/placeholder.svg"}
+                                    alt={`Review image ${index + 1}`}
+                                    width={120}
+                                    height={120}
+                                    className="object-cover w-24 h-24"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -417,6 +631,66 @@ export default function ReviewPage() {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Lightbox */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
+          onClick={closeLightbox}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={closeLightbox}
+              className="absolute top-4 right-4 bg-black bg-opacity-50 rounded-full p-2 z-10"
+              aria-label="Close lightbox"
+            >
+              <X size={24} color="white" />
+            </button>
+
+            {lightboxImages.length > 1 && (
+              <>
+                <button
+                  onClick={showPrevImage}
+                  className="absolute left-4 bg-black bg-opacity-50 rounded-full p-2 z-10"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft size={24} color="white" />
+                </button>
+                <button
+                  onClick={showNextImage}
+                  className="absolute right-4 bg-black bg-opacity-50 rounded-full p-2 z-10"
+                  aria-label="Next image"
+                >
+                  <ChevronRight size={24} color="white" />
+                </button>
+              </>
+            )}
+
+            <div className="relative w-full h-full flex items-center justify-center p-4">
+              <Image src={lightboxImage || "/placeholder.svg"} alt="Review image" fill className="object-contain" />
+            </div>
+
+            {lightboxImages.length > 1 && (
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                {lightboxImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setCurrentImageIndex(index)
+                      setLightboxImage(lightboxImages[index])
+                    }}
+                    className={`w-2 h-2 rounded-full ${index === currentImageIndex ? "bg-white" : "bg-gray-500"}`}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

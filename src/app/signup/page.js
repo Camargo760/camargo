@@ -50,7 +50,7 @@ export default function SignUp() {
       // Log the request payload for debugging
       console.log("Submitting signup with:", { name, email, password: "***" })
 
-      const response = await fetch("/api/auth/signup", {
+      const response = await fetch("/api/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

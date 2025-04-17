@@ -60,7 +60,7 @@ export default function AboutPage() {
     }
 
     fetchData()
-  }, [])
+  }, [aboutContent.textStyles])
 
   if (loading) {
     return (

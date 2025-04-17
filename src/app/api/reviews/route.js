@@ -1,8 +1,15 @@
+// api/reviews/route.js
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
 import clientPromise from "../../../lib/mongodb"
 import { ObjectId } from "mongodb"
+
+// Helper function to convert image to base64
+async function imageToBase64(file) {
+  const buffer = Buffer.from(await file.arrayBuffer())
+  return `data:${file.type};base64,${buffer.toString("base64")}`
+}
 
 export async function GET() {
   try {
@@ -32,6 +39,7 @@ export async function GET() {
             _id: 1,
             rating: 1,
             text: 1,
+            images: 1,
             createdAt: 1,
             updatedAt: 1,
             user: {
@@ -63,7 +71,11 @@ export async function POST(request) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 })
     }
 
-    const { rating, text } = await request.json()
+    // Parse the multipart form data
+    const formData = await request.formData()
+    const rating = Number.parseInt(formData.get("rating"))
+    const text = formData.get("text")
+    const imageFiles = formData.getAll("images")
 
     // Validate input
     if (!rating || rating < 1 || rating > 5) {
@@ -95,11 +107,29 @@ export async function POST(request) {
       )
     }
 
+    // Process images and convert to base64
+    let savedImages = []
+    if (imageFiles && imageFiles.length > 0) {
+      // Limit number of images (optional)
+      const filesToProcess = imageFiles.slice(0, 3) // Limit to 3 images
+      
+      // Convert each image to base64
+      for (const file of filesToProcess) {
+        try {
+          const base64Image = await imageToBase64(file)
+          savedImages.push(base64Image)
+        } catch (error) {
+          console.error("Error converting image to base64:", error)
+        }
+      }
+    }
+
     // Create the review
     const review = {
       userId: user._id,
       rating,
       text,
+      images: savedImages,
       createdAt: new Date(),
       updatedAt: new Date(),
     }

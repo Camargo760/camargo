@@ -131,7 +131,7 @@ const EmailAuthVerification = ({ email, onVerificationComplete }) => {
                 </svg>
                 <h3 className="text-xl font-bold mb-2">Check your email</h3>
                 <p className="text-gray-600 mb-4">
-                    We've sent a verification link to <strong>{email}</strong>
+                    We have sent a verification link to <strong>{email}</strong>
                 </p>
                 <p className="text-gray-600 mb-6">
                     Click the link in the email to verify your account and complete sign up.
@@ -144,7 +144,7 @@ const EmailAuthVerification = ({ email, onVerificationComplete }) => {
                 )}
 
                 <div className="text-sm text-gray-600 mt-6">
-                    Didn't receive the email? Check your spam folder or{" "}
+                    Did not receive the email? Check your spam folder or{" "}
                     <button
                         onClick={sendVerificationEmail}
                         disabled={loading}
@@ -171,7 +171,7 @@ const EmailAuthVerification = ({ email, onVerificationComplete }) => {
         <div className="mb-6">
             <div className="flex items-center mb-4">
                 <div className="w-full">
-                    <div className="text-sm text-gray-600 mb-2">We'll send a verification link to this email address</div>
+                    <div className="text-sm text-gray-600 mb-2">We will send a verification link to this email address</div>
                     <div className="font-medium">{email}</div>
                 </div>
             </div>
