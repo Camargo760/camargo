@@ -144,17 +144,17 @@ export default function Home() {
             <p className={`${subtextSize} ${subtextColor} ${subtextFont} mb-8`}>
               {homeContent.subText || "Discover our latest collection of premium clothing and accessories."}
             </p>
-            <div className="flex flex-col md:flex-row gap-4 justify-center">
+            <div className="flex flex-col md:flex-row gap-8 justify-center">
               <Link
                 href="/products"
-                className="px-8 py-3 rounded-md font-semibold text-sm transition-colors"
+                className="px-4 py-2 rounded-md font-semibold text-sm transition-colors"
                 style={{ backgroundColor: "#ffffff", color: "#000000" }}
               >
                 Shop Now
               </Link>
               <Link
                 href="/customOrder"
-                className="px-8 py-3 rounded-md font-semibold text-sm transition-colors border-2"
+                className="px-4 py-2 rounded-md font-semibold text-sm transition-colors border-2"
                 style={{ borderColor: "#ffffff", color: "#ffffff", backgroundColor: "transparent" }}
               >
                 Custom Orders
