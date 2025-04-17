@@ -14,6 +14,7 @@ export async function GET() {
     if (!content) {
       return NextResponse.json({
         backgroundImage: null,
+        backgroundImageMobile: null,
         mainText: "",
         subText: "",
         textStyles: {
@@ -42,9 +43,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 })
     }
 
-    const { backgroundImage, mainText, subText, textStyles } = await request.json()
-    
-    console.log("Saving home content with text styles:", textStyles) // Debug log
+    const { backgroundImage, backgroundImageMobile, mainText, subText, textStyles } = await request.json()
 
     const client = await clientPromise
     const db = client.db("ecommerce")
@@ -54,8 +53,8 @@ export async function POST(request) {
       { type: "home" },
       {
         $set: {
-          type: "home", // Ensure type is set
           backgroundImage,
+          backgroundImageMobile,
           mainText,
           subText,
           textStyles,
