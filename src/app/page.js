@@ -144,7 +144,7 @@ export default function Home() {
             <p className={`${subtextSize} ${subtextColor} ${subtextFont} mb-8`}>
               {homeContent.subText || "Discover our latest collection of premium clothing and accessories."}
             </p>
-            <div className="flex flex-col md:flex-row gap-8 justify-center">
+            <div className="flex flex-col md:flex-row md:gap-8 gap-4 justify-center">
                             <Link
                 href="/products"
                 className="px-4 py-2 rounded-md font-semibold text-sm transition-colors border-2"
