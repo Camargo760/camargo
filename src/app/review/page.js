@@ -134,12 +134,35 @@ export default function ReviewPage() {
   }
 
   const handleRemoveImage = (index) => {
-    // Remove the image from the preview
-    setImagePreviewUrls((prevUrls) => prevUrls.filter((_, i) => i !== index))
+    // Create a copy of the current preview URLs
+    const updatedPreviewUrls = [...imagePreviewUrls]
 
-    // Remove the image from the files array if it's a new upload
-    if (index < reviewImages.length) {
-      setReviewImages((prevImages) => prevImages.filter((_, i) => i !== index))
+    // Get the URL that's being removed
+    const removedUrl = updatedPreviewUrls[index]
+
+    // Remove the URL from the preview array
+    updatedPreviewUrls.splice(index, 1)
+    setImagePreviewUrls(updatedPreviewUrls)
+
+    // If it's a blob URL (new upload), we need to remove it from reviewImages as well
+    if (removedUrl.startsWith("blob:")) {
+      // Find the index in reviewImages that corresponds to this blob URL
+      const blobIndex = Array.from(reviewImages).findIndex((file, i) => {
+        const fileUrl = URL.createObjectURL(file)
+        URL.revokeObjectURL(fileUrl) // Clean up
+        return fileUrl === removedUrl
+      })
+
+      if (blobIndex !== -1) {
+        const updatedReviewImages = [...reviewImages]
+        updatedReviewImages.splice(blobIndex, 1)
+        setReviewImages(updatedReviewImages)
+      }
+    }
+
+    // Revoke the object URL to avoid memory leaks
+    if (removedUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(removedUrl)
     }
   }
 
@@ -170,9 +193,8 @@ export default function ReviewPage() {
       formData.append("rating", rating)
       formData.append("text", reviewText)
 
-      // Add existing image URLs that weren't removed
-      if (isEditing && imagePreviewUrls.length > 0) {
-        // Filter out blob URLs (new uploads) and keep only existing URLs
+      // Add existing image URLs that weren't removed (filter out blob URLs)
+      if (isEditing) {
         const existingImages = imagePreviewUrls.filter((url) => !url.startsWith("blob:"))
         formData.append("existingImages", JSON.stringify(existingImages))
       }
@@ -228,7 +250,7 @@ export default function ReviewPage() {
 
     // Set image previews if the review has images
     if (review.images && review.images.length > 0) {
-      setImagePreviewUrls(review.images)
+      setImagePreviewUrls([...review.images])
     } else {
       setImagePreviewUrls([])
     }
@@ -251,6 +273,14 @@ export default function ReviewPage() {
       if (!res.ok) {
         throw new Error("Failed to delete review")
       }
+
+      // Reset all form fields including images
+      setRating(0)
+      setReviewText("")
+      setReviewImages([])
+      setImagePreviewUrls([])
+      setIsEditing(false)
+      setEditingReviewId(null)
 
       // Refresh reviews
       fetchReviews()
