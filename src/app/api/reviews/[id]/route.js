@@ -1,9 +1,14 @@
-// api/reviews/[id]/route.js
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../auth/[...nextauth]/route"
 import clientPromise from "../../../../lib/mongodb"
 import { ObjectId } from "mongodb"
+
+// Helper function to convert image to base64
+async function imageToBase64(file) {
+  const buffer = Buffer.from(await file.arrayBuffer())
+  return `data:${file.type};base64,${buffer.toString("base64")}`
+}
 
 export async function PUT(request, { params }) {
   try {
@@ -19,23 +24,23 @@ export async function PUT(request, { params }) {
     }
 
     // Parse FormData instead of JSON
-    const formData = await request.formData();
-    const rating = parseInt(formData.get("rating"), 10);
-    const text = formData.get("text");
-    
+    const formData = await request.formData()
+    const rating = Number.parseInt(formData.get("rating"), 10)
+    const text = formData.get("text")
+
     // Get existing images if any
-    let existingImages = [];
+    let existingImages = []
     try {
-      const existingImagesJson = formData.get("existingImages");
+      const existingImagesJson = formData.get("existingImages")
       if (existingImagesJson) {
-        existingImages = JSON.parse(existingImagesJson);
+        existingImages = JSON.parse(existingImagesJson)
       }
     } catch (error) {
-      console.error("Error parsing existing images:", error);
+      console.error("Error parsing existing images:", error)
     }
-    
-    // Handle image files if needed
-    const images = formData.getAll("images");
+
+    // Handle new image files
+    const imageFiles = formData.getAll("images")
 
     // Validate input
     if (!rating || rating < 1 || rating > 5) {
@@ -66,24 +71,34 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "You can only edit your own reviews" }, { status: 403 })
     }
 
+    // Process new images and convert to base64
+    const newImages = []
+    if (imageFiles && imageFiles.length > 0) {
+      for (const file of imageFiles) {
+        if (file instanceof File) {
+          try {
+            const base64Image = await imageToBase64(file)
+            newImages.push(base64Image)
+          } catch (error) {
+            console.error("Error converting image to base64:", error)
+          }
+        }
+      }
+    }
+
+    // Combine existing and new images
+    const allImages = [...existingImages, ...newImages]
+
     // Prepare the update payload
     const updateData = {
       rating,
       text,
+      images: allImages,
       updatedAt: new Date(),
-    };
-    
-    // If there are image operations, you would handle them here
-    // For now, just include existingImages if they exist
-    if (existingImages.length > 0) {
-      updateData.images = existingImages;
     }
-    
+
     // Update the review
-    const result = await db.collection("reviews").updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updateData }
-    );
+    const result = await db.collection("reviews").updateOne({ _id: new ObjectId(id) }, { $set: updateData })
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ error: "Review not found" }, { status: 404 })
