@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Header from "../../components/Header"
 import { ChevronLeft, ChevronRight, Edit, Palette, Type, Save, Trash2, Upload, Star } from "lucide-react"
+// Add import for AdminPasswordChange at the top of the file
+import AdminPasswordChange from "../../components/AdminPasswordChange"
 
 export default function Admin() {
   const [products, setProducts] = useState([])
@@ -1325,6 +1327,11 @@ export default function Admin() {
               </button>
             </div>
           )}
+        </div>
+
+        {/* Admin Password Change */}
+        <div className="mt-8">
+          <AdminPasswordChange siteTheme={siteTheme} />
         </div>
 
         {/* Reviews Management */}
