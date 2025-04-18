@@ -1,4 +1,3 @@
-// api/reviews/route.js
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
@@ -108,11 +107,11 @@ export async function POST(request) {
     }
 
     // Process images and convert to base64
-    let savedImages = []
+    const savedImages = []
     if (imageFiles && imageFiles.length > 0) {
       // Limit number of images (optional)
       const filesToProcess = imageFiles.slice(0, 3) // Limit to 3 images
-      
+
       // Convert each image to base64
       for (const file of filesToProcess) {
         try {
