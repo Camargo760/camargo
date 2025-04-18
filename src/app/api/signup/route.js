@@ -1,47 +1,89 @@
-// api/signup/route.js
-import { NextResponse } from 'next/server';
-import { hash } from 'bcryptjs';
-import clientPromise from '../../../lib/mongodb';
+import { NextResponse } from "next/server"
+import bcrypt from "bcryptjs"
+import clientPromise from "../../../lib/mongodb"
+
+// Password validation
+const validatePassword = (password) => {
+  const errors = []
+  if (password.length < 6) errors.push("Password must be at least 6 characters long")
+  if (!/[A-Z]/.test(password)) errors.push("Password must contain at least one uppercase letter")
+  if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter")
+  if (!/[0-9]/.test(password)) errors.push("Password must contain at least one number")
+  if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password))
+    errors.push("Password must contain at least one special character")
+
+  return errors
+}
 
 export async function POST(request) {
   try {
-    const { name, email, password } = await request.json();
+    // Parse the request body
+    const { name, email, password } = await request.json()
 
-    // Basic validation
+    // Validate required fields
     if (!name || !email || !password) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+      return NextResponse.json({ error: "Invalid email format" }, { status: 400 })
     }
 
-    const client = await clientPromise;
-    const db = client.db('ecommerce');
-    const usersCollection = db.collection('users');
+    // Validate password strength
+    const passwordErrors = validatePassword(password)
+    if (passwordErrors.length > 0) {
+      return NextResponse.json({ error: passwordErrors.join(". ") }, { status: 400 })
+    }
+
+    // Connect to MongoDB
+    const client = await clientPromise
+    const db = client.db("ecommerce")
 
     // Check if user already exists
-    const existingUser = await usersCollection.findOne({ email });
+    const existingUser = await db.collection("users").findOne({ email: email.toLowerCase() })
     if (existingUser) {
-      return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+      return NextResponse.json({ error: "User with this email already exists" }, { status: 409 })
     }
 
     // Hash the password
-    const hashedPassword = await hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create the new user
-    const result = await usersCollection.insertOne({
+    // Create the user
+    const result = await db.collection("users").insertOne({
       name,
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
-      role: 'user', // Default role for new signups
-    });
+      createdAt: new Date(),
+      role: "customer", // Default role
+    })
 
-    return NextResponse.json({ message: 'User created successfully', userId: result.insertedId }, { status: 201 });
+    // Return success response without exposing the password
+    return NextResponse.json(
+      {
+        id: result.insertedId.toString(),
+        name,
+        email,
+        role: "customer",
+        message: "User created successfully",
+      },
+      { status: 201 },
+    )
   } catch (error) {
-    console.error('Signup error:', error.message); // Avoid logging sensitive information
-    return NextResponse.json({ error: 'An error occurred during signup' }, { status: 500 });
+    console.error("Error creating user:", error)
+    return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
   }
+}
+
+// Add OPTIONS method to handle preflight requests for CORS
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  })
 }
