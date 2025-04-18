@@ -1,12 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Header from "../../components/Header"
+import { Clock, ListOrderedIcon, DollarSign, Filter } from "lucide-react"
+import Link from "next/link"
 
-export default function Products() {
+export default function ProductsPage() {
   const [products, setProducts] = useState([])
+  const [filteredProducts, setFilteredProducts] = useState([])
+  const [sortBy, setSortBy] = useState("newest")
+  const [categories, setCategories] = useState([])
+  const [selectedCategory, setSelectedCategory] = useState("all")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [siteTheme, setSiteTheme] = useState({
@@ -17,18 +23,11 @@ export default function Products() {
     secondaryBgColor: "#2a2a2a",
     borderColor: "#333",
   })
+  const router = useRouter()
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch products
-        const productsRes = await fetch("/api/products?published=true")
-        if (!productsRes.ok) {
-          throw new Error("Failed to fetch products")
-        }
-        const productsData = await productsRes.json()
-        setProducts(productsData)
-
         // Fetch site theme
         const themeRes = await fetch("/api/site-theme")
         if (themeRes.ok) {
@@ -37,6 +36,18 @@ export default function Products() {
             setSiteTheme(themeData.theme)
           }
         }
+
+        // Fetch products from MongoDB API
+        const productsRes = await fetch("/api/products")
+        if (!productsRes.ok) {
+          throw new Error("Failed to fetch products")
+        }
+        const productsData = await productsRes.json()
+        setProducts(productsData)
+
+        // Extract unique categories
+        const uniqueCategories = [...new Set(productsData.map((product) => product.category || "Uncategorized"))]
+        setCategories(uniqueCategories)
       } catch (err) {
         console.error("Error fetching data:", err)
         setError(err.message || "Failed to load products")
@@ -47,6 +58,42 @@ export default function Products() {
 
     fetchData()
   }, [])
+
+  // Apply filters and sorting
+  useEffect(() => {
+    let result = [...products]
+
+    // Apply category filter
+    if (selectedCategory !== "all") {
+      result = result.filter((product) => (product.category || "Uncategorized") === selectedCategory)
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case "newest":
+        result.sort((a, b) => new Date(b.uploadTime || b.createdAt) - new Date(a.uploadTime || a.createdAt))
+        break
+      case "oldest":
+        result.sort((a, b) => new Date(a.uploadTime || a.createdAt) - new Date(b.uploadTime || b.createdAt))
+        break
+      case "name_asc":
+        result.sort((a, b) => (a.name || a.title).localeCompare(b.name || b.title))
+        break
+      case "name_desc":
+        result.sort((a, b) => (b.name || b.title).localeCompare(a.name || a.title))
+        break
+      case "price_low":
+        result.sort((a, b) => a.price - b.price)
+        break
+      case "price_high":
+        result.sort((a, b) => b.price - a.price)
+        break
+      default:
+        break
+    }
+
+    setFilteredProducts(result)
+  }, [products, selectedCategory, sortBy])
 
   if (loading) {
     return (
@@ -78,71 +125,176 @@ export default function Products() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
       <Header />
-      <main className="container mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-8 text-center" style={{ color: siteTheme.textColor }}>
+      <main className="container mx-auto py-12 px-4 md:px-8">
+        <h1 className="text-3xl font-bold mb-8 text-center" style={{ color: siteTheme.accentColor }}>
           Our Products
         </h1>
 
-        {products.length === 0 ? (
-          <p className="text-center" style={{ color: siteTheme.textColor }}>
-            No products available at the moment.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <Link key={product._id} href={`/product/${product._id}`}>
-                <div
-                  className="rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-105"
+        <div className="flex flex-col md:flex-row gap-6 mb-8">
+          {/* Category Filter - Left Side */}
+          <div className="md:w-1/4 lg:w-1/5">
+            <div
+              className="p-4 rounded-lg"
+              style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+            >
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Filter size={18} />
+                <span>Categories</span>
+              </h3>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => setSelectedCategory("all")}
+                  className={`px-3 py-2 rounded text-left transition-colors`}
                   style={{
-                    backgroundColor: siteTheme.cardBgColor,
-                    borderColor: siteTheme.borderColor,
-                    borderWidth: "1px",
+                    backgroundColor: selectedCategory === "all" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
                   }}
                 >
-                  <div className="relative h-64 w-full">
-                    {product.images && product.images.length > 0 ? (
-                      <Image
-                        src={product.images[0] || "/placeholder.svg"}
-                        alt={product.name}
-                        fill
-                        style={{ objectFit: "cover" }}
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center"
-                        style={{ backgroundColor: siteTheme.secondaryBgColor }}
-                      >
-                        <span style={{ color: siteTheme.textColor }}>No Image</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <h2 className="text-xl font-semibold mb-2" style={{ color: siteTheme.textColor }}>
-                      {product.name}
-                    </h2>
-                    <p className="text-sm mb-2" style={{ color: siteTheme.textColor }}>
-                      {product.description.length > 100
-                        ? `${product.description.substring(0, 100)}...`
-                        : product.description}
-                    </p>
-                    <div className="flex justify-between items-center mt-4">
-                      <span className="text-lg font-bold" style={{ color: siteTheme.accentColor }}>
-                        ${product.price.toFixed(2)}
-                      </span>
-                      <span
-                        className="px-2 py-1 text-xs rounded"
-                        style={{ backgroundColor: siteTheme.secondaryBgColor, color: siteTheme.textColor }}
-                      >
-                        {product.category}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                  All Products
+                </button>
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-3 py-2 rounded text-left transition-colors`}
+                    style={{
+                      backgroundColor:
+                        selectedCategory === category ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+                      color: siteTheme.textColor,
+                    }}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* Products with Sorting - Right Side */}
+          <div className="md:w-3/4 lg:w-4/5">
+            {/* Sorting Options */}
+            <div
+              className="mb-4 p-4 rounded-lg"
+              style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <h3 className="text-lg font-semibold flex items-center gap-2 mr-2">
+                  <ListOrderedIcon size={18} />
+                  <span>Sort by:</span>
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSortBy(sortBy === "newest" ? "oldest" : "newest")}
+                    className={`px-3 py-1 rounded text-sm transition-colors flex items-center`}
+                    style={{
+                      backgroundColor:
+                        sortBy.includes("newest") || sortBy.includes("oldest")
+                          ? siteTheme.accentColor
+                          : siteTheme.secondaryBgColor,
+                      color: siteTheme.textColor,
+                    }}
+                  >
+                    <Clock className="mr-1" size={14} />
+                    {sortBy === "newest" ? "Newest First" : sortBy === "oldest" ? "Oldest First" : "Time"}
+                  </button>
+
+                  <button
+                    onClick={() => setSortBy(sortBy === "name_asc" ? "name_desc" : "name_asc")}
+                    className={`px-3 py-1 rounded text-sm transition-colors flex items-center`}
+                    style={{
+                      backgroundColor: sortBy.includes("name") ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+                      color: siteTheme.textColor,
+                    }}
+                  >
+                    <ListOrderedIcon className="mr-1" size={14} />
+                    {sortBy === "name_asc" ? "A-Z" : sortBy === "name_desc" ? "Z-A" : "Name"}
+                  </button>
+
+                  <button
+                    onClick={() => setSortBy(sortBy === "price_low" ? "price_high" : "price_low")}
+                    className={`px-3 py-1 rounded text-sm transition-colors flex items-center`}
+                    style={{
+                      backgroundColor: sortBy.includes("price") ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+                      color: siteTheme.textColor,
+                    }}
+                  >
+                    <DollarSign className="mr-1" size={14} />
+                    {sortBy === "price_low"
+                      ? "Price: Low to High"
+                      : sortBy === "price_high"
+                        ? "Price: High to Low"
+                        : "Price"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            {filteredProducts.length === 0 ? (
+              <div className="text-center p-8 rounded-lg" style={{ backgroundColor: siteTheme.cardBgColor }}>
+                <p className="text-lg">No products found matching your criteria.</p>
+                <button
+                  onClick={() => {
+                    setSelectedCategory("all")
+                    setSortBy("newest")
+                  }}
+                  className="mt-4 px-4 py-2 rounded"
+                  style={{ backgroundColor: siteTheme.accentColor }}
+                >
+                  Reset Filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product._id} product={product} siteTheme={siteTheme} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </main>
     </div>
+  )
+}
+
+// Product Card Component
+function ProductCard({ product, siteTheme }) {
+  return (
+    <Link href={`/product/${product._id}`}>
+      <div
+        className="rounded-lg overflow-hidden shadow-md transition-transform hover:scale-105"
+        style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
+      >
+        <div className="relative h-48 w-full">
+          {product.images && product.images.length > 0 ? (
+            <Image
+              src={product.images[0] || "/placeholder.svg"}
+              alt={product.name || product.title}
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ backgroundColor: siteTheme.secondaryBgColor }}
+            >
+              <span style={{ color: siteTheme.textColor }}>No Image</span>
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <h3 className="text-lg font-semibold mb-1 truncate" style={{ color: siteTheme.textColor }}>
+            {product.name || product.title}
+          </h3>
+          <p className="text-lg font-bold" style={{ color: siteTheme.accentColor }}>
+            ${product.price.toFixed(2)}
+          </p>
+          <p className="text-sm mt-2 line-clamp-2" style={{ color: siteTheme.textColor }}>
+            {product.description || "No description available"}
+          </p>
+        </div>
+      </div>
+    </Link>
   )
 }
