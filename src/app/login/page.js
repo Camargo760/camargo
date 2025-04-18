@@ -154,7 +154,7 @@ export default function Login() {
               Forgot Password?
             </button>
             <p style={{ color: siteTheme.textColor }}>
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/signup" className="hover:underline" style={{ color: siteTheme.accentColor }}>
                 Sign Up
               </Link>
