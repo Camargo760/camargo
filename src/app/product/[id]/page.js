@@ -1,3 +1,4 @@
+// product/[id]/page.js
 "use client"
 
 import { useState, useEffect } from "react"
@@ -34,7 +35,7 @@ export default function ProductDetail({ params }) {
         }
         const productData = await productRes.json()
         setProduct(productData)
-        
+
         // Set default color and size if available
         if (productData.availableColors && productData.availableColors.length > 0) {
           setSelectedColor(productData.availableColors[0])
@@ -63,11 +64,6 @@ export default function ProductDetail({ params }) {
       fetchData()
     }
   }, [id])
-
-  const handleAddToCart = () => {
-    // Implement cart functionality
-    alert("Added to cart!")
-  }
 
   const handleBuyNow = () => {
     if (!selectedColor) {
@@ -151,9 +147,8 @@ export default function ProductDetail({ params }) {
                   <button
                     key={index}
                     onClick={() => setCurrentImage(index)}
-                    className={`relative h-20 w-20 rounded-md overflow-hidden ${
-                      currentImage === index ? "ring-2" : ""
-                    }`}
+                    className={`relative h-20 w-20 rounded-md overflow-hidden ${currentImage === index ? "ring-2" : ""
+                      }`}
                     style={{
                       backgroundColor: siteTheme.secondaryBgColor,
                       borderColor: siteTheme.borderColor,
@@ -187,6 +182,10 @@ export default function ProductDetail({ params }) {
               {product.description}
             </p>
 
+              <p className="text-sm mb-4" style={{ color: siteTheme.textColor }}>
+                Category: <span className="font-semibold">{product.category}</span>
+              </p>
+
             {/* Color Selection */}
             {product.availableColors && product.availableColors.length > 0 && (
               <div className="mb-6">
@@ -198,9 +197,8 @@ export default function ProductDetail({ params }) {
                     <button
                       key={color}
                       onClick={() => setSelectedColor(color)}
-                      className={`px-4 py-2 rounded-md ${
-                        selectedColor === color ? "ring-2" : ""
-                      }`}
+                      className={`px-4 py-2 rounded-md ${selectedColor === color ? "ring-2" : ""
+                        }`}
                       style={{
                         backgroundColor: siteTheme.secondaryBgColor,
                         color: siteTheme.textColor,
@@ -227,9 +225,8 @@ export default function ProductDetail({ params }) {
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
-                      className={`px-4 py-2 rounded-md ${
-                        selectedSize === size ? "ring-2" : ""
-                      }`}
+                      className={`px-4 py-2 rounded-md ${selectedSize === size ? "ring-2" : ""
+                        }`}
                       style={{
                         backgroundColor: siteTheme.secondaryBgColor,
                         color: siteTheme.textColor,
@@ -284,7 +281,7 @@ export default function ProductDetail({ params }) {
                     color: siteTheme.textColor,
                     borderColor: siteTheme.borderColor,
                     borderWidth: "1px",
-                  
+
                   }}
                 >
                   +
@@ -293,19 +290,7 @@ export default function ProductDetail({ params }) {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={handleAddToCart}
-                className="flex-1 py-3 px-6 rounded-md font-semibold"
-                style={{
-                  backgroundColor: siteTheme.secondaryBgColor,
-                  color: siteTheme.textColor,
-                  borderColor: siteTheme.borderColor,
-                  borderWidth: "1px",
-                }}
-              >
-                Add to Cart
-              </button>
+            <div className="flex flex-col sm:flex-row">
               <button
                 onClick={handleBuyNow}
                 className="flex-1 py-3 px-6 rounded-md font-semibold"
@@ -313,13 +298,6 @@ export default function ProductDetail({ params }) {
               >
                 Buy Now
               </button>
-            </div>
-
-            {/* Additional Info */}
-            <div className="mt-8">
-              <p className="text-sm" style={{ color: siteTheme.textColor }}>
-                Category: <span className="font-semibold">{product.category}</span>
-              </p>
             </div>
           </div>
         </div>
