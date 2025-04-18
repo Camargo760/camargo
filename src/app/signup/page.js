@@ -9,6 +9,7 @@ export default function SignUp() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -21,6 +22,19 @@ export default function SignUp() {
     borderColor: "#333",
   })
   const router = useRouter()
+
+  // Password validation
+  const validatePassword = (password) => {
+    const errors = []
+    if (password.length < 6) errors.push("Password must be at least 6 characters long")
+    if (!/[A-Z]/.test(password)) errors.push("Password must contain at least one uppercase letter")
+    if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter")
+    if (!/[0-9]/.test(password)) errors.push("Password must contain at least one number")
+    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password))
+      errors.push("Password must contain at least one special character")
+
+    return errors
+  }
 
   useEffect(() => {
     const fetchSiteTheme = async () => {
@@ -45,6 +59,29 @@ export default function SignUp() {
 
     setError("")
     setLoading(true)
+
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      setLoading(false)
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address")
+      setLoading(false)
+      return
+    }
+
+    // Validate password strength
+    const passwordErrors = validatePassword(password)
+    if (passwordErrors.length > 0) {
+      setError(passwordErrors.join(". "))
+      setLoading(false)
+      return
+    }
 
     try {
       // Log the request payload for debugging
@@ -82,6 +119,7 @@ export default function SignUp() {
       setName("")
       setEmail("")
       setPassword("")
+      setConfirmPassword("")
 
       // Redirect to login after a short delay
       setTimeout(() => {
@@ -182,12 +220,39 @@ export default function SignUp() {
                 borderWidth: "1px",
               }}
             />
+            <p className="text-xs mt-1 opacity-70">
+              Must be at least 6 characters with uppercase, lowercase, number, and special character
+            </p>
+          </div>
+
+          <div className="mb-4">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-lg font-medium mb-2"
+              style={{ color: siteTheme.textColor }}
+            >
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: siteTheme.secondaryBgColor,
+                color: siteTheme.textColor,
+                borderColor: siteTheme.borderColor,
+                borderWidth: "1px",
+              }}
+            />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full font-semibold py-3 px-6 rounde-lg transition duration-300 ease-in-out"
+            className="w-full font-semibold py-3 px-6 rounded-lg transition duration-300 ease-in-out"
             style={{
               backgroundColor: siteTheme.accentColor,
               color: siteTheme.textColor,
