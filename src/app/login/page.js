@@ -5,12 +5,14 @@ import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Header from "../../components/Header"
+import ResetPasswordModal from "../../components/ResetPasswordModal"
 
 export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [showResetModal, setShowResetModal] = useState(false)
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -41,7 +43,6 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     setError("")
     setLoading(true)
 
@@ -53,16 +54,16 @@ export default function Login() {
       })
 
       if (result.error) {
-        throw new Error(result.error)
+        setError("Invalid email or password")
+        setLoading(false)
+        return
       }
 
       // Redirect to home page on successful login
       router.push("/")
-      router.refresh()
     } catch (err) {
       console.error("Login error:", err)
-      setError(err.message || "Invalid email or password")
-    } finally {
+      setError("An error occurred during login")
       setLoading(false)
     }
   }
@@ -143,9 +144,17 @@ export default function Login() {
             {loading ? "Logging In..." : "Log In"}
           </button>
 
-          <div className="text-center mt-4">
+          <div className="flex flex-col justify-between items-center mt-4 gap-2">
+            <button
+              type="button"
+              onClick={() => setShowResetModal(true)}
+              className="text-sm hover:underline"
+              style={{ color: siteTheme.accentColor }}
+            >
+              Forgot Password?
+            </button>
             <p style={{ color: siteTheme.textColor }}>
-              Do not have an account?{" "}
+              Don't have an account?{" "}
               <Link href="/signup" className="hover:underline" style={{ color: siteTheme.accentColor }}>
                 Sign Up
               </Link>
@@ -153,6 +162,8 @@ export default function Login() {
           </div>
         </form>
       </main>
+
+      <ResetPasswordModal isOpen={showResetModal} onClose={() => setShowResetModal(false)} siteTheme={siteTheme} />
     </div>
   )
 }
