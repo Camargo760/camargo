@@ -131,7 +131,7 @@ export default function Home() {
                 style={{ objectFit: "cover" }}
                 priority
               />
-              <div className="absolute inset-0"></div>
+              <div className="absolute inset-0 bg-black/20"></div>
             </div>
           ) : (
             <div className="absolute inset-0 z-0" style={{ backgroundColor: siteTheme.secondaryBgColor }}></div>
@@ -145,7 +145,7 @@ export default function Home() {
               {homeContent.subText || "Discover our latest collection of premium clothing and accessories."}
             </p>
             <div className="flex md:gap-8 gap-4 justify-center">
-                            <Link
+              <Link
                 href="/products"
                 className="px-4 py-2 rounded-md font-semibold text-sm transition-colors border-2"
                 style={{ borderColor: "#ffffff", color: "#000000", backgroundColor: "#ffffff" }}
@@ -160,6 +160,7 @@ export default function Home() {
                 Custom Orders
               </Link>
             </div>
+
           </div>
         </div>
       </main>
