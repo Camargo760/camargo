@@ -37,8 +37,8 @@ export default function ProductsPage() {
           }
         }
 
-        // Fetch products from MongoDB API
-        const productsRes = await fetch("/api/products")
+        // Fetch products from MongoDB API - add published=true parameter
+        const productsRes = await fetch("/api/products?published=true")
         if (!productsRes.ok) {
           throw new Error("Failed to fetch products")
         }
@@ -293,6 +293,17 @@ function ProductCard({ product, siteTheme }) {
           <p className="text-sm mt-2 line-clamp-2" style={{ color: siteTheme.textColor }}>
             {product.description || "No description available"}
           </p>
+          <div className="mt-3 flex justify-between items-center">
+            <span className="text-xs" style={{ color: siteTheme.textColor }}>
+              {product.category || "Uncategorized"}
+            </span>
+            <button
+              className="px-3 py-1 rounded text-xs"
+              style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+            >
+              View Details
+            </button>
+          </div>
         </div>
       </div>
     </Link>
