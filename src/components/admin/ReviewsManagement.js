@@ -53,7 +53,7 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
 
   return (
     <div
-      className="mt-8 rounded-lg p-6"
+      className="mt-8 rounded-lg p-4"
       style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
     >
       <h2 className="text-2xl font-bold mb-4 flex items-center">
