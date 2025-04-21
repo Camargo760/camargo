@@ -21,6 +21,7 @@ export default function ReviewPage() {
   const [userHasReview, setUserHasReview] = useState(false)
   const [reviewImages, setReviewImages] = useState([])
   const [imagePreviewUrls, setImagePreviewUrls] = useState([])
+  const [iconSize, setIconSize] = useState(14);
   const fileInputRef = useRef(null)
 
   // Lightbox state
@@ -59,23 +60,40 @@ export default function ReviewPage() {
     fetchData()
   }, [])
 
-  // Handle keyboard navigation for lightbox
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (!lightboxOpen) return
+      if (!lightboxOpen) return;
 
       if (e.key === "Escape") {
-        closeLightbox()
+        closeLightbox();
       } else if (e.key === "ArrowRight") {
-        showNextImage()
+        showNextImage();
       } else if (e.key === "ArrowLeft") {
-        showPrevImage()
+        showPrevImage();
       }
-    }
+    };
 
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [lightboxOpen, currentImageIndex, lightboxImages])
+    const updateSize = () => {
+      if (window.innerWidth >= 640) {
+        setIconSize(20);
+      } else {
+        setIconSize(14);
+      }
+    };
+
+    // Add event listeners
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", updateSize);
+
+    updateSize(); // Run on mount
+
+    // Cleanup function — return only once
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", updateSize);
+    };
+  }, [lightboxOpen, currentImageIndex, lightboxImages]);
+
 
   const fetchReviews = async () => {
     try {
@@ -344,6 +362,9 @@ export default function ReviewPage() {
     return 0
   })
 
+
+  // change icons size on smaller devices 
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
       <Header />
@@ -533,13 +554,31 @@ export default function ReviewPage() {
                     }}
                   >
                     {isUserReview && (
-                      <div className="mb-2 font-semibold flex items-center">
-                        <span
-                          className="px-2 py-1 rounded text-sm"
-                          style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
-                        >
-                          Your Review
-                        </span>
+                      <div className="flex flex-row justify-between items-center mb-2">
+                        <div className="font-semibold flex items-center">
+                          <span
+                            className="px-2 py-1 rounded text-sm"
+                            style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+                          >
+                            Your Review
+                          </span>
+                        </div>
+                        <div className="flex space-x-4">
+                          <button
+                            onClick={() => handleEditReview(review)}
+                            style={{ color: siteTheme.accentColor }}
+                            title="Edit review"
+                          >
+                            <Edit size={iconSize} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReview(review._id)}
+                            className="text-red-500 hover:text-red-700"
+                            title="Delete review"
+                          >
+                            <Trash size={iconSize} />
+                          </button>
+                        </div>
                       </div>
                     )}
                     <div className="flex flex-row flex-wrap items-start">
@@ -560,44 +599,25 @@ export default function ReviewPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-                          <div>
-                            <p className="font-semibold" style={{ color: siteTheme.textColor }}>
-                              {review.user.name}
-                            </p>
-                            <div className="flex items-center mt-1">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <Star
-                                  key={star}
-                                  fill={review.rating >= star ? "#FFD700" : "none"}
-                                  color={review.rating >= star ? "#FFD700" : "#D1D5DB"}
-                                  size={16}
-                                />
-                              ))}
-                              <span className="ml-2 text-sm" style={{ color: siteTheme.textColor }}>
-                                {new Date(review.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
+                        <div className="">
+                          <p className="font-semibold" style={{ color: siteTheme.textColor }}>
+                            {review.user.name}
+                          </p>
+                          <div className="flex items-center mt-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                fill={review.rating >= star ? "#FFD700" : "none"}
+                                color={review.rating >= star ? "#FFD700" : "#D1D5DB"}
+                                size={16}
+                              />
+                            ))}
+                            <span className="ml-2 text-sm" style={{ color: siteTheme.textColor }}>
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </span>
                           </div>
-                          {isUserReview && (
-                            <div className="flex space-x-2 mt-2 sm:mt-0">
-                              <button
-                                onClick={() => handleEditReview(review)}
-                                style={{ color: siteTheme.accentColor }}
-                                title="Edit review"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteReview(review._id)}
-                                className="text-red-500 hover:text-red-700"
-                                title="Delete review"
-                              >
-                                <Trash size={16} />
-                              </button>
-                            </div>
-                          )}
                         </div>
+
                         <p className="mt-2" style={{ color: siteTheme.textColor }}>
                           {review.text}
                         </p>
@@ -618,7 +638,7 @@ export default function ReviewPage() {
                                     alt={`Review image ${index + 1}`}
                                     width={120}
                                     height={120}
-                                    className="object-cover w-24 h-24"
+                                    className="object-cover w-14 h-14 sm:w-24 sm:h-24"
                                   />
                                 </div>
                               ))}
