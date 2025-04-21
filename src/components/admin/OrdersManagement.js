@@ -281,11 +281,11 @@ export default function OrdersManagement({ siteTheme, orders }) {
           </div>
 
           {/* Pagination controls for orders */}
-          <div className="flex justify-between items-center mt-4">
+          <div className="sm:flex justify-between items-center mt-4">
             <div className="text-sm">
               Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, orders.length)} of {orders.length} orders
             </div>
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 mt-2 sm:mt-0">
               <button
                 onClick={handlePreviousOrderPage}
                 disabled={currentOrderPage === 1}
