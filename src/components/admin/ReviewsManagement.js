@@ -72,9 +72,9 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
               <div key={review._id} className="p-4 rounded-lg" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <div className="flex items-center">
+                    <div className="flex-col items-center">
                       <div className="font-semibold">{review.user.name}</div>
-                      <div className="ml-2 text-sm opacity-70">{review.user.email}</div>
+                      <div className="text-sm opacity-70">{review.user.email}</div>
                     </div>
                     <div className="flex mt-1">
                       {[1, 2, 3, 4, 5].map((star) => (
@@ -100,7 +100,7 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
                 {review.images && review.images.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {review.images.map((image, index) => (
-                      <div key={index} className="relative w-20 h-20">
+                      <div key={index} className="relative w-15 h-15 sm:w-20 sm:h-20">
                         <Image
                           src={image || "/placeholder.svg"}
                           alt={`Review image ${index + 1}`}
@@ -116,12 +116,12 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
           </div>
 
           {/* Pagination controls for reviews */}
-          <div className="flex justify-between items-center mt-4">
+          <div className="sm:flex justify-between items-center mt-4">
             <div className="text-sm">
               Showing {indexOfFirstReview + 1} to {Math.min(indexOfLastReview, reviews.length)} of {reviews.length}{" "}
               reviews
             </div>
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 mt-2 sm:mt-0">
               <button
                 onClick={handlePreviousReviewPage}
                 disabled={currentReviewPage === 1}
