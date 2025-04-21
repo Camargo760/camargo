@@ -74,7 +74,7 @@ export default function ThemeSettings({ siteTheme, setSiteTheme, fetchSiteTheme 
                   type="color"
                   value={editTheme.bgColor}
                   onChange={(e) => setEditTheme({ ...editTheme, bgColor: e.target.value })}
-                  className="h-10 w-40 rounded mr-2"
+                  className="h-10 w-10 rounded mr-2"
                 />
                 <input
                   type="text"
