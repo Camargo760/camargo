@@ -706,22 +706,27 @@ export default function HomeContentManagement({
                             <Monitor className="mr-2" size={16} />
                             <h3 className="font-medium">Desktop Preview</h3>
                         </div>
-                        <p className={`${mainTextSizes.desktop} ${homeTextColor} ${homeTextFont}`}>{homeText || "No main text set"}</p>
-                        <p className={`${subtextSizes.desktop} ${homeSubtextColor} ${homeSubtextFont}`}>
-                            {homeSubtext || "No subtext set"}
-                        </p>
+                        <div style={{ maxWidth: "800px" }} className="overflow-hidden">
+                            <p className={`${mainTextSizes.desktop} ${homeTextColor} ${homeTextFont}`}>{homeText || "No main text set"}</p>
+                        </div>
+                        <div style={{ maxWidth: "800px" }} className="overflow-hidden mt-4">
+                            <p className={`${subtextSizes.desktop} ${homeSubtextColor} ${homeSubtextFont}`}>
+                                {homeSubtext || "No subtext set"}
+                            </p>
+                        </div>
 
                         <div className="mt-4 pt-4 border-t" style={{ borderColor: siteTheme.borderColor }}>
                             <div className="flex items-center mb-2">
                                 <Smartphone className="mr-2" size={16} />
                                 <h3 className="font-medium">Mobile Preview</h3>
                             </div>
-                            <div style={{ maxWidth: "320px" }}>
-                                <p className={`${mainTextSizes.mobile} ${homeTextColor} ${homeTextFont}`}>
+                            <div style={{ maxWidth: "320px" }} className="overflow-hidden">
+                                <p className={`${mainTextSizes.mobile} ${homeTextColor} ${homeTextFont} break-words overflow-wrap`}>
                                     {homeText || "No main text set"}
                                 </p>
-
-                                <p className={`${subtextSizes.mobile} ${homeSubtextColor} ${homeSubtextFont}`}>
+                            </div>
+                            <div style={{ maxWidth: "320px" }} className="overflow-hidden mt-2">
+                                <p className={`${subtextSizes.mobile} ${homeSubtextColor} ${homeSubtextFont} break-words overflow-wrap`}>
                                     {homeSubtext || "No subtext set"}
                                 </p>
                             </div>
