@@ -76,11 +76,12 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
                 backgroundColor: selectedMethod === "stripe" ? siteTheme.secondaryBgColor : "transparent",
               }}
             >
-              <div className="flex items-center">
-                <CreditCard style={{ color: "#3b82f6" }} className="mr-3" size={24} />
+              <div className="flex flex-col items-start">
                 <span className="font-medium">Pay with Card</span>
+                <span className="text-sm opacity-70">Visa, Mastercard, etc.</span>
               </div>
-              <span className="text-sm opacity-70">Visa, Mastercard, etc.</span>
+              <CreditCard style={{ color: "#3b82f6" }} className="mr-3" size={24} />
+
             </button>
 
             <button
@@ -91,11 +92,12 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
                 backgroundColor: selectedMethod === "delivery" ? siteTheme.secondaryBgColor : "transparent",
               }}
             >
-              <div className="flex items-center">
-                <Truck style={{ color: "#10b981" }} className="mr-3" size={24} />
+              <div className="flex flex-col items-start">
                 <span className="font-medium">Pay at Delivery Time</span>
+                <span className="text-sm opacity-70">Cash on delivery</span>
               </div>
-              <span className="text-sm opacity-70">Cash on delivery</span>
+              <Truck style={{ color: "#10b981" }} className="mr-3" size={24} />
+
             </button>
           </div>
 
