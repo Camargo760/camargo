@@ -208,7 +208,7 @@ export default function Admin() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
       <Header />
-      <main className="container mx-auto mt-8 p-8">
+      <main className="container mx-auto mt-8 p-4 sm:p-8">
         <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
