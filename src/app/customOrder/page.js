@@ -354,7 +354,7 @@ export default function CustomOrder() {
         <div className="max-w-7xl mx-auto my-12 px-4 md:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div
-              className="p-8 rounded-lg text-center relative overflow-hidden"
+              className="sm:p-8 p-4 rounded-lg text-center relative overflow-hidden"
               style={{
                 backgroundColor: siteTheme.cardBgColor,
                 borderColor: siteTheme.borderColor,
@@ -429,13 +429,13 @@ export default function CustomOrder() {
             </div>
 
             <div
-              className="p-8 rounded-lg"
+              className="sm:p-8 p-4 rounded-lg"
               style={{
                 backgroundColor: siteTheme.cardBgColor,
                 borderColor: siteTheme.borderColor,
                 boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
               }}
-            >
+             >
               <h2
                 className="font-['Kanit'] text-2xl uppercase tracking-wide mt-0 mb-6"
                 style={{ color: siteTheme.accentColor }}
