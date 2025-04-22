@@ -3,10 +3,6 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 import clientPromise from '../../../../lib/mongodb';
 
-// Debug the imports
-console.log("NextAuth type:", typeof NextAuth);
-console.log("CredentialsProvider type:", typeof CredentialsProvider);
-
 // Handle potential ESM default exports
 const Auth = NextAuth.default || NextAuth;
 const Provider = CredentialsProvider.default || CredentialsProvider;
