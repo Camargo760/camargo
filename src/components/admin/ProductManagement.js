@@ -159,7 +159,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
       {/* Product Form */}
       <form
         onSubmit={handleSubmit}
-        className="mb-8 p-6 rounded-lg"
+        className="mb-8 p-4 sm:p-6 rounded-lg"
         style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
       >
         <h2 className="text-2xl font-bold mb-4">
