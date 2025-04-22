@@ -32,7 +32,7 @@ export default function AboutPage() {
         const aboutRes = await fetch("/api/about-content")
         if (aboutRes.ok) {
           const aboutData = await aboutRes.json()
-          
+
           // Create a merged object with default values
           const mergedContent = {
             description: aboutData.description || "",
@@ -96,16 +96,17 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <div className="flex flex-col md:flex-row flex-wrap justify-around gap-12 max-w-5xl mx-auto">
+        <div className="md:flex justify-center gap-20">
           {/* 3D Instagram Card */}
-          <div className="flex justify-center items-center">
+          <div className="flex justify-center items-center box-border md:mb-0 mb-8">
             <InstagramCard />
           </div>
           {/* Facebook Profile */}
-          <div className="flex justify-center items-center">
+          <div className="flex justify-center items-center box-border">
             <FacebookCard />
           </div>
         </div>
+
       </main>
     </div>
   )
