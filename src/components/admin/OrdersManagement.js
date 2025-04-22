@@ -136,12 +136,6 @@ export default function OrdersManagement({ siteTheme, orders }) {
                   >
                     Payment Method
                   </th>
-                  <th
-                    className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
-                    style={{ borderColor: siteTheme.borderColor }}
-                  >
-                    Status
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -239,7 +233,8 @@ export default function OrdersManagement({ siteTheme, orders }) {
                           className="capitalize"
                           style={{ color: order.paymentMethod === "delivery" ? "#F97316" : "#3B82F6" }}
                         >
-                          {order.paymentMethod === "delivery" ? "Delivery" : "Stripe"}
+                         {order.paymentMethod || "stripe"}
+
                         </span>
                         {order.paymentMethod === "delivery" && order.preferredMethod && (
                           <span
@@ -255,24 +250,6 @@ export default function OrdersManagement({ siteTheme, orders }) {
                           <span className="font-semibold">Notes:</span> {order.additionalNotes}
                         </p>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b" style={{ borderColor: siteTheme.borderColor }}>
-                      <select
-                        value={order.status || "pending"}
-                        onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                        className="px-2 py-1 rounded text-sm"
-                        style={{
-                          backgroundColor: siteTheme.secondaryBgColor,
-                          color: siteTheme.textColor,
-                          borderColor: siteTheme.borderColor,
-                        }}
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
                     </td>
                   </tr>
                 ))}
