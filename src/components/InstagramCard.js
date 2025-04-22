@@ -37,7 +37,7 @@ const InstagramCard = () => {
   }, [])
 
   return (
-    <div className="h-[473.5px] w-[350px] md:w-full md:h-full min-w-xs max-w-xs mx-auto">
+    <div className="h-[473.5px] w-[350px]   max-w-xs mx-auto">
       <div
         className="h-full w-full cursor-pointer"
         style={{ perspective: "1000px" }}
