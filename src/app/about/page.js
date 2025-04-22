@@ -5,7 +5,6 @@ import Header from "../../components/Header"
 import InstagramCard from "../../components/InstagramCard"
 import FacebookCard from "../../components/FacebookCard"
 
-
 export default function AboutPage() {
   const [aboutContent, setAboutContent] = useState({
     description: "",
@@ -33,12 +32,15 @@ export default function AboutPage() {
         const aboutRes = await fetch("/api/about-content")
         if (aboutRes.ok) {
           const aboutData = await aboutRes.json()
-          console.log("About content data:", aboutData) // Debug log
-
+          
           // Create a merged object with default values
           const mergedContent = {
             description: aboutData.description || "",
-            textStyles: aboutData.textStyles || aboutContent.textStyles,
+            textStyles: aboutData.textStyles || {
+              textSize: "text-lg",
+              textColor: "text-gray-700",
+              textFont: "font-normal",
+            },
           }
 
           setAboutContent(mergedContent)
@@ -60,7 +62,7 @@ export default function AboutPage() {
     }
 
     fetchData()
-  }, [aboutContent.textStyles])
+  }, []) // Remove the dependency array item
 
   if (loading) {
     return (
@@ -94,11 +96,15 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+        <div className="flex flex-col md:flex-row flex-wrap justify-around gap-12 max-w-5xl mx-auto">
           {/* 3D Instagram Card */}
-          <InstagramCard />
+          <div className="flex justify-center items-center">
+            <InstagramCard />
+          </div>
           {/* Facebook Profile */}
-          <FacebookCard />
+          <div className="flex justify-center items-center">
+            <FacebookCard />
+          </div>
         </div>
       </main>
     </div>
