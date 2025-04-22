@@ -71,7 +71,7 @@ export default function LogoSettings({ siteTheme, logoUrl, fetchSiteSettings }) 
 
   return (
     <div
-      className="mt-8 p-6 rounded-lg"
+      className="mt-8 p-4 sm:p-6 rounded-lg"
       style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
     >
       <h2 className="text-2xl font-bold mb-4 flex items-center">
