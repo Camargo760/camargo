@@ -37,7 +37,7 @@ export default function ThemeSettings({ siteTheme, setSiteTheme, fetchSiteTheme 
 
   return (
     <div
-      className="my-8 p-6 rounded-lg"
+      className="my-8 p-4 sm:p-6 rounded-lg"
       style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
     >
       <div className="flex justify-between items-center mb-4">
