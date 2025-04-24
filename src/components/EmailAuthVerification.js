@@ -121,7 +121,7 @@ const EmailAuthVerification = ({ email, onVerificationComplete }) => {
         </div>
 
         <div className="text-sm text-gray-600 mt-4 text-center">
-          Didn't receive the code?{" "}
+          Did not receive the code?{" "}
           <button onClick={sendVerificationCode} disabled={loading} className="text-blue-600 hover:underline">
             {loading ? "Sending..." : "Resend Code"}
           </button>
@@ -135,7 +135,7 @@ const EmailAuthVerification = ({ email, onVerificationComplete }) => {
     <div className="mb-6">
       <div className="flex items-center mb-4">
         <div className="w-full">
-          <div className="text-sm text-gray-600 mb-2">We'll send a verification code to this email address</div>
+          <div className="text-sm text-gray-600 mb-2">We will send a verification code to this email address</div>
           <div className="font-medium">{email}</div>
         </div>
       </div>
