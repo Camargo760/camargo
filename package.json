@@ -10,6 +10,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+        "@clerk/backend": "^1.30.0",
+    "@clerk/nextjs": "^6.18.0",
     "framer-motion": "^12.6.3",
     "html2canvas": "^1.4.1",
     "firebase": "^9.0.0",
