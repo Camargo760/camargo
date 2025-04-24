@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Header from "../../components/Header"
+import { useSignUp } from "@clerk/nextjs"
+import EmailAuthVerification from "../../components/EmailAuthVerification"
 
 export default function SignUp() {
   const [name, setName] = useState("")
@@ -13,6 +15,7 @@ export default function SignUp() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [showEmailVerification, setShowEmailVerification] = useState(false)
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -21,7 +24,9 @@ export default function SignUp() {
     secondaryBgColor: "#2a2a2a",
     borderColor: "#333",
   })
+
   const router = useRouter()
+  const { signUp, setActive } = useSignUp()
 
   // Password validation
   const validatePassword = (password) => {
@@ -84,35 +89,46 @@ export default function SignUp() {
     }
 
     try {
-      // Log the request payload for debugging
-      console.log("Submitting signup with:", { name, email, password: "***" })
+      // Start the sign-up process with Clerk
+      await signUp.create({
+        identifier: email,
+        password: password,
+        emailAddress: email,
+      });
 
-      const response = await fetch("/api/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, password }),
-      })
+      // // Step 2 (optional): Prepare name fields for update
+      // const firstName = name.split(" ")[0];
+      // const lastName = name.split(" ").slice(1).join(" ");
 
-      // Log the response status for debugging
-      console.log("Signup response status:", response.status)
+      // // Step 3: Attempt to set additional attributes (after sign-up)
+      // await signUp.update({
+      //   firstName,
+      //   lastName,
+      // });
 
-      // Handle non-JSON responses
-      const contentType = response.headers.get("content-type")
-      if (!contentType || !contentType.includes("application/json")) {
-        const text = await response.text()
-        console.error("Non-JSON response:", text)
-        throw new Error("Server returned non-JSON response")
+
+
+      // Show email verification component
+      setShowEmailVerification(true)
+      setLoading(false)
+    } catch (err) {
+      console.error("Signup error:", err)
+
+      let errorMessage = "An error occurred during sign up"
+      if (err.errors && err.errors.length > 0) {
+        errorMessage = err.errors[0].message
+      } else if (err.message) {
+        errorMessage = err.message
       }
 
-      const data = await response.json()
+      setError(errorMessage)
+      setLoading(false)
+    }
+  }
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to sign up")
-      }
-
-      // Success
+  const handleVerificationComplete = async (verified) => {
+    if (verified) {
+      // Set success state
       setSuccess(true)
 
       // Clear form
@@ -120,16 +136,12 @@ export default function SignUp() {
       setEmail("")
       setPassword("")
       setConfirmPassword("")
+      setShowEmailVerification(false)
 
       // Redirect to login after a short delay
       setTimeout(() => {
         router.push("/login")
       }, 2000)
-    } catch (err) {
-      console.error("Signup error:", err)
-      setError(err.message || "An error occurred during sign up")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -153,124 +165,146 @@ export default function SignUp() {
           </div>
         )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-lg p-8 space-y-6 w-full shadow-lg"
-          style={{
-            backgroundColor: siteTheme.cardBgColor,
-            borderColor: siteTheme.borderColor,
-            borderWidth: "1px",
-          }}
-        >
-          <div className="mb-4">
-            <label htmlFor="name" className="block text-lg font-medium mb-2" style={{ color: siteTheme.textColor }}>
-              Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
-              style={{
-                backgroundColor: siteTheme.secondaryBgColor,
-                color: siteTheme.textColor,
-                borderColor: siteTheme.borderColor,
-                borderWidth: "1px",
-              }}
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-lg font-medium mb-2" style={{ color: siteTheme.textColor }}>
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
-              style={{
-                backgroundColor: siteTheme.secondaryBgColor,
-                color: siteTheme.textColor,
-                borderColor: siteTheme.borderColor,
-                borderWidth: "1px",
-              }}
-            />
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="password" className="block text-lg font-medium mb-2" style={{ color: siteTheme.textColor }}>
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
-              style={{
-                backgroundColor: siteTheme.secondaryBgColor,
-                color: siteTheme.textColor,
-                borderColor: siteTheme.borderColor,
-                borderWidth: "1px",
-              }}
-            />
-            <p className="text-xs mt-1 opacity-70">
-              Must be at least 6 characters with uppercase, lowercase, number, and special character
-            </p>
-          </div>
-
-          <div className="mb-4">
-            <label
-              htmlFor="confirmPassword"
-              className="block text-lg font-medium mb-2"
-              style={{ color: siteTheme.textColor }}
-            >
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
-              style={{
-                backgroundColor: siteTheme.secondaryBgColor,
-                color: siteTheme.textColor,
-                borderColor: siteTheme.borderColor,
-                borderWidth: "1px",
-              }}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full font-semibold py-3 px-6 rounded-lg transition duration-300 ease-in-out"
+        {showEmailVerification ? (
+          <div
+            className="rounded-lg p-8 space-y-6 w-full shadow-lg"
             style={{
-              backgroundColor: siteTheme.accentColor,
-              color: siteTheme.textColor,
-              opacity: loading ? 0.7 : 1,
+              backgroundColor: siteTheme.cardBgColor,
+              borderColor: siteTheme.borderColor,
+              borderWidth: "1px",
             }}
           >
-            {loading ? "Signing Up..." : "Sign Up"}
-          </button>
-
-          <div className="text-center mt-4">
-            <p style={{ color: siteTheme.textColor }}>
-              Already have an account?{" "}
-              <Link href="/login" className="hover:underline" style={{ color: siteTheme.accentColor }}>
-                Log In
-              </Link>
-            </p>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: siteTheme.textColor }}>
+              Verify Your Email
+            </h2>
+            <EmailAuthVerification email={email} onVerificationComplete={handleVerificationComplete} />
           </div>
-        </form>
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-lg p-8 space-y-6 w-full shadow-lg"
+            style={{
+              backgroundColor: siteTheme.cardBgColor,
+              borderColor: siteTheme.borderColor,
+              borderWidth: "1px",
+            }}
+          >
+            <div className="mb-4">
+              <label htmlFor="name" className="block text-lg font-medium mb-2" style={{ color: siteTheme.textColor }}>
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  backgroundColor: siteTheme.secondaryBgColor,
+                  color: siteTheme.textColor,
+                  borderColor: siteTheme.borderColor,
+                  borderWidth: "1px",
+                }}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="email" className="block text-lg font-medium mb-2" style={{ color: siteTheme.textColor }}>
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  backgroundColor: siteTheme.secondaryBgColor,
+                  color: siteTheme.textColor,
+                  borderColor: siteTheme.borderColor,
+                  borderWidth: "1px",
+                }}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label
+                htmlFor="password"
+                className="block text-lg font-medium mb-2"
+                style={{ color: siteTheme.textColor }}
+              >
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  backgroundColor: siteTheme.secondaryBgColor,
+                  color: siteTheme.textColor,
+                  borderColor: siteTheme.borderColor,
+                  borderWidth: "1px",
+                }}
+              />
+              <p className="text-xs mt-1 opacity-70">
+                Must be at least 6 characters with uppercase, lowercase, number, and special character
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-lg font-medium mb-2"
+                style={{ color: siteTheme.textColor }}
+              >
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                style={{
+                  backgroundColor: siteTheme.secondaryBgColor,
+                  color: siteTheme.textColor,
+                  borderColor: siteTheme.borderColor,
+                  borderWidth: "1px",
+                }}
+              />
+            </div>
+
+            <div id="clerk-captcha"></div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full font-semibold py-3 px-6 rounded-lg transition duration-300 ease-in-out"
+              style={{
+                backgroundColor: siteTheme.accentColor,
+                color: siteTheme.textColor,
+                opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {loading ? "Signing Up..." : "Sign Up"}
+            </button>
+
+            <div className="text-center mt-4">
+              <p style={{ color: siteTheme.textColor }}>
+                Already have an account?{" "}
+                <Link href="/login" className="hover:underline" style={{ color: siteTheme.accentColor }}>
+                  Log In
+                </Link>
+              </p>
+            </div>
+          </form>
+        )}
       </main>
     </div>
   )
