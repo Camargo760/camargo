@@ -2,11 +2,9 @@
 
 import './global.css';
 import { SessionProvider } from 'next-auth/react';
-import { ClerkProvider } from '@clerk/nextjs';
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
       <html lang="en">
         <head>
           <link rel="icon" href="/assets/sleeve.png" type="image/png" />
@@ -17,7 +15,6 @@ export default function RootLayout({ children }) {
           </SessionProvider>
         </body>
       </html>
-    </ClerkProvider>
   );
 }
 
