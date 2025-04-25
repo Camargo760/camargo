@@ -1,311 +1,296 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import Header from "../../components/Header"
-import { useSignUp } from "@clerk/nextjs"
-import EmailAuthVerification from "../../components/EmailAuthVerification"
+import { useState, useEffect, useRef } from "react"
+import {
+    getAuth,
+    RecaptchaVerifier,
+    signInWithPhoneNumber
+} from "firebase/auth"
+import { initializeApp } from "firebase/app"
 
-export default function SignUp() {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [showEmailVerification, setShowEmailVerification] = useState(false)
-  const [siteTheme, setSiteTheme] = useState({
-    bgColor: "#0a0a0a",
-    cardBgColor: "#1a1a1a",
-    accentColor: "#ff3e00",
-    textColor: "#f0f0f0",
-    secondaryBgColor: "#2a2a2a",
-    borderColor: "#333",
-  })
-
-  const router = useRouter()
-  const { signUp, setActive } = useSignUp()
-
-  // Password validation
-  const validatePassword = (password) => {
-    const errors = []
-    if (password.length < 6) errors.push("Password must be at least 6 characters long")
-    if (!/[A-Z]/.test(password)) errors.push("Password must contain at least one uppercase letter")
-    if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter")
-    if (!/[0-9]/.test(password)) errors.push("Password must contain at least one number")
-    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password))
-      errors.push("Password must contain at least one special character")
-
-    return errors
-  }
-
-  useEffect(() => {
-    const fetchSiteTheme = async () => {
-      try {
-        const res = await fetch("/api/site-theme")
-        if (res.ok) {
-          const data = await res.json()
-          if (data.theme) {
-            setSiteTheme(data.theme)
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching site theme:", err)
-      }
-    }
-
-    fetchSiteTheme()
-  }, [])
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    setError("")
-    setLoading(true)
-
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      setLoading(false)
-      return
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address")
-      setLoading(false)
-      return
-    }
-
-    // Validate password strength
-    const passwordErrors = validatePassword(password)
-    if (passwordErrors.length > 0) {
-      setError(passwordErrors.join(". "))
-      setLoading(false)
-      return
-    }
-
-    try {
-      // Start the sign-up process with Clerk
-      await signUp.create({
-        identifier: email,
-        password: password,
-        emailAddress: email,
-      });
-
-      // // Step 2 (optional): Prepare name fields for update
-      // const firstName = name.split(" ")[0];
-      // const lastName = name.split(" ").slice(1).join(" ");
-
-      // // Step 3: Attempt to set additional attributes (after sign-up)
-      // await signUp.update({
-      //   firstName,
-      //   lastName,
-      // });
-
-
-
-      // Show email verification component
-      setShowEmailVerification(true)
-      setLoading(false)
-    } catch (err) {
-      console.error("Signup error:", err)
-
-      let errorMessage = "An error occurred during sign up"
-      if (err.errors && err.errors.length > 0) {
-        errorMessage = err.errors[0].message
-      } else if (err.message) {
-        errorMessage = err.message
-      }
-
-      setError(errorMessage)
-      setLoading(false)
-    }
-  }
-
-  const handleVerificationComplete = async (verified) => {
-    if (verified) {
-      // Set success state
-      setSuccess(true)
-
-      // Clear form
-      setName("")
-      setEmail("")
-      setPassword("")
-      setConfirmPassword("")
-      setShowEmailVerification(false)
-
-      // Redirect to login after a short delay
-      setTimeout(() => {
-        router.push("/login")
-      }, 2000)
-    }
-  }
-
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
-      <Header />
-      <main className="container mx-auto py-10 px-4 md:px-8 w-full max-w-lg flex flex-col items-center">
-        <h1 className="text-3xl font-extrabold mb-8 text-center" style={{ color: siteTheme.textColor }}>
-          Sign Up
-        </h1>
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 w-full">
-            <p>{error}</p>
-          </div>
-        )}
-
-        {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 w-full">
-            <p>Account created successfully! Redirecting to login...</p>
-          </div>
-        )}
-
-        {showEmailVerification ? (
-          <div
-            className="rounded-lg p-8 space-y-6 w-full shadow-lg"
-            style={{
-              backgroundColor: siteTheme.cardBgColor,
-              borderColor: siteTheme.borderColor,
-              borderWidth: "1px",
-            }}
-          >
-            <h2 className="text-xl font-semibold mb-4" style={{ color: siteTheme.textColor }}>
-              Verify Your Email
-            </h2>
-            <EmailAuthVerification email={email} onVerificationComplete={handleVerificationComplete} />
-          </div>
-        ) : (
-          <form
-            onSubmit={handleSubmit}
-            className="rounded-lg p-8 space-y-6 w-full shadow-lg"
-            style={{
-              backgroundColor: siteTheme.cardBgColor,
-              borderColor: siteTheme.borderColor,
-              borderWidth: "1px",
-            }}
-          >
-            <div className="mb-4">
-              <label htmlFor="name" className="block text-lg font-medium mb-2" style={{ color: siteTheme.textColor }}>
-                Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
-                style={{
-                  backgroundColor: siteTheme.secondaryBgColor,
-                  color: siteTheme.textColor,
-                  borderColor: siteTheme.borderColor,
-                  borderWidth: "1px",
-                }}
-              />
-            </div>
-
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-lg font-medium mb-2" style={{ color: siteTheme.textColor }}>
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
-                style={{
-                  backgroundColor: siteTheme.secondaryBgColor,
-                  color: siteTheme.textColor,
-                  borderColor: siteTheme.borderColor,
-                  borderWidth: "1px",
-                }}
-              />
-            </div>
-
-            <div className="mb-4">
-              <label
-                htmlFor="password"
-                className="block text-lg font-medium mb-2"
-                style={{ color: siteTheme.textColor }}
-              >
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
-                style={{
-                  backgroundColor: siteTheme.secondaryBgColor,
-                  color: siteTheme.textColor,
-                  borderColor: siteTheme.borderColor,
-                  borderWidth: "1px",
-                }}
-              />
-              <p className="text-xs mt-1 opacity-70">
-                Must be at least 6 characters with uppercase, lowercase, number, and special character
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <label
-                htmlFor="confirmPassword"
-                className="block text-lg font-medium mb-2"
-                style={{ color: siteTheme.textColor }}
-              >
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2"
-                style={{
-                  backgroundColor: siteTheme.secondaryBgColor,
-                  color: siteTheme.textColor,
-                  borderColor: siteTheme.borderColor,
-                  borderWidth: "1px",
-                }}
-              />
-            </div>
-
-            <div id="clerk-captcha"></div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full font-semibold py-3 px-6 rounded-lg transition duration-300 ease-in-out"
-              style={{
-                backgroundColor: siteTheme.accentColor,
-                color: siteTheme.textColor,
-                opacity: loading ? 0.7 : 1,
-              }}
-            >
-              {loading ? "Signing Up..." : "Sign Up"}
-            </button>
-
-            <div className="text-center mt-4">
-              <p style={{ color: siteTheme.textColor }}>
-                Already have an account?{" "}
-                <Link href="/login" className="hover:underline" style={{ color: siteTheme.accentColor }}>
-                  Log In
-                </Link>
-              </p>
-            </div>
-          </form>
-        )}
-      </main>
-    </div>
-  )
+// Firebase configuration - replace with your own config
+const firebaseConfig = {
+    apiKey: "AIzaSyAwgtSF2fU5YipJyztEpKkN_SPsi3QW1-4",
+    authDomain: "myproject-3c36e.firebaseapp.com",
+    projectId: "myproject-3c36e",
+    storageBucket: "myproject-3c36e.firebasestorage.app",
+    messagingSenderId: "599358717709",
+    appId: "1:599358717709:web:06a4f41082eb0f58277a44",
 }
+
+// Initialize Firebase app only once
+let app;
+let auth;
+if (typeof window !== 'undefined') {
+    if (!app) {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+    }
+}
+
+const FirebasePhoneAuth = ({ phone, onVerificationComplete }) => {
+    const [otpCode, setOtpCode] = useState("")
+    const [isCodeSent, setIsCodeSent] = useState(false)
+    const [error, setError] = useState(null)
+    const [loading, setLoading] = useState(false)
+    const [confirmationResult, setConfirmationResult] = useState(null)
+    const [recaptchaVerified, setRecaptchaVerified] = useState(false)
+
+    // Use a ref for the reCAPTCHA verifier
+    const recaptchaVerifierRef = useRef(null)
+    const recaptchaContainerRef = useRef(null)
+
+    useEffect(() => {
+        // Initialize Firebase if not already initialized
+        if (typeof window !== 'undefined') {
+            if (!app) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                auth.languageCode = 'en';
+            }
+        }
+
+        return () => {
+            // Clean up reCAPTCHA when component unmounts
+            if (recaptchaVerifierRef.current) {
+                try {
+                    recaptchaVerifierRef.current.clear();
+                } catch (error) {
+                    console.error("Error clearing reCAPTCHA:", error);
+                }
+                recaptchaVerifierRef.current = null;
+            }
+        }
+    }, []);
+
+    // Set up reCAPTCHA after the component has mounted and the container is available
+    useEffect(() => {
+        if (!isCodeSent && !recaptchaVerifierRef.current && recaptchaContainerRef.current) {
+            try {
+                const currentAuth = getAuth(); // safely get auth from already initialized app
+                currentAuth.languageCode = 'en';
+                recaptchaVerifierRef.current = new RecaptchaVerifier(
+                    recaptchaContainerRef.current,
+                    {
+                        'size': 'normal',
+                        'callback': () => {
+                            setRecaptchaVerified(true);
+                        },
+                        'expired-callback': () => {
+                            setRecaptchaVerified(false);
+                            setError("reCAPTCHA expired. Please verify again.");
+                        }
+                    },
+                    auth // Pass it as the 3rd argument here
+                );
+
+                recaptchaVerifierRef.current.render();
+            } catch (error) {
+                console.error("Error setting up reCAPTCHA:", error);
+                setError("Failed to set up phone verification. Please try again.");
+            }
+        }
+    }, [isCodeSent]);
+
+    const formatPhoneNumber = (phoneNumber) => {
+        // Format phone number to E.164 format
+        let formattedPhone = phoneNumber.trim()
+        if (!formattedPhone.startsWith("+")) {
+            // Check if it has a 1 at the start (US number)
+            if (!/^1/.test(formattedPhone.replace(/\D/g, ""))) {
+                formattedPhone = "+1" + formattedPhone.replace(/\D/g, "")
+            } else {
+                formattedPhone = "+" + formattedPhone.replace(/\D/g, "")
+            }
+        } else {
+            // Just clean the number but preserve the + sign
+            formattedPhone = "+" + formattedPhone.replace(/\D/g, "")
+        }
+        return formattedPhone
+    }
+
+    const sendVerificationCode = async () => {
+        try {
+            setError(null)
+            setLoading(true)
+
+            if (!recaptchaVerified) {
+                setError("Please complete the reCAPTCHA verification first")
+                setLoading(false)
+                return
+            }
+
+            const formattedPhone = formatPhoneNumber(phone)
+
+            // Send verification code
+            const confirmation = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifierRef.current)
+            setConfirmationResult(confirmation)
+
+            console.log("Verification code sent successfully!")
+            setIsCodeSent(true)
+            setLoading(false)
+        } catch (err) {
+            console.error("Error sending verification code:", err)
+
+            let errorMessage = "Failed to send verification code"
+            if (err.code === 'auth/invalid-phone-number') {
+                errorMessage = "Invalid phone number format. Please try again."
+            } else if (err.code === 'auth/too-many-requests') {
+                errorMessage = "Too many requests. Please try again later."
+            } else if (err.message) {
+                errorMessage = err.message
+            }
+
+            setError(errorMessage)
+            setLoading(false)
+
+            // Reset reCAPTCHA if there's an error
+            if (recaptchaVerifierRef.current) {
+                try {
+                    recaptchaVerifierRef.current.clear();
+                } catch (error) {
+                    console.error("Error clearing reCAPTCHA:", error);
+                }
+                recaptchaVerifierRef.current = null;
+                setRecaptchaVerified(false);
+
+                // The reCAPTCHA will be reinitialized by the useEffect
+            }
+        }
+    }
+
+    const verifyCode = async () => {
+        try {
+            setError(null)
+            setLoading(true)
+
+            if (!confirmationResult) {
+                throw new Error("No verification code was sent. Please try again.")
+            }
+
+            // Confirm the verification code
+            const result = await confirmationResult.confirm(otpCode)
+
+            // User signed in successfully
+            const user = result.user
+            console.log("Phone verification successful!", user)
+
+            setLoading(false)
+            onVerificationComplete(true)
+        } catch (err) {
+            console.error("Error verifying code:", err)
+
+            let errorMessage = "Invalid verification code"
+            if (err.code === 'auth/invalid-verification-code') {
+                errorMessage = "Invalid verification code. Please try again."
+            } else if (err.code === 'auth/code-expired') {
+                errorMessage = "Verification code has expired. Please request a new one."
+            } else if (err.message) {
+                errorMessage = err.message
+            }
+
+            setError(errorMessage)
+            setLoading(false)
+        }
+    }
+
+    const resetVerification = () => {
+        setIsCodeSent(false)
+        setOtpCode("")
+        setError(null)
+        setConfirmationResult(null)
+
+        // Reset reCAPTCHA
+        if (recaptchaVerifierRef.current) {
+            try {
+                recaptchaVerifierRef.current.clear();
+            } catch (error) {
+                console.error("Error clearing reCAPTCHA:", error);
+            }
+            recaptchaVerifierRef.current = null;
+            setRecaptchaVerified(false);
+        }
+    }
+
+    if (!isCodeSent) {
+        return (
+            <div className="mb-6">
+                <div className="flex items-center mb-4">
+                    <div className="w-full">
+                        <div className="text-sm text-gray-600 mb-2">We'll send a verification code to this phone number</div>
+                        <div className="font-medium">{phone}</div>
+                    </div>
+                </div>
+
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-4 text-sm">{error}</div>
+                )}
+
+                <div ref={recaptchaContainerRef} className="mb-4"></div>
+
+                <button
+                    onClick={sendVerificationCode}
+                    disabled={loading || !recaptchaVerified}
+                    className={`w-full py-2 px-4 rounded focus:outline-none focus:shadow-outline ${(!loading && recaptchaVerified)
+                        ? "bg-blue-500 hover:bg-blue-700 text-white"
+                        : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                        }`}
+                >
+                    {loading ? "Sending..." : "Send Verification Code"}
+                </button>
+            </div>
+        )
+    }
+
+    return (
+        <div className="mb-6">
+            <div className="text-sm text-gray-600 mb-2">Enter the 6-digit verification code sent to {phone}</div>
+
+            <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-4"
+                type="text"
+                placeholder="6-digit code"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                maxLength={6}
+            />
+
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-4 text-sm">{error}</div>
+            )}
+
+            <div className="flex space-x-2">
+                <button
+                    onClick={resetVerification}
+                    className="py-2 px-4 border border-gray-300 rounded focus:outline-none hover:bg-gray-100"
+                >
+                    Change Number
+                </button>
+
+                <button
+                    onClick={verifyCode}
+                    disabled={loading || otpCode.length !== 6}
+                    className={`flex-1 py-2 px-4 rounded focus:outline-none focus:shadow-outline ${otpCode.length === 6
+                        ? "bg-blue-500 hover:bg-blue-700 text-white"
+                        : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                        }`}
+                >
+                    {loading ? "Verifying..." : "Verify Code"}
+                </button>
+            </div>
+
+            <div className="text-sm text-gray-600 mt-4 text-center">
+                Didn't receive the code?{" "}
+                <button
+                    onClick={resetVerification}
+                    disabled={loading}
+                    className="text-blue-600 hover:underline"
+                >
+                    Resend Code
+                </button>
+            </div>
+        </div>
+    )
+}
+
+export default FirebasePhoneAuth
