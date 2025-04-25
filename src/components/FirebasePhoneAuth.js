@@ -217,7 +217,7 @@ const FirebasePhoneAuth = ({ phone, onVerificationComplete }) => {
             <div className="mb-6">
                 <div className="flex items-center mb-4">
                     <div className="w-full">
-                        <div className="text-sm text-gray-600 mb-2">We'll send a verification code to this phone number</div>
+                        <div className="text-sm text-gray-600 mb-2">We will send a verification code to this phone number</div>
                         <div className="font-medium">{phone}</div>
                     </div>
                 </div>
@@ -280,7 +280,7 @@ const FirebasePhoneAuth = ({ phone, onVerificationComplete }) => {
             </div>
 
             <div className="text-sm text-gray-600 mt-4 text-center">
-                Didn't receive the code?{" "}
+                Did not receive the code?{" "}
                 <button
                     onClick={resetVerification}
                     disabled={loading}
