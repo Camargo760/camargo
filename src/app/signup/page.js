@@ -168,7 +168,7 @@ export default function SignUp() {
             </svg>
             <h3 className="text-xl font-bold mb-2">Check your email</h3>
             <p className="mb-4">
-              We've sent a verification link to <strong>{email}</strong>
+              We sent a verification link to <strong>{email}</strong>
             </p>
             <p className="mb-6">
               Click the link in the email to verify your account and complete sign up.
@@ -188,7 +188,7 @@ export default function SignUp() {
             )}
 
             <div className="text-sm mt-6">
-              Didn't receive the email? Check your spam folder or{" "}
+              Didnt receive the email? Check your spam folder or{" "}
               <button
                 onClick={sendVerificationEmail}
                 disabled={loading}
