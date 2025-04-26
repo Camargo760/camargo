@@ -11,7 +11,7 @@ import { initializeApp } from "firebase/app"
 // Firebase configuration - replace with your own config
 const firebaseConfig = {
     apiKey: "AIzaSyAwgtSF2fU5YipJyztEpKkN_SPsi3QW1-4",
-  authDomain: "myproject-3c36e.firebaseapp.com",
+  authDomain: "camargosworld.com",
   projectId: "myproject-3c36e",
   storageBucket: "myproject-3c36e.firebasestorage.app",
   messagingSenderId: "599358717709",
