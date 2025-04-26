@@ -15,12 +15,12 @@ const EmailAuthVerification = ({ email, onVerificationComplete }) => {
     // Initialize Firebase and check for email link on component mount
     useEffect(() => {
         const firebaseConfig = {
-            apiKey: "AIzaSyAa2ypCdwLJfp88i1e0w-9GJE8iFnk6CuY",
-            authDomain: "camargosworld-38371.firebaseapp.com",
-            projectId: "camargosworld-38371",
-            storageBucket: "camargosworld-38371.firebasestorage.app",
-            messagingSenderId: "641311677825",
-            appId: "1:641311677825:web:097da69d25ce455fec1c80"
+             apiKey: "AIzaSyAa2ypCdwLJfp88i1e0w-9GJE8iFnk6CuY",
+  authDomain: "camargosworld-38371.firebaseapp.com",
+  projectId: "camargosworld-38371",
+  storageBucket: "camargosworld-38371.firebasestorage.app",
+  messagingSenderId: "641311677825",
+  appId: "1:641311677825:web:097da69d25ce455fec1c80"
         }
 
         try {
@@ -132,7 +132,7 @@ const EmailAuthVerification = ({ email, onVerificationComplete }) => {
                 </svg>
                 <h3 className="text-xl font-bold mb-2">Check your email</h3>
                 <p className="text-gray-600 mb-4">
-                    We've sent a verification link to <strong>{email}</strong>
+                    Weve sent a verification link to <strong>{email}</strong>
                 </p>
                 <p className="text-gray-600 mb-6">
                     Click the link in the email to verify your account and complete sign up.
@@ -145,7 +145,7 @@ const EmailAuthVerification = ({ email, onVerificationComplete }) => {
                 )}
 
                 <div className="text-sm text-gray-600 mt-6">
-                    Didn't receive the email? Check your spam folder or{" "}
+                    Didnt receive the email? Check your spam folder or{" "}
                     <button
                         onClick={sendVerificationEmail}
                         disabled={loading}
