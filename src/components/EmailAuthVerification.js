@@ -172,7 +172,7 @@ const EmailAuthVerification = ({ email, onVerificationComplete }) => {
         <div className="mb-6">
             <div className="flex items-center mb-4">
                 <div className="w-full">
-                    <div className="text-sm text-gray-600 mb-2">We'll send a verification link to this email address</div>
+                    <div className="text-sm text-gray-600 mb-2">Well send a verification link to this email address</div>
                     <div className="font-medium">{email}</div>
                 </div>
             </div>
