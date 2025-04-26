@@ -10,12 +10,12 @@ import { initializeApp } from "firebase/app"
 
 // Firebase configuration - replace with your own config
 const firebaseConfig = {
-     apiKey: "AIzaSyAa2ypCdwLJfp88i1e0w-9GJE8iFnk6CuY",
-  authDomain: "camargosworld.com",
-  projectId: "camargosworld-38371",
-  storageBucket: "camargosworld-38371.firebasestorage.app",
-  messagingSenderId: "641311677825",
-  appId: "1:641311677825:web:097da69d25ce455fec1c80"
+    apiKey: "AIzaSyAwgtSF2fU5YipJyztEpKkN_SPsi3QW1-4",
+  authDomain: "myproject-3c36e.firebaseapp.com",
+  projectId: "myproject-3c36e",
+  storageBucket: "myproject-3c36e.firebasestorage.app",
+  messagingSenderId: "599358717709",
+  appId: "1:599358717709:web:06a4f41082eb0f58277a44",
 }
 
 // Initialize Firebase app only once
