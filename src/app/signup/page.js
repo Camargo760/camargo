@@ -4,6 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Header from "../../components/Header"
+import { initializeApp, getApps, getApp } from "firebase/app"
+import { getAuth, sendSignInLinkToEmail } from "firebase/auth"
 
 export default function SignUp() {
   const [name, setName] = useState("")
@@ -12,6 +14,7 @@ export default function SignUp() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [isEmailSent, setIsEmailSent] = useState(false)
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -40,6 +43,27 @@ export default function SignUp() {
     fetchSiteTheme()
   }, [])
 
+  const initializeFirebase = () => {
+    const firebaseConfig = {
+      apiKey: "AIzaSyAa2ypCdwLJfp88i1e0w-9GJE8iFnk6CuY",
+      authDomain: "camargosworld-38371.firebaseapp.com",
+      projectId: "camargosworld-38371",
+      storageBucket: "camargosworld-38371.firebasestorage.app",
+      messagingSenderId: "641311677825",
+      appId: "1:641311677825:web:097da69d25ce455fec1c80"
+    }
+
+    try {
+      // Initialize Firebase if not already initialized
+      const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
+      return getAuth(app)
+    } catch (error) {
+      console.error("Error initializing Firebase:", error)
+      setError("Failed to initialize authentication. Please try again later.")
+      return null
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -47,10 +71,8 @@ export default function SignUp() {
     setLoading(true)
 
     try {
-      // Log the request payload for debugging
-      console.log("Submitting signup with:", { name, email, password: "***" })
-
-      const response = await fetch("/api/signup", {
+      // First register the user in your backend
+      const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -58,10 +80,6 @@ export default function SignUp() {
         body: JSON.stringify({ name, email, password }),
       })
 
-      // Log the response status for debugging
-      console.log("Signup response status:", response.status)
-
-      // Handle non-JSON responses
       const contentType = response.headers.get("content-type")
       if (!contentType || !contentType.includes("application/json")) {
         const text = await response.text()
@@ -75,24 +93,125 @@ export default function SignUp() {
         throw new Error(data.error || "Failed to sign up")
       }
 
-      // Success
-      setSuccess(true)
-
-      // Clear form
-      setName("")
-      setEmail("")
-      setPassword("")
-
-      // Redirect to login after a short delay
-      setTimeout(() => {
-        router.push("/login")
-      }, 2000)
+      // Now send verification email via Firebase
+      await sendVerificationEmail()
+      
     } catch (err) {
       console.error("Signup error:", err)
       setError(err.message || "An error occurred during sign up")
-    } finally {
       setLoading(false)
     }
+  }
+
+  const sendVerificationEmail = async () => {
+    try {
+      const auth = initializeFirebase()
+      if (!auth) return
+
+      const actionCodeSettings = {
+        url: window.location.origin + "/email-verification-complete",
+        handleCodeInApp: true,
+      }
+
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings)
+
+      // Save the email for later use
+      window.localStorage.setItem('emailForSignIn', email)
+
+      console.log("Verification email sent successfully!")
+      setIsEmailSent(true)
+      setSuccess(true)
+      setLoading(false)
+    } catch (err) {
+      console.error("Error sending verification email:", err)
+      let errorMessage = "Failed to send verification email"
+
+      if (err.code === "auth/invalid-email") {
+        errorMessage = "The email address is invalid. Please enter a valid email."
+      } else if (err.code === "auth/user-disabled") {
+        errorMessage = "This user account has been disabled."
+      } else if (err.code === "auth/network-request-failed") {
+        errorMessage = "Network error. Please check your internet connection and try again."
+      }
+
+      setError(errorMessage)
+      setLoading(false)
+    }
+  }
+
+  if (isEmailSent) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
+        <Header />
+        <main className="container mx-auto py-10 px-4 md:px-8 w-full max-w-lg flex flex-col items-center">
+          <div 
+            className="rounded-lg p-8 space-y-6 w-full shadow-lg text-center"
+            style={{
+              backgroundColor: siteTheme.cardBgColor,
+              borderColor: siteTheme.borderColor,
+              borderWidth: "1px",
+            }}
+          >
+            <svg 
+              className="w-16 h-16 mx-auto mb-4" 
+              fill="none" 
+              stroke={siteTheme.accentColor} 
+              viewBox="0 0 24 24" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth="2" 
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+            <h3 className="text-xl font-bold mb-2">Check your email</h3>
+            <p className="mb-4">
+              We've sent a verification link to <strong>{email}</strong>
+            </p>
+            <p className="mb-6">
+              Click the link in the email to verify your account and complete sign up.
+            </p>
+
+            {error && (
+              <div 
+                className="px-3 py-2 rounded mb-4 text-sm"
+                style={{ 
+                  backgroundColor: "rgba(239, 68, 68, 0.2)", 
+                  color: "#ef4444",
+                  border: "1px solid #ef4444"
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            <div className="text-sm mt-6">
+              Didn't receive the email? Check your spam folder or{" "}
+              <button
+                onClick={sendVerificationEmail}
+                disabled={loading}
+                className="hover:underline font-medium"
+                style={{ color: siteTheme.accentColor }}
+              >
+                {loading ? "Sending..." : "Send again"}
+              </button>
+            </div>
+
+            <div className="mt-6">
+              <button
+                onClick={() => setIsEmailSent(false)}
+                className="hover:underline"
+                style={{ color: siteTheme.textColor, opacity: 0.8 }}
+              >
+                Use a different email address
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -104,13 +223,27 @@ export default function SignUp() {
         </h1>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 w-full">
+          <div 
+            className="px-4 py-3 rounded mb-4 w-full"
+            style={{ 
+              backgroundColor: "rgba(239, 68, 68, 0.2)", 
+              color: "#ef4444",
+              border: "1px solid #ef4444"
+            }}
+          >
             <p>{error}</p>
           </div>
         )}
 
-        {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 w-full">
+        {success && !isEmailSent && (
+          <div 
+            className="px-4 py-3 rounded mb-4 w-full"
+            style={{ 
+              backgroundColor: "rgba(34, 197, 94, 0.2)", 
+              color: "#22c55e",
+              border: "1px solid #22c55e"
+            }}
+          >
             <p>Account created successfully! Redirecting to login...</p>
           </div>
         )}
@@ -187,7 +320,7 @@ export default function SignUp() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full font-semibold py-3 px-6 rounde-lg transition duration-300 ease-in-out"
+            className="w-full font-semibold py-3 px-6 rounded-lg transition duration-300 ease-in-out"
             style={{
               backgroundColor: siteTheme.accentColor,
               color: siteTheme.textColor,
