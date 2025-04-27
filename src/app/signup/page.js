@@ -12,7 +12,6 @@ export default function SignUp() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [isEmailSent, setIsEmailSent] = useState(false)
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -40,6 +39,22 @@ export default function SignUp() {
 
     fetchSiteTheme()
   }, [])
+
+  useEffect(() => {
+    if (success) {
+      // Clear the form fields
+      setName("")
+      setEmail("")
+      setPassword("")
+      
+      // Redirect to login page after 3 seconds
+      const timer = setTimeout(() => {
+        router.push("/login")
+      }, 3000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [success, router])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -70,32 +85,13 @@ export default function SignUp() {
         throw new Error(data.error || "Failed to sign up")
       }
 
-      // Instead of Firebase email verification, simulate email sending
-      setTimeout(() => {
-        setIsEmailSent(true)
-        setSuccess(true)
-        setLoading(false)
-      }, 1000)
+      // Set success state to show success message and trigger redirect
+      setSuccess(true)
+      setLoading(false)
       
     } catch (err) {
       console.error("Signup error:", err)
       setError(err.message || "An error occurred during sign up")
-      setLoading(false)
-    }
-  }
-
-  const sendVerificationEmail = async () => {
-    try {
-      setLoading(true)
-      
-      // Simulate sending verification email
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      console.log("Verification email sent successfully!")
-      setLoading(false)
-    } catch (err) {
-      console.error("Error sending verification email:", err)
-      setError("Failed to send verification email. Please try again.")
       setLoading(false)
     }
   }
@@ -121,7 +117,7 @@ export default function SignUp() {
           </div>
         )}
 
-        {success && !isEmailSent && (
+        {success && (
           <div 
             className="px-4 py-3 rounded mb-4 w-full"
             style={{ 
@@ -130,7 +126,7 @@ export default function SignUp() {
               border: "1px solid #22c55e"
             }}
           >
-            <p>Account created successfully! Redirecting to login...</p>
+            <p>Account created successfully! Redirecting to login page...</p>
           </div>
         )}
 
@@ -205,15 +201,15 @@ export default function SignUp() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || success}
             className="w-full font-semibold py-3 px-6 rounded-lg transition duration-300 ease-in-out"
             style={{
               backgroundColor: siteTheme.accentColor,
               color: siteTheme.textColor,
-              opacity: loading ? 0.7 : 1,
+              opacity: (loading || success) ? 0.7 : 1,
             }}
           >
-            {loading ? "Signing Up..." : "Sign Up"}
+            {loading ? "Signing Up..." : success ? "Success!" : "Sign Up"}
           </button>
 
           <div className="text-center mt-4">
