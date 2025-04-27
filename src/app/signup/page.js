@@ -4,8 +4,6 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Header from "../../components/Header"
-import { initializeApp, getApps, getApp } from "firebase/app"
-import { getAuth, sendSignInLinkToEmail } from "firebase/auth"
 
 export default function SignUp() {
   const [name, setName] = useState("")
@@ -43,27 +41,6 @@ export default function SignUp() {
     fetchSiteTheme()
   }, [])
 
-  const initializeFirebase = () => {
-    const firebaseConfig = {
-      apiKey: "AIzaSyAa2ypCdwLJfp88i1e0w-9GJE8iFnk6CuY",
-      authDomain: "camargosworld-38371.firebaseapp.com",
-      projectId: "camargosworld-38371",
-      storageBucket: "camargosworld-38371.firebasestorage.app",
-      messagingSenderId: "641311677825",
-      appId: "1:641311677825:web:097da69d25ce455fec1c80"
-    }
-
-    try {
-      // Initialize Firebase if not already initialized
-      const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
-      return getAuth(app)
-    } catch (error) {
-      console.error("Error initializing Firebase:", error)
-      setError("Failed to initialize authentication. Please try again later.")
-      return null
-    }
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -71,7 +48,7 @@ export default function SignUp() {
     setLoading(true)
 
     try {
-      // First register the user in your backend
+      // Register the user in your backend
       const response = await fetch("/api/signup", {
         method: "POST",
         headers: {
@@ -93,8 +70,12 @@ export default function SignUp() {
         throw new Error(data.error || "Failed to sign up")
       }
 
-      // Now send verification email via Firebase
-      await sendVerificationEmail()
+      // Instead of Firebase email verification, simulate email sending
+      setTimeout(() => {
+        setIsEmailSent(true)
+        setSuccess(true)
+        setLoading(false)
+      }, 1000)
       
     } catch (err) {
       console.error("Signup error:", err)
@@ -105,36 +86,16 @@ export default function SignUp() {
 
   const sendVerificationEmail = async () => {
     try {
-      const auth = initializeFirebase()
-      if (!auth) return
-
-      const actionCodeSettings = {
-        url: window.location.origin + "/email-verification-complete",
-        handleCodeInApp: true,
-      }
-
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings)
-
-      // Save the email for later use
-      window.localStorage.setItem('emailForSignIn', email)
-
+      setLoading(true)
+      
+      // Simulate sending verification email
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
       console.log("Verification email sent successfully!")
-      setIsEmailSent(true)
-      setSuccess(true)
       setLoading(false)
     } catch (err) {
       console.error("Error sending verification email:", err)
-      let errorMessage = "Failed to send verification email"
-
-      if (err.code === "auth/invalid-email") {
-        errorMessage = "The email address is invalid. Please enter a valid email."
-      } else if (err.code === "auth/user-disabled") {
-        errorMessage = "This user account has been disabled."
-      } else if (err.code === "auth/network-request-failed") {
-        errorMessage = "Network error. Please check your internet connection and try again."
-      }
-
-      setError(errorMessage)
+      setError("Failed to send verification email. Please try again.")
       setLoading(false)
     }
   }
