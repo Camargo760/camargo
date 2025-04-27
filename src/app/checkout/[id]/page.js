@@ -6,7 +6,6 @@ import Image from "next/image"
 import Header from "../../../components/Header"
 import PaymentModal from "../../../components/payment-modal"
 import DeliveryPaymentForm from "../../../components/delivery-payment-form"
-import FirebasePhoneAuth from "../../../components/FirebasePhoneAuth" // Import our new component
 import { loadStripe } from "@stripe/stripe-js"
 import { useSession } from "next-auth/react"
 
@@ -28,8 +27,6 @@ export default function Checkout({ params }) {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isDeliveryFormOpen, setIsDeliveryFormOpen] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null)
-  const [showPhoneVerification, setShowPhoneVerification] = useState(false)
-  const [phoneVerified, setPhoneVerified] = useState(false)
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -159,17 +156,8 @@ export default function Checkout({ params }) {
       return
     }
 
-    // Show phone verification before payment
-    setShowPhoneVerification(true)
-  }
-
-  const handlePhoneVerificationComplete = (verified) => {
-    if (verified) {
-      setPhoneVerified(true)
-      setShowPhoneVerification(false)
-      // Open payment method selection modal
-      setIsPaymentModalOpen(true)
-    }
+    // Open payment method selection modal directly without phone verification
+    setIsPaymentModalOpen(true)
   }
 
   const handleSelectPaymentMethod = async (method) => {
@@ -384,137 +372,126 @@ export default function Checkout({ params }) {
               borderWidth: "1px",
             }}
           >
-            {showPhoneVerification ? (
-              <div>
-                <h2 className="text-xl font-semibold mb-4" style={{ color: siteTheme.textColor }}>
-                  Verify Your Phone Number
-                </h2>
-                <FirebasePhoneAuth phone={phone} onVerificationComplete={handlePhoneVerificationComplete} />
+            <h2 className="text-xl font-semibold mb-4" style={{ color: siteTheme.textColor }}>
+              Customer Information
+            </h2>
+
+            <form onSubmit={handleProceedToPayment}>
+              <div className="mb-4">
+                <label
+                  className="block text-sm font-bold mb-2"
+                  htmlFor="name"
+                  style={{ color: siteTheme.textColor }}
+                >
+                  Full Name
+                </label>
+                <input
+                  className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                    borderWidth: "1px",
+                  }}
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
               </div>
-            ) : (
-              <>
-                <h2 className="text-xl font-semibold mb-4" style={{ color: siteTheme.textColor }}>
-                  Customer Information
-                </h2>
 
-                <form onSubmit={handleProceedToPayment}>
-                  <div className="mb-4">
-                    <label
-                      className="block text-sm font-bold mb-2"
-                      htmlFor="name"
-                      style={{ color: siteTheme.textColor }}
-                    >
-                      Full Name
-                    </label>
-                    <input
-                      className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                        borderWidth: "1px",
-                      }}
-                      id="name"
-                      type="text"
-                      placeholder="John Doe"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                    />
-                  </div>
+              <div className="mb-4">
+                <label
+                  className="block text-sm font-bold mb-2"
+                  htmlFor="email"
+                  style={{ color: siteTheme.textColor }}
+                >
+                  Email
+                </label>
+                <input
+                  className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                    borderWidth: "1px",
+                  }}
+                  id="email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
 
-                  <div className="mb-4">
-                    <label
-                      className="block text-sm font-bold mb-2"
-                      htmlFor="email"
-                      style={{ color: siteTheme.textColor }}
-                    >
-                      Email
-                    </label>
-                    <input
-                      className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                        borderWidth: "1px",
-                      }}
-                      id="email"
-                      type="email"
-                      placeholder="john@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
+              <div className="mb-4">
+                <label
+                  className="block text-sm font-bold mb-2"
+                  htmlFor="phone"
+                  style={{ color: siteTheme.textColor }}
+                >
+                  Phone
+                </label>
+                <input
+                  className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                    borderWidth: "1px",
+                  }}
+                  id="phone"
+                  type="tel"
+                  placeholder="(123) 456-7890"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
 
-                  <div className="mb-4">
-                    <label
-                      className="block text-sm font-bold mb-2"
-                      htmlFor="phone"
-                      style={{ color: siteTheme.textColor }}
-                    >
-                      Phone
-                    </label>
-                    <input
-                      className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                        borderWidth: "1px",
-                      }}
-                      id="phone"
-                      type="tel"
-                      placeholder="(123) 456-7890"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      required
-                    />
-                  </div>
+              <div className="mb-6">
+                <label
+                  className="block text-sm font-bold mb-2"
+                  htmlFor="address"
+                  style={{ color: siteTheme.textColor }}
+                >
+                  Shipping Address
+                </label>
+                <textarea
+                  className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.secondaryBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                    borderWidth: "1px",
+                  }}
+                  id="address"
+                  placeholder="123 Main St, City, State, ZIP"
+                  rows="3"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  required
+                />
+              </div>
 
-                  <div className="mb-6">
-                    <label
-                      className="block text-sm font-bold mb-2"
-                      htmlFor="address"
-                      style={{ color: siteTheme.textColor }}
-                    >
-                      Shipping Address
-                    </label>
-                    <textarea
-                      className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
-                      style={{
-                        backgroundColor: siteTheme.secondaryBgColor,
-                        color: siteTheme.textColor,
-                        borderColor: siteTheme.borderColor,
-                        borderWidth: "1px",
-                      }}
-                      id="address"
-                      placeholder="123 Main St, City, State, ZIP"
-                      rows="3"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between mt-4">
-                    <button
-                      className="w-full font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                      style={{
-                        backgroundColor: siteTheme.accentColor,
-                        color: siteTheme.textColor,
-                        opacity: loading ? 0.7 : 1,
-                      }}
-                      type="submit"
-                      disabled={loading}
-                    >
-                      {loading ? "Processing..." : "Proceed to Payment"}
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
+              <div className="flex items-center justify-between mt-4">
+                <button
+                  className="w-full font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  style={{
+                    backgroundColor: siteTheme.accentColor,
+                    color: siteTheme.textColor,
+                    opacity: loading ? 0.7 : 1,
+                  }}
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? "Processing..." : "Proceed to Payment"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
 
