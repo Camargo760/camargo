@@ -10,7 +10,7 @@ import { initializeApp } from "firebase/app"
 
 // Firebase configuration - replace with your own config
 const firebaseConfig = {
-    apiKey: "AIzaSyAa2ypCdwLJfp88i1e0w-9GJE8iFnk6CuY",
+      apiKey: "AIzaSyAa2ypCdwLJfp88i1e0w-9GJE8iFnk6CuY",
   authDomain: "camargosworld-38371.firebaseapp.com",
   projectId: "camargosworld-38371",
   storageBucket: "camargosworld-38371.firebasestorage.app",
