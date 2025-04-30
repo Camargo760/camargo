@@ -397,7 +397,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
                         }}
                       >
                         <Image
-                          src={image || "/placeholder.svg"}
+                          src={image || "/assets/placeholder.svg"}
                           alt={`${product.name} - Image ${index + 1}`}
                           fill
                           style={{ objectFit: "cover" }}
