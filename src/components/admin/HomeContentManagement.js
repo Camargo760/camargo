@@ -266,7 +266,7 @@ export default function HomeContentManagement({
                             {previewHomeBackground && (
                                 <div className="relative w-40 h-24 bg-gray-200 rounded overflow-hidden">
                                     <Image
-                                        src={previewHomeBackground || "/placeholder.svg"}
+                                        src={previewHomeBackground || "/assets/placeholder.svg"}
                                         alt="Home background"
                                         fill
                                         style={{ objectFit: "cover" }}
@@ -293,7 +293,7 @@ export default function HomeContentManagement({
                             {previewHomeBackgroundMobile && (
                                 <div className="relative w-24 h-40 bg-gray-200 rounded overflow-hidden">
                                     <Image
-                                        src={previewHomeBackgroundMobile || "/placeholder.svg"}
+                                        src={previewHomeBackgroundMobile || "/assets/placeholder.svg"}
                                         alt="Home mobile background"
                                         fill
                                         style={{ objectFit: "cover" }}
@@ -581,7 +581,7 @@ export default function HomeContentManagement({
                             {previewMode === "desktop" && previewHomeBackground ? (
                                 <div className="absolute inset-0">
                                     <Image
-                                        src={previewHomeBackground || "/placeholder.svg"}
+                                        src={previewHomeBackground || "/assets/placeholder.svg"}
                                         alt="Preview background"
                                         fill
                                         style={{ objectFit: "cover" }}
@@ -591,7 +591,7 @@ export default function HomeContentManagement({
                             ) : previewMode === "mobile" && previewHomeBackgroundMobile ? (
                                 <div className="absolute inset-0">
                                     <Image
-                                        src={previewHomeBackgroundMobile || "/placeholder.svg"}
+                                        src={previewHomeBackgroundMobile || "/assets/placeholder.svg"}
                                         alt="Preview mobile background"
                                         fill
                                         style={{ objectFit: "cover" }}
@@ -663,7 +663,7 @@ export default function HomeContentManagement({
                             {homeBackground ? (
                                 <div className="relative w-full h-40 bg-gray-200 rounded overflow-hidden mb-2">
                                     <Image
-                                        src={homeBackground || "/placeholder.svg"}
+                                        src={homeBackground || "/assets/placeholder.svg"}
                                         alt="Home background"
                                         fill
                                         style={{ objectFit: "cover" }}
@@ -684,7 +684,7 @@ export default function HomeContentManagement({
                             {homeBackgroundMobile ? (
                                 <div className="relative w-32 h-40 bg-gray-200 rounded overflow-hidden mb-2 mx-auto">
                                     <Image
-                                        src={homeBackgroundMobile || "/placeholder.svg"}
+                                        src={homeBackgroundMobile || "/assets/placeholder.svg"}
                                         alt="Home mobile background"
                                         fill
                                         style={{ objectFit: "cover" }}
