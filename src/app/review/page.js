@@ -449,7 +449,7 @@ export default function ReviewPage() {
                           onClick={() => openLightbox(url, imagePreviewUrls, index)}
                         >
                           <Image
-                            src={url || "/placeholder.svg"}
+                            src={url || "/assets/placeholder.svg"}
                             alt={`Review image ${index + 1}`}
                             width={96}
                             height={96}
@@ -588,7 +588,7 @@ export default function ReviewPage() {
                       >
                         {review.user.image ? (
                           <Image
-                            src={review.user.image || "/placeholder.svg"}
+                            src={review.user.image || "/assets/placeholder.svg"}
                             alt={review.user.name}
                             width={40}
                             height={40}
@@ -634,7 +634,7 @@ export default function ReviewPage() {
                                   onClick={() => openLightbox(imageUrl, review.images, index)}
                                 >
                                   <Image
-                                    src={imageUrl || "/placeholder.svg"}
+                                    src={imageUrl || "/assets/placeholder.svg"}
                                     alt={`Review image ${index + 1}`}
                                     width={120}
                                     height={120}
@@ -723,7 +723,7 @@ export default function ReviewPage() {
             )}
 
             <div className="relative w-full h-full flex items-center justify-center p-4">
-              <Image src={lightboxImage || "/placeholder.svg"} alt="Review image" fill className="object-contain" />
+              <Image src={lightboxImage || "/assets/placeholder.svg"} alt="Review image" fill className="object-contain" />
             </div>
 
             {lightboxImages.length > 1 && (
