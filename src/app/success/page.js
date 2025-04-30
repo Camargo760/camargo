@@ -225,7 +225,7 @@ function SuccessContent() {
                   style={{ borderColor: siteTheme.borderColor }}
                 >
                   <Image
-                    src={orderDetails.product.finalDesignImage || "/placeholder.svg"}
+                    src={orderDetails.product.finalDesignImage || "/assets/placeholder.svg"}
                     alt="Your custom design"
                     fill
                     style={{ objectFit: "contain" }}
