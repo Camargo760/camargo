@@ -390,7 +390,7 @@ export default function CustomOrder() {
                   >
                     {element.type === "image" ? (
                       <img
-                        src={element.content || "/placeholder.svg"}
+                        src={element.content || "/assets/placeholder.svg"}
                         alt="Custom Design"
                         className="max-w-[80%] max-h-[80%] object-contain pointer-events-auto"
                         draggable="false"
