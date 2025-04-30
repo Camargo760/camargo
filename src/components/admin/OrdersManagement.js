@@ -179,7 +179,7 @@ export default function OrdersManagement({ siteTheme, orders }) {
                               className="cursor-pointer inline-block"
                             >
                               <Image
-                                src={order.product.customImage || "/placeholder.svg"}
+                                src={order.product.customImage || "/assets/placeholder.svg"}
                                 alt="Custom design"
                                 width={50}
                                 height={50}
@@ -198,7 +198,7 @@ export default function OrdersManagement({ siteTheme, orders }) {
                             <p className="text-xs font-semibold">Final Design:</p>
                             <div className="relative group">
                               <Image
-                                src={order.product.finalDesignImage || "/placeholder.svg"}
+                                src={order.product.finalDesignImage || "/assets/placeholder.svg"}
                                 alt="Final design"
                                 width={100}
                                 height={100}
