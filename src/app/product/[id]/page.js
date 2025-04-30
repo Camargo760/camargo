@@ -130,7 +130,7 @@ export default function ProductDetail({ params }) {
             >
               {product.images && product.images.length > 0 ? (
                 <Image
-                  src={product.images[currentImage] || "/placeholder.svg"}
+                  src={product.images[currentImage] || "/assets/placeholder.svg"}
                   alt={product.name}
                   fill
                   style={{ objectFit: "contain" }}
@@ -156,7 +156,7 @@ export default function ProductDetail({ params }) {
                       ringColor: siteTheme.accentColor,
                     }}
                   >
-                    <Image src={image || "/placeholder.svg"} alt={`${product.name} - Image ${index + 1}`} fill style={{ objectFit: "cover" }} />
+                    <Image src={image || "/assets/placeholder.svg"} alt={`${product.name} - Image ${index + 1}`} fill style={{ objectFit: "cover" }} />
                   </button>
                 ))}
               </div>
