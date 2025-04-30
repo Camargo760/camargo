@@ -269,7 +269,7 @@ function ProductCard({ product, siteTheme }) {
         <div className="relative h-48 w-full">
           {product.images && product.images.length > 0 ? (
             <Image
-              src={product.images[0] || "/placeholder.svg"}
+              src={product.images[0] || "/assets/placeholder.svg"}
               alt={product.name || product.title}
               fill
               className="object-cover"
