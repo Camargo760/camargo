@@ -323,14 +323,14 @@ export default function Checkout({ params }) {
                 {designImage ? (
                   // Show the design image if available
                   <Image
-                    src={designImage || "/placeholder.svg"}
+                    src={designImage || "/assets/placeholder.svg"}
                     alt={product.name}
                     fill
                     style={{ objectFit: "contain" }}
                   />
                 ) : product.images && product.images.length > 0 ? (
                   <Image
-                    src={product.images[0] || "/placeholder.svg"}
+                    src={product.images[0] || "/assets/placeholder.svg"}
                     alt={product.name}
                     fill
                     style={{ objectFit: "cover" }}
