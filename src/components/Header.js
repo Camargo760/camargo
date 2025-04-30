@@ -48,7 +48,7 @@ export default function Header() {
         <Link href="/" className="h-full flex items-center">
           <div className="h-[40px] flex items-center">
             <Image
-              src={logoUrl || "/placeholder.svg"}
+              src={logoUrl || "/assets/placeholder.svg"}
               alt="Logo"
               width={120}
               height={40}
