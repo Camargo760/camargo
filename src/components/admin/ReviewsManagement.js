@@ -102,7 +102,7 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
                     {review.images.map((image, index) => (
                       <div key={index} className="relative w-15 h-15 sm:w-20 sm:h-20">
                         <Image
-                          src={image || "/placeholder.svg"}
+                          src={image || "/assets/placeholder.svg"}
                           alt={`Review image ${index + 1}`}
                           fill
                           className="rounded object-cover"
