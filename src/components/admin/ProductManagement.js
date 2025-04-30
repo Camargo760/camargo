@@ -244,7 +244,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
           {images.map((image, index) => (
             <div key={index} className="relative">
               <Image
-                src={image || "/placeholder.svg"}
+                src={image || "/assets/placeholder.svg"}
                 alt={`Product image ${index + 1}`}
                 width={100}
                 height={100}
