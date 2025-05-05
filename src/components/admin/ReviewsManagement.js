@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight, Trash2, Star, Type } from "lucide-react"
-import ImageLightbox from "../ImageLightbox"
+import ImageLightbox from "../ImageLightBox"
 
 export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) {
   const [currentReviewPage, setCurrentReviewPage] = useState(1)
