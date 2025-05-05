@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "../auth/[...nextauth]/route"
 import clientPromise from "../../../lib/mongodb"
-import { ObjectId } from "mongodb"
 
 // Helper function to convert image to base64
 async function imageToBase64(file) {
@@ -37,7 +34,9 @@ export async function GET() {
           $project: {
             _id: 1,
             rating: 1,
-            text: 1,
+            title: 1,
+            content: 1,
+            name: 1,
             images: 1,
             createdAt: 1,
             updatedAt: 1,
@@ -64,73 +63,82 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 })
+    // Check content type to determine how to parse the request
+    const contentType = request.headers.get("content-type") || ""
+
+    let data
+    let imageUrls = []
+
+    if (contentType.includes("multipart/form-data")) {
+      // Handle form data (with images)
+      const formData = await request.formData()
+
+      // Extract review data
+      const rating = Number.parseInt(formData.get("rating"), 10)
+      const title = formData.get("title")
+      const content = formData.get("content")
+      const name = formData.get("name")
+      const userId = formData.get("userId")
+
+      // Process images
+      const imageFiles = formData.getAll("images")
+
+      if (imageFiles && imageFiles.length > 0) {
+        // Convert each image to base64
+        for (const file of imageFiles) {
+          if (file.size > 0) {
+            const base64Image = await imageToBase64(file)
+            imageUrls.push(base64Image)
+          }
+        }
+      }
+
+      data = { rating, title, content, name, userId }
+    } else {
+      // Handle JSON data (no images)
+      data = await request.json()
+      imageUrls = data.imageUrls || []
     }
 
-    // Parse the multipart form data
-    const formData = await request.formData()
-    const rating = Number.parseInt(formData.get("rating"))
-    const text = formData.get("text")
-    const imageFiles = formData.getAll("images")
+    const { rating, title, content, name, userId } = data
 
     // Validate input
     if (!rating || rating < 1 || rating > 5) {
       return NextResponse.json({ error: "Invalid rating" }, { status: 400 })
     }
 
-    if (!text || text.trim() === "") {
-      return NextResponse.json({ error: "Review text is required" }, { status: 400 })
+    if (!title || title.trim() === "") {
+      return NextResponse.json({ error: "Review title is required" }, { status: 400 })
+    }
+
+    if (!content || content.trim() === "") {
+      return NextResponse.json({ error: "Review content is required" }, { status: 400 })
+    }
+
+    if (!name || name.trim() === "") {
+      return NextResponse.json({ error: "Name is required" }, { status: 400 })
     }
 
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Get user ID
-    const user = await db.collection("users").findOne({ email: session.user.email })
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
-    }
-
-    // Check if user already has a review
-    const existingReview = await db.collection("reviews").findOne({
-      userId: ObjectId.isValid(user._id) ? user._id : new ObjectId(user._id),
-    })
-
-    if (existingReview) {
-      return NextResponse.json(
-        { error: "You have already submitted a review. Please edit your existing review instead." },
-        { status: 400 },
-      )
-    }
-
-    // Process images and convert to base64
-    const savedImages = []
-    if (imageFiles && imageFiles.length > 0) {
-      // Limit number of images (optional)
-      const filesToProcess = imageFiles.slice(0, 3) // Limit to 3 images
-
-      // Convert each image to base64
-      for (const file of filesToProcess) {
-        try {
-          const base64Image = await imageToBase64(file)
-          savedImages.push(base64Image)
-        } catch (error) {
-          console.error("Error converting image to base64:", error)
-        }
-      }
-    }
-
     // Create the review
     const review = {
-      userId: user._id,
       rating,
-      text,
-      images: savedImages,
+      title,
+      content,
+      name,
+      images: imageUrls,
       createdAt: new Date(),
       updatedAt: new Date(),
+    }
+
+    // If user is logged in, associate the review with their account
+    if (userId) {
+      const user = await db.collection("users").findOne({ email: userId })
+      if (user) {
+        review.userId = user._id
+      }
     }
 
     const result = await db.collection("reviews").insertOne(review)
@@ -138,11 +146,6 @@ export async function POST(request) {
     return NextResponse.json({
       _id: result.insertedId,
       ...review,
-      user: {
-        name: user.name,
-        email: user.email,
-        image: user.image,
-      },
     })
   } catch (error) {
     console.error("Error creating review:", error)
