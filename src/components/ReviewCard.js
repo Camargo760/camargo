@@ -3,7 +3,7 @@
 import { Star } from "lucide-react"
 import Image from "next/image"
 import { useState } from "react"
-import ImageLightbox from "../components/ImageLightBox"
+// import ImageLightbox from "../components/ImageLightBox"
 
 export default function ReviewCard({ review, siteTheme }) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
