@@ -1,9 +1,11 @@
-"use client"
+// pages/Admin.js
 
+"use client"
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Header from "../../components/Header"
+import LoadingSpinner from "../../components/LoadingSpinner"
 
 // Import admin components
 import ProductManagement from "../../components/admin/ProductManagement"
@@ -201,7 +203,7 @@ export default function Admin() {
   }, [session, status, router, sortOrder])
 
   if (status === "loading") {
-    return <div>Loading...</div>
+    return <LoadingSpinner siteTheme={siteTheme} />
   }
 
   if (!session || session.user.email !== "camargo_co@outlook.com") {
