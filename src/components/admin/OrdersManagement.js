@@ -8,6 +8,7 @@ export default function OrdersManagement({ siteTheme, orders }) {
   const [currentOrderPage, setCurrentOrderPage] = useState(1)
   const [totalOrderPages, setTotalOrderPages] = useState(Math.ceil(orders.length / 10) || 1)
   const ordersPerPage = 10
+  const [expandedDesign, setExpandedDesign] = useState(null)
 
   // Pagination handlers for orders
   const handlePreviousOrderPage = () => {
@@ -37,25 +38,12 @@ export default function OrdersManagement({ siteTheme, orders }) {
     document.body.removeChild(link)
   }
 
-  const handleUpdateStatus = async (orderId, newStatus) => {
-    try {
-      const res = await fetch(`/api/orders/${orderId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        console.error("Error updating order status:", errorData)
-        throw new Error(errorData.error || "Failed to update order status")
-      }
-
-      // Refresh orders after status update
-      window.location.reload()
-    } catch (err) {
-      console.error("Error updating order status:", err)
-      alert("Failed to update order status. Please try again.")
+  // Toggle expanded design view
+  const toggleExpandDesign = (orderId) => {
+    if (expandedDesign === orderId) {
+      setExpandedDesign(null)
+    } else {
+      setExpandedDesign(orderId)
     }
   }
 
@@ -136,6 +124,12 @@ export default function OrdersManagement({ siteTheme, orders }) {
                   >
                     Payment Method
                   </th>
+                  <th
+                    className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
+                    style={{ borderColor: siteTheme.borderColor }}
+                  >
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -179,7 +173,7 @@ export default function OrdersManagement({ siteTheme, orders }) {
                               className="cursor-pointer inline-block"
                             >
                               <Image
-                                src={order.product.customImage || "/assets/placeholder.svg"}
+                                src={order.product.customImage || "/placeholder.svg"}
                                 alt="Custom design"
                                 width={50}
                                 height={50}
@@ -197,14 +191,19 @@ export default function OrdersManagement({ siteTheme, orders }) {
                           <div className="mt-3">
                             <p className="text-xs font-semibold">Final Design:</p>
                             <div className="relative group">
-                              <Image
-                                src={order.product.finalDesignImage || "/assets/placeholder.svg"}
-                                alt="Final design"
-                                width={100}
-                                height={100}
-                                className="rounded mt-1 transition-all"
-                                style={{ borderColor: siteTheme.accentColor, borderWidth: "2px" }}
-                              />
+                              <div className="cursor-pointer" onClick={() => toggleExpandDesign(order.id)}>
+                                <Image
+                                  src={order.product.finalDesignImage || "/placeholder.svg"}
+                                  alt="Final design"
+                                  width={100}
+                                  height={100}
+                                  className="rounded mt-1 transition-all"
+                                  style={{ borderColor: siteTheme.accentColor, borderWidth: "2px" }}
+                                />
+                                <span className="text-xs block mt-1" style={{ color: siteTheme.accentColor }}>
+                                  {expandedDesign === order.id ? "Hide Full Design" : "View Full Design"}
+                                </span>
+                              </div>
                               <button
                                 onClick={() => downloadDesignImage(order.product.finalDesignImage, order.id)}
                                 className="mt-2 right-2 p-1 rounded "
@@ -214,6 +213,40 @@ export default function OrdersManagement({ siteTheme, orders }) {
                                 Download
                               </button>
                             </div>
+
+                            {/* Expanded design view */}
+                            {expandedDesign === order.id && (
+                              <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+                                <div className="bg-white rounded-lg p-4 max-w-3xl max-h-[90vh] overflow-auto">
+                                  <div className="flex justify-between mb-4">
+                                    <h3 className="text-lg font-bold text-gray-900">Custom Design Details</h3>
+                                    <button
+                                      onClick={() => setExpandedDesign(null)}
+                                      className="text-gray-500 hover:text-gray-700"
+                                    >
+                                      Close
+                                    </button>
+                                  </div>
+                                  <div className="relative w-full h-[400px]">
+                                    <Image
+                                      src={order.product.finalDesignImage || "/placeholder.svg"}
+                                      alt="Final design"
+                                      fill
+                                      style={{ objectFit: "contain" }}
+                                    />
+                                  </div>
+                                  <div className="mt-4 flex justify-end">
+                                    <button
+                                      onClick={() => downloadDesignImage(order.product.finalDesignImage, order.id)}
+                                      className="px-4 py-2 rounded"
+                                      style={{ backgroundColor: siteTheme.accentColor, color: "white" }}
+                                    >
+                                      Download Design
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -233,8 +266,7 @@ export default function OrdersManagement({ siteTheme, orders }) {
                           className="capitalize"
                           style={{ color: order.paymentMethod === "delivery" ? "#F97316" : "#3B82F6" }}
                         >
-                         {order.paymentMethod || "stripe"}
-
+                          {order.paymentMethod === "delivery" ? "Delivery" : "Stripe"}
                         </span>
                         {order.paymentMethod === "delivery" && order.preferredMethod && (
                           <span
@@ -258,11 +290,11 @@ export default function OrdersManagement({ siteTheme, orders }) {
           </div>
 
           {/* Pagination controls for orders */}
-          <div className="sm:flex justify-between items-center mt-4">
+          <div className="flex justify-between items-center mt-4">
             <div className="text-sm">
               Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, orders.length)} of {orders.length} orders
             </div>
-            <div className="flex space-x-2 mt-2 sm:mt-0">
+            <div className="flex space-x-2">
               <button
                 onClick={handlePreviousOrderPage}
                 disabled={currentOrderPage === 1}
