@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import Header from "../../components/Header"
 import Link from "next/link"
 import Image from "next/image"
+import LoadingSpinner from "../../components/LoadingSpinner"
 
 function SuccessContent() {
   const [orderDetails, setOrderDetails] = useState(null)
@@ -90,11 +91,7 @@ function SuccessContent() {
 
 
   if (loading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-90">
-        <div className="text-center text-white text-2xl font-bold">Loading...</div>
-      </div>
-    )
+    return <LoadingSpinner siteTheme={siteTheme} />
   }
 
   if (error) {
