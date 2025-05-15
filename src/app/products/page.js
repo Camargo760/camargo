@@ -4,8 +4,10 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Header from "../../components/Header"
-import { Clock, ListOrderedIcon, DollarSign, Filter } from "lucide-react"
+import { Clock, ListOrderedIcon, DollarSign, Filter, Loader2 } from "lucide-react"
 import Link from "next/link"
+import LoadingSpinner from "../../components/LoadingSpinner"
+
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([])
@@ -98,18 +100,9 @@ export default function ProductsPage() {
   }, [products, selectedCategory, sortBy])
 
   if (loading) {
-    return (
-      <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor }}>
-        <Header />
-        <div className="container mx-auto py-8 px-4 flex justify-center items-center h-64">
-          <div
-            className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
-            style={{ borderColor: siteTheme.accentColor }}
-          ></div>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner siteTheme={siteTheme} />
   }
+
 
   if (error) {
     return (
