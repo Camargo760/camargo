@@ -88,33 +88,6 @@ function SuccessContent() {
     }
   }, [searchParams])
 
-  // Find the getStatusText function and make sure it's defined correctly
-  const getStatusText = (status) => {
-    switch (status) {
-      case "received":
-        return "Order Received"
-      case "out_for_delivery":
-        return "Out for Delivery"
-      case "delivered":
-        return "Delivered"
-      default:
-        return "Pending"
-    }
-  }
-
-  // Find the getStatusColor function and make sure it's defined correctly
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "received":
-        return "#3b82f6" // blue
-      case "out_for_delivery":
-        return "#eab308" // yellow
-      case "delivered":
-        return "#10b981" // green
-      default:
-        return "#f97316" // orange
-    }
-  }
 
   if (loading) {
     return (
@@ -177,12 +150,6 @@ function SuccessContent() {
                 </span>
               )}
             </p>
-            <p className="mt-2">
-              Status:{" "}
-              <span className="font-medium" style={{ color: getStatusColor(orderDetails.status) }}>
-                {getStatusText(orderDetails.status)}
-              </span>
-            </p>
           </div>
           <div className="mb-4">
             <h3 className="text-xl font-semibold">Product Information</h3>
@@ -225,7 +192,7 @@ function SuccessContent() {
                   style={{ borderColor: siteTheme.borderColor }}
                 >
                   <Image
-                    src={orderDetails.product.finalDesignImage || "/assets/placeholder.svg"}
+                    src={orderDetails.product.finalDesignImage || "/placeholder.svg"}
                     alt="Your custom design"
                     fill
                     style={{ objectFit: "contain" }}
