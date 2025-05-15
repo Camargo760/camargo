@@ -4,13 +4,14 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import Header from "../components/Header"
+import LoadingSpinner from "../components/LoadingSpinner"
 
 export default function Home() {
   const [homeContent, setHomeContent] = useState({
     backgroundImage: null,
     backgroundImageMobile: null,
-    mainText: "",
-    subText: "",
+    mainText: "Welcome to Camargo Clothing Co.",
+    subText: "Discover our latest collection of premium clothing and accessories.",
     textStyles: {
       mainTextSize: "text-4xl md:text-6xl",
       mainTextColor: "text-white",
@@ -88,14 +89,7 @@ export default function Home() {
   }, [])
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: siteTheme.bgColor }}>
-        <div
-          className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
-          style={{ borderColor: siteTheme.accentColor }}
-        ></div>
-      </div>
-    )
+    return <LoadingSpinner siteTheme={siteTheme} />
   }
 
   // Destructure textStyles with fallbacks
@@ -139,10 +133,10 @@ export default function Home() {
 
           <div className="relative z-10 text-center px-4 max-w-4xl">
             <h1 className={`${mainTextSize} ${mainTextColor} ${mainTextFont} mb-4`}>
-              {homeContent.mainText || ""}
+              {homeContent.mainText || "Welcome to Camargo Clothing Co."}
             </h1>
             <p className={`${subtextSize} ${subtextColor} ${subtextFont} mb-8`}>
-              {homeContent.subText || ""}
+              {homeContent.subText || "Discover our latest collection of premium clothing and accessories."}
             </p>
             <div className="flex md:gap-8 gap-4 justify-center">
               <Link
