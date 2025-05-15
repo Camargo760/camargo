@@ -8,6 +8,7 @@ import PaymentModal from "../../../components/payment-modal"
 import DeliveryPaymentForm from "../../../components/delivery-payment-form"
 import { loadStripe } from "@stripe/stripe-js"
 import { useSession } from "next-auth/react"
+import LoadingSpinner from "../../../components/LoadingSpinner"
 
 // Use React.use for params
 import { use } from "react"
@@ -222,19 +223,7 @@ export default function Checkout({ params }) {
   }
 
   if (loading && !product) {
-    return (
-      <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor }}>
-        <Header />
-        <main className="container mx-auto py-8 px-4">
-          <div className="flex justify-center items-center h-64">
-            <div
-              className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
-              style={{ borderColor: siteTheme.accentColor }}
-            ></div>
-          </div>
-        </main>
-      </div>
-    )
+    return <LoadingSpinner siteTheme={siteTheme} />
   }
 
   if (error && !product) {
