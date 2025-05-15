@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Upload, Type } from "lucide-react"
-import DraggableElement from "../../components/DraggableElement"
 import html2canvas from "html2canvas"
 import Header from "@/components/Header"
 
@@ -14,11 +13,11 @@ export default function CustomOrder() {
   const [customTextColor, setCustomTextColor] = useState("#ffffff")
   const [customTextFont, setCustomTextFont] = useState("font-['Kanit']")
   const [customTextSize, setCustomTextSize] = useState("text-4xl")
+  const [customTextFontSize, setCustomTextFontSize] = useState(24) // Default font size in px
   const [uploadedImage, setUploadedImage] = useState(null)
   const [fileName, setFileName] = useState("No file chosen")
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(false)
-  const [designElements, setDesignElements] = useState([])
   const [finalDesignImage, setFinalDesignImage] = useState(null)
   const [showTextOptions, setShowTextOptions] = useState(false)
   const [siteTheme, setSiteTheme] = useState({
@@ -92,11 +91,11 @@ export default function CustomOrder() {
   ]
 
   const textSizeOptions = [
-    { value: "text-xl", label: "Small" },
-    { value: "text-2xl", label: "Medium" },
-    { value: "text-3xl", label: "Large" },
-    { value: "text-4xl", label: "Extra Large" },
-    { value: "text-5xl", label: "Huge" },
+    { value: "text-xl", label: "Small", size: 16 },
+    { value: "text-2xl", label: "Medium", size: 20 },
+    { value: "text-3xl", label: "Large", size: 24 },
+    { value: "text-4xl", label: "Extra Large", size: 28 },
+    { value: "text-5xl", label: "Huge", size: 32 },
   ]
 
   const sizeOptions = ["S", "M", "L", "XL", "XXL"]
@@ -106,38 +105,6 @@ export default function CustomOrder() {
     const colorOption = colorOptions.find((option) => option.color === colorValue)
     return colorOption ? colorOption.title : colorValue
   }
-
-  // Update design elements when text or image changes
-  useEffect(() => {
-    const newElements = []
-
-    // Add image element first (lower z-index)
-    if (uploadedImage) {
-      newElements.push({
-        type: "image",
-        content: uploadedImage,
-        position: { x: 0.5, y: 0.5 }, // Center position (relative)
-        id: "image-element",
-        zIndex: 10, // Lower z-index for images
-      })
-    }
-
-    // Add text element second (higher z-index)
-    if (customText) {
-      newElements.push({
-        type: "text",
-        content: customText,
-        position: { x: 0.5, y: 0.5 }, // Center position (relative)
-        id: "text-element",
-        zIndex: 20, // Higher z-index for text so it appears on top
-        textColor: customTextColor,
-        textFont: customTextFont,
-        textSize: customTextSize,
-      })
-    }
-
-    setDesignElements(newElements)
-  }, [customText, uploadedImage, customTextColor, customTextFont, customTextSize])
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -164,67 +131,18 @@ export default function CustomOrder() {
     }
   }
 
-  // Handle element position changes
-  const handleElementPositionChange = (elementData) => {
-    setDesignElements((prev) => {
-      return prev.map((el) => {
-        if (el.type === elementData.type) {
-          return { ...el, position: elementData.position }
-        }
-        return el
-      })
-    })
-  }
-
   // Capture the design as an image
   const captureDesign = async () => {
     if (!canvasRef.current) return null
 
     try {
-      // First, create a clone of the canvas to avoid modifying the original
-      const canvasClone = canvasRef.current.cloneNode(true)
-
-      // Set the clone's position to be absolute and fixed size
-      canvasClone.style.position = "absolute"
-      canvasClone.style.top = "-9999px"
-      canvasClone.style.left = "-9999px"
-      canvasClone.style.width = "800px" // Fixed width for consistent output
-      canvasClone.style.height = "600px" // Fixed height for consistent output
-      canvasClone.style.backgroundColor = currentBgColor
-
-      // Append to body temporarily
-      document.body.appendChild(canvasClone)
-
-      // Ensure all elements in the clone have their computed positions
-      const elements = canvasClone.querySelectorAll(".absolute")
-      elements.forEach((el) => {
-        // Make sure elements maintain their relative positions
-        const style = window.getComputedStyle(el)
-        el.style.position = "absolute"
-        el.style.transform = "none" // Remove any transforms
-
-        // Convert percentage positions to pixels for the fixed size container
-        if (el.style.left.includes("%")) {
-          const percentage = Number.parseFloat(el.style.left) / 100
-          el.style.left = `${percentage * 800}px`
-        }
-
-        if (el.style.top.includes("%")) {
-          const percentage = Number.parseFloat(el.style.top) / 100
-          el.style.top = `${percentage * 600}px`
-        }
-      })
-
-      // Use html2canvas on the clone
-      const canvas = await html2canvas(canvasClone, {
+      // Use html2canvas directly on the canvas element
+      const canvas = await html2canvas(canvasRef.current, {
         backgroundColor: currentBgColor,
         scale: 2, // Higher quality
         logging: false,
         useCORS: true, // To handle cross-origin images
       })
-
-      // Remove the clone from the DOM
-      document.body.removeChild(canvasClone)
 
       return canvas.toDataURL("image/png")
     } catch (error) {
@@ -236,6 +154,16 @@ export default function CustomOrder() {
   // Store the design image in the database
   const storeDesignImage = async (imageData, productId) => {
     try {
+      // Prepare simple design data for storage
+      const designData = {
+        backgroundColor: currentBgColor,
+        customText: customText,
+        customTextColor: customTextColor,
+        customTextFont: customTextFont,
+        customTextSize: customTextSize,
+        customImage: uploadedImage,
+      }
+
       const response = await fetch("/api/customProductImages", {
         method: "POST",
         headers: {
@@ -244,6 +172,7 @@ export default function CustomOrder() {
         body: JSON.stringify({
           imageData,
           productId,
+          designData, // Include the design data
         }),
       })
 
@@ -285,8 +214,6 @@ export default function CustomOrder() {
         availableSizes: [selectedSize],
         customText: customText,
         customImage: uploadedImage,
-        // We'll store the image ID instead of the full image data
-        designElements: designElements, // Store element positions for potential future editing
         textCustomization: {
           color: customTextColor,
           font: customTextFont,
@@ -363,56 +290,48 @@ export default function CustomOrder() {
             >
               <div
                 ref={canvasRef}
-                className="w-full h-[400px] md:h-[500px] mb-6 flex items-center justify-center relative overflow-hidden rounded border"
+                className="w-full h-[400px] md:h-[500px] mb-6 flex flex-col items-center justify-center relative overflow-hidden rounded border"
                 style={{
                   backgroundColor: currentBgColor,
                   minHeight: "400px", // Ensure minimum height
                   borderColor: siteTheme.borderColor,
                 }}
               >
-                {/* Add a helper message when elements are present */}
-                {designElements.length > 0 && (
-                  <div className="absolute top-2 left-2 right-2 text-center bg-black bg-opacity-50 text-white text-xs p-1 rounded z-50 pointer-events-none">
-                    Drag text and images to position them on your design
+                {/* Static centered design */}
+                {uploadedImage && (
+                  <div className="mb-4 relative" style={{ maxWidth: "60%", maxHeight: "60%" }}>
+                    <img
+                      src={uploadedImage || "/placeholder.svg"}
+                      alt="Custom Design"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "200px",
+                        display: "block",
+                        margin: "0 auto",
+                      }}
+                    />
                   </div>
                 )}
-                {designElements.map((element) => (
-                  <DraggableElement
-                    key={element.id}
-                    containerRef={canvasRef}
-                    onPositionChange={handleElementPositionChange}
-                    type={element.type}
-                    zIndex={element.zIndex} // Pass the z-index to the component
-                    initialPosition={{
-                      x: element.position.x * 100 + "%",
-                      y: element.position.y * 100 + "%",
+
+                {customText && (
+                  <div
+                    className={`${customTextFont} font-bold text-center mt-4`}
+                    style={{
+                      color: customTextColor,
+                      textShadow: "2px 2px 4px rgba(0, 0, 0, 0.7)",
+                      padding: "8px",
+                      borderRadius: "4px",
+                      backgroundColor: "rgba(0, 0, 0, 0.2)",
+                      fontSize: `${customTextFontSize}px`,
+                      maxWidth: "80%",
+                      wordBreak: "break-word",
                     }}
                   >
-                    {element.type === "image" ? (
-                      <img
-                        src={element.content || "/assets/placeholder.svg"}
-                        alt="Custom Design"
-                        className="max-w-[80%] max-h-[80%] object-contain pointer-events-auto"
-                        draggable="false"
-                      />
-                    ) : (
-                      <div
-                        className={`${element.textFont} ${element.textSize} font-bold pointer-events-auto`}
-                        style={{
-                          color: element.textColor,
-                          textShadow: "2px 2px 4px rgba(0, 0, 0, 0.7)",
-                          padding: "5px",
-                          borderRadius: "4px",
-                          backgroundColor: "rgba(0, 0, 0, 0.2)",
-                        }}
-                      >
-                        {element.content}
-                      </div>
-                    )}
-                  </DraggableElement>
-                ))}
+                    {customText}
+                  </div>
+                )}
 
-                {designElements.length === 0 && (
+                {!uploadedImage && !customText && (
                   <div className="font-['Kanit'] text-4xl font-bold text-white text-shadow">YOUR DESIGN</div>
                 )}
               </div>
@@ -435,7 +354,7 @@ export default function CustomOrder() {
                 borderColor: siteTheme.borderColor,
                 boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
               }}
-             >
+            >
               <h2
                 className="font-['Kanit'] text-2xl uppercase tracking-wide mt-0 mb-6"
                 style={{ color: siteTheme.accentColor }}
@@ -579,7 +498,14 @@ export default function CustomOrder() {
                       <label className="block text-sm font-medium mb-1">Text Size</label>
                       <select
                         value={customTextSize}
-                        onChange={(e) => setCustomTextSize(e.target.value)}
+                        onChange={(e) => {
+                          setCustomTextSize(e.target.value)
+                          // Update font size in pixels
+                          const selectedOption = textSizeOptions.find((option) => option.value === e.target.value)
+                          if (selectedOption) {
+                            setCustomTextFontSize(selectedOption.size)
+                          }
+                        }}
                         className="w-full p-2 rounded"
                         style={{
                           backgroundColor: siteTheme.bgColor,
@@ -600,18 +526,17 @@ export default function CustomOrder() {
                     <div className="mt-3 p-2 rounded" style={{ backgroundColor: siteTheme.bgColor }}>
                       <p className="text-sm mb-1">Preview:</p>
                       <div
-                        className={`${customTextFont} ${customTextSize} font-bold text-center p-2`}
-                        style={{ color: customTextColor }}
+                        className={`${customTextFont} font-bold text-center p-2`}
+                        style={{
+                          color: customTextColor,
+                          fontSize: `${customTextFontSize}px`,
+                        }}
                       >
                         {customText}
                       </div>
                     </div>
                   </div>
                 )}
-
-                <p className="text-xs mt-2" style={{ color: "#b0b0b0" }}>
-                  Drag and position your text anywhere on the t-shirt design
-                </p>
               </div>
 
               <div className="mb-6">
@@ -646,9 +571,6 @@ export default function CustomOrder() {
                   <div className="text-xs" style={{ color: "#b0b0b0" }}>
                     JPG, PNG or GIF (Max 5MB)
                   </div>
-                  <p className="text-xs" style={{ color: "#b0b0b0" }}>
-                    Drag and position your image anywhere on the t-shirt design
-                  </p>
                 </div>
               </div>
 
