@@ -62,6 +62,9 @@ export default function Admin() {
     borderColor: "#333",
   })
 
+  // State to manage the active tab
+  const [activeTab, setActiveTab] = useState("addNewProduct")
+
   // Define fetchProducts function before using it in useEffect
   const fetchProducts = async () => {
     try {
@@ -208,7 +211,7 @@ export default function Admin() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
       <Header />
-      <main className="container mx-auto mt-8 p-4 sm:p-8">
+      <main className="container mx-auto mt-8 sm:p-8 p-4">
         <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
@@ -216,57 +219,150 @@ export default function Admin() {
           </div>
         )}
 
-        {/* Product Management */}
-        <ProductManagement
-          siteTheme={siteTheme}
-          fetchProducts={fetchProducts}
-          products={products}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-        />
-
-        {/* Orders Management */}
-        <OrdersManagement siteTheme={siteTheme} orders={orders} />
-
-        {/* Logo Settings */}
-        <LogoSettings siteTheme={siteTheme} logoUrl={logoUrl} fetchSiteSettings={fetchSiteSettings} />
-
-        {/* Admin Password Change */}
-        <div className="mt-8">
-          <AdminPasswordChange siteTheme={siteTheme} />
+        {/* Tab Buttons */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={() => setActiveTab("addNewProduct")}
+            className={`px-4 py-2 rounded ${activeTab === "addNewProduct" ? "bg-accent" : "bg-secondary"}`}
+            style={{
+              backgroundColor: activeTab === "addNewProduct" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+              color: siteTheme.textColor,
+            }}
+          >
+            Add New Product
+          </button>
+          <button
+            onClick={() => setActiveTab("ordersManagement")}
+            className={`px-4 py-2 rounded ${activeTab === "ordersManagement" ? "bg-accent" : "bg-secondary"}`}
+            style={{
+              backgroundColor: activeTab === "ordersManagement" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+              color: siteTheme.textColor,
+            }}
+          >
+            Orders Management
+          </button>
+          <button
+            onClick={() => setActiveTab("logoSettings")}
+            className={`px-4 py-2 rounded ${activeTab === "logoSettings" ? "bg-accent" : "bg-secondary"}`}
+            style={{
+              backgroundColor: activeTab === "logoSettings" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+              color: siteTheme.textColor,
+            }}
+          >
+            Logo Settings
+          </button>
+          <button
+            onClick={() => setActiveTab("passwordChange")}
+            className={`px-4 py-2 rounded ${activeTab === "passwordChange" ? "bg-accent" : "bg-secondary"}`}
+            style={{
+              backgroundColor: activeTab === "passwordChange" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+              color: siteTheme.textColor,
+            }}
+          >
+            Password Change
+          </button>
+          <button
+            onClick={() => setActiveTab("reviewsManagement")}
+            className={`px-4 py-2 rounded ${activeTab === "reviewsManagement" ? "bg-accent" : "bg-secondary"}`}
+            style={{
+              backgroundColor: activeTab === "reviewsManagement" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+              color: siteTheme.textColor,
+            }}
+          >
+            Reviews Management
+          </button>
+          <button
+            onClick={() => setActiveTab("homeContentManagement")}
+            className={`px-4 py-2 rounded ${activeTab === "homeContentManagement" ? "bg-accent" : "bg-secondary"}`}
+            style={{
+              backgroundColor: activeTab === "homeContentManagement" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+              color: siteTheme.textColor,
+            }}
+          >
+            Home Content Management
+          </button>
+          <button
+            onClick={() => setActiveTab("aboutContentManagement")}
+            className={`px-4 py-2 rounded ${activeTab === "aboutContentManagement" ? "bg-accent" : "bg-secondary"}`}
+            style={{
+              backgroundColor: activeTab === "aboutContentManagement" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+              color: siteTheme.textColor,
+            }}
+          >
+            About Content Management
+          </button>
+          <button
+            onClick={() => setActiveTab("themeSettings")}
+            className={`px-4 py-2 rounded ${activeTab === "themeSettings" ? "bg-accent" : "bg-secondary"}`}
+            style={{
+              backgroundColor: activeTab === "themeSettings" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+              color: siteTheme.textColor,
+            }}
+          >
+            Theme Settings
+          </button>
         </div>
 
-        {/* Reviews Management */}
-        <ReviewsManagement siteTheme={siteTheme} reviews={reviews} fetchReviews={fetchReviews} />
+        {/* Tab Content */}
+        {activeTab === "addNewProduct" && (
+          <ProductManagement
+            siteTheme={siteTheme}
+            fetchProducts={fetchProducts}
+            products={products}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
+          />
+        )}
 
-        {/* Home Page Content Management */}
-        <HomeContentManagement
-          siteTheme={siteTheme}
-          homeBackground={homeBackground}
-          homeBackgroundMobile={homeBackgroundMobile}
-          homeText={homeText}
-          homeSubtext={homeSubtext}
-          homeTextSize={homeTextSize}
-          homeTextColor={homeTextColor}
-          homeTextFont={homeTextFont}
-          homeSubtextSize={homeSubtextSize}
-          homeSubtextColor={homeSubtextColor}
-          homeSubtextFont={homeSubtextFont}
-          fetchHomeContent={fetchHomeContent}
-        />
+        {activeTab === "ordersManagement" && (
+          <OrdersManagement siteTheme={siteTheme} orders={orders} />
+        )}
 
-        {/* About Page Content Management */}
-        <AboutContentManagement
-          siteTheme={siteTheme}
-          aboutContent={aboutContent}
-          aboutTextSize={aboutTextSize}
-          aboutTextColor={aboutTextColor}
-          aboutTextFont={aboutTextFont}
-          fetchAboutContent={fetchAboutContent}
-        />
+        {activeTab === "logoSettings" && (
+          <LogoSettings siteTheme={siteTheme} logoUrl={logoUrl} fetchSiteSettings={fetchSiteSettings} />
+        )}
 
-        {/* Theme Setting */}
-        <ThemeSettings siteTheme={siteTheme} setSiteTheme={setSiteTheme} fetchSiteTheme={fetchSiteTheme} />
+        {activeTab === "passwordChange" && (
+          <div className="mt-8">
+            <AdminPasswordChange siteTheme={siteTheme} />
+          </div>
+        )}
+
+        {activeTab === "reviewsManagement" && (
+          <ReviewsManagement siteTheme={siteTheme} reviews={reviews} fetchReviews={fetchReviews} />
+        )}
+
+        {activeTab === "homeContentManagement" && (
+          <HomeContentManagement
+            siteTheme={siteTheme}
+            homeBackground={homeBackground}
+            homeBackgroundMobile={homeBackgroundMobile}
+            homeText={homeText}
+            homeSubtext={homeSubtext}
+            homeTextSize={homeTextSize}
+            homeTextColor={homeTextColor}
+            homeTextFont={homeTextFont}
+            homeSubtextSize={homeSubtextSize}
+            homeSubtextColor={homeSubtextColor}
+            homeSubtextFont={homeSubtextFont}
+            fetchHomeContent={fetchHomeContent}
+          />
+        )}
+
+        {activeTab === "aboutContentManagement" && (
+          <AboutContentManagement
+            siteTheme={siteTheme}
+            aboutContent={aboutContent}
+            aboutTextSize={aboutTextSize}
+            aboutTextColor={aboutTextColor}
+            aboutTextFont={aboutTextFont}
+            fetchAboutContent={fetchAboutContent}
+          />
+        )}
+
+        {activeTab === "themeSettings" && (
+          <ThemeSettings siteTheme={siteTheme} setSiteTheme={setSiteTheme} fetchSiteTheme={fetchSiteTheme} />
+        )}
       </main>
     </div>
   )
