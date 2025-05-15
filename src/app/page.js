@@ -10,8 +10,8 @@ export default function Home() {
   const [homeContent, setHomeContent] = useState({
     backgroundImage: null,
     backgroundImageMobile: null,
-    mainText: "Welcome to Camargo Clothing Co.",
-    subText: "Discover our latest collection of premium clothing and accessories.",
+    mainText: "",
+    subText: "",
     textStyles: {
       mainTextSize: "text-4xl md:text-6xl",
       mainTextColor: "text-white",
