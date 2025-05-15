@@ -23,6 +23,8 @@ export default function ProductsPage() {
     secondaryBgColor: "#2a2a2a",
     borderColor: "#333",
   })
+  const [showFilterOptions, setShowFilterOptions] = useState(false)
+  const [showSortOptions, setShowSortOptions] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -131,101 +133,124 @@ export default function ProductsPage() {
         </h1>
 
         <div className="flex flex-col md:flex-row gap-6 mb-8">
-          {/* Category Filter - Left Side */}
-          <div className="md:w-1/4 lg:w-1/5">
-            <div
-              className="p-4 rounded-lg"
-              style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
-            >
-              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <Filter size={18} />
-                <span>Categories</span>
-              </h3>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => setSelectedCategory("all")}
-                  className={`px-3 py-2 rounded text-left transition-colors`}
-                  style={{
-                    backgroundColor: selectedCategory === "all" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
-                    color: siteTheme.textColor,
-                  }}
-                >
-                  All Products
-                </button>
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-3 py-2 rounded text-left transition-colors`}
-                    style={{
-                      backgroundColor:
-                        selectedCategory === category ? siteTheme.accentColor : siteTheme.secondaryBgColor,
-                      color: siteTheme.textColor,
-                    }}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
           {/* Products with Sorting - Right Side */}
-          <div className="md:w-3/4 lg:w-4/5">
-            {/* Sorting Options */}
-            <div
-              className="mb-4 p-4 rounded-lg"
-              style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
-            >
-              <div className="flex flex-wrap items-center gap-3">
-                <h3 className="text-lg font-semibold flex items-center gap-2 mr-2">
-                  <ListOrderedIcon size={18} />
-                  <span>Sort by:</span>
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSortBy(sortBy === "newest" ? "oldest" : "newest")}
-                    className={`px-3 py-1 rounded text-sm transition-colors flex items-center`}
-                    style={{
-                      backgroundColor:
-                        sortBy.includes("newest") || sortBy.includes("oldest")
-                          ? siteTheme.accentColor
-                          : siteTheme.secondaryBgColor,
-                      color: siteTheme.textColor,
-                    }}
+          <div className="md:w-full">
+            {/* Filter and Sort Buttons */}
+            <div className="flex flex-wrap items-center gap-3 mb-4 relative">
+              <div className="relative">
+                <button
+                  onClick={() => setShowFilterOptions(!showFilterOptions)}
+                  className="px-3 py-2 rounded text-sm transition-colors flex items-center"
+                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+                >
+                  <Filter className="mr-1" size={14} />
+                  Filter
+                </button>
+                {showFilterOptions && (
+                  <div
+                    className="p-4 rounded-lg mb-4 absolute z-10 mt-2 w-60"
+                    style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
                   >
-                    <Clock className="mr-1" size={14} />
-                    {sortBy === "newest" ? "Newest First" : sortBy === "oldest" ? "Oldest First" : "Time"}
-                  </button>
+                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                      <Filter size={18} />
+                      <span>Categories</span>
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => setSelectedCategory("all")}
+                        className={`px-3 py-2 rounded text-left transition-colors`}
+                        style={{
+                          backgroundColor: selectedCategory === "all" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+                          color: siteTheme.textColor,
+                        }}
+                      >
+                        All Products
+                      </button>
+                      {categories.map((category) => (
+                        <button
+                          key={category}
+                          onClick={() => setSelectedCategory(category)}
+                          className={`px-3 py-2 rounded text-left transition-colors`}
+                          style={{
+                            backgroundColor:
+                              selectedCategory === category ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+                            color: siteTheme.textColor,
+                          }}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                  <button
-                    onClick={() => setSortBy(sortBy === "name_asc" ? "name_desc" : "name_asc")}
-                    className={`px-3 py-1 rounded text-sm transition-colors flex items-center`}
-                    style={{
-                      backgroundColor: sortBy.includes("name") ? siteTheme.accentColor : siteTheme.secondaryBgColor,
-                      color: siteTheme.textColor,
-                    }}
+              <div className="relative">
+                <button
+                  onClick={() => setShowSortOptions(!showSortOptions)}
+                  className="px-3 py-2 rounded text-sm transition-colors flex items-center"
+                  style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+                >
+                  <ListOrderedIcon className="mr-1" size={14} />
+                  Sort
+                </button>
+                {showSortOptions && (
+                  <div
+                    className="mb-4 p-4 rounded-lg absolute z-10 mt-2 w-40"
+                    style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
                   >
-                    <ListOrderedIcon className="mr-1" size={14} />
-                    {sortBy === "name_asc" ? "A-Z" : sortBy === "name_desc" ? "Z-A" : "Name"}
-                  </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="text-lg font-semibold flex items-center gap-2 mr-2">
+                        <ListOrderedIcon size={18} />
+                        <span>Sort by:</span>
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setSortBy(sortBy === "newest" ? "oldest" : "newest")}
+                          className={`px-3 py-1 rounded text-sm transition-colors flex items-center`}
+                          style={{
+                            backgroundColor:
+                              sortBy.includes("newest") || sortBy.includes("oldest")
+                                ? siteTheme.accentColor
+                                : siteTheme.secondaryBgColor,
+                            color: siteTheme.textColor,
+                          }}
+                        >
+                          <Clock className="mr-1" size={14} />
+                          {sortBy === "newest" ? "Newest First" : sortBy === "oldest" ? "Oldest First" : "Time"}
+                        </button>
 
-                  <button
-                    onClick={() => setSortBy(sortBy === "price_low" ? "price_high" : "price_low")}
-                    className={`px-3 py-1 rounded text-sm transition-colors flex items-center`}
-                    style={{
-                      backgroundColor: sortBy.includes("price") ? siteTheme.accentColor : siteTheme.secondaryBgColor,
-                      color: siteTheme.textColor,
-                    }}
-                  >
-                    <DollarSign className="mr-1" size={14} />
-                    {sortBy === "price_low"
-                      ? "Price: Low to High"
-                      : sortBy === "price_high"
-                        ? "Price: High to Low"
-                        : "Price"}
-                  </button>
-                </div>
+                        <button
+                          onClick={() => setSortBy(sortBy === "name_asc" ? "name_desc" : "name_asc")}
+                          className={`px-3 py-1 rounded text-sm transition-colors flex items-center`}
+                          style={{
+                            backgroundColor: sortBy.includes("name") ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+                            color: siteTheme.textColor,
+                          }}
+                        >
+                          <ListOrderedIcon className="mr-1" size={14} />
+                          {sortBy === "name_asc" ? "A-Z" : sortBy === "name_desc" ? "Z-A" : "Name"}
+                        </button>
+
+                        <button
+                          onClick={() => setSortBy(sortBy === "price_low" ? "price_high" : "price_low")}
+                          className={`px-3 py-1 rounded text-sm transition-colors flex items-center`}
+                          style={{
+                            backgroundColor: sortBy.includes("price") ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+                            color: siteTheme.textColor,
+                          }}
+                        >
+                          <DollarSign className="mr-1" size={14} />
+                          {sortBy === "price_low"
+                            ? "Price: Low to High"
+                            : sortBy === "price_high"
+                              ? "Price: High to Low"
+                              : "Price"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -245,7 +270,7 @@ export default function ProductsPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product._id} product={product} siteTheme={siteTheme} />
                 ))}
@@ -263,7 +288,7 @@ function ProductCard({ product, siteTheme }) {
   return (
     <Link href={`/product/${product._id}`}>
       <div
-        className="rounded-lg overflow-hidden shadow-md transition-transform hover:scale-105"
+        className="rounded-lg overflow-hidden shadow-md transition-transform hover:scale-105 min-h-[300px]"
         style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
       >
         <div className="relative h-48 w-full">
@@ -284,26 +309,12 @@ function ProductCard({ product, siteTheme }) {
           )}
         </div>
         <div className="p-4">
-          <h3 className="text-lg font-semibold mb-1 truncate" style={{ color: siteTheme.textColor }}>
-            {product.name || product.title}
-          </h3>
           <p className="text-lg font-bold" style={{ color: siteTheme.accentColor }}>
             ${product.price.toFixed(2)}
           </p>
           <p className="text-sm mt-2 line-clamp-2" style={{ color: siteTheme.textColor }}>
             {product.description || "No description available"}
           </p>
-          <div className="mt-3 flex justify-between items-center">
-            <span className="text-xs" style={{ color: siteTheme.textColor }}>
-              {product.category || "Uncategorized"}
-            </span>
-            <button
-              className="px-3 py-1 rounded text-xs"
-              style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
-            >
-              View Details
-            </button>
-          </div>
         </div>
       </div>
     </Link>
