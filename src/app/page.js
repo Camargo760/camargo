@@ -133,10 +133,10 @@ export default function Home() {
 
           <div className="relative z-10 text-center px-4 max-w-4xl">
             <h1 className={`${mainTextSize} ${mainTextColor} ${mainTextFont} mb-4`}>
-              {homeContent.mainText || "Welcome to Camargo Clothing Co."}
+              {homeContent.mainText || ""}
             </h1>
             <p className={`${subtextSize} ${subtextColor} ${subtextFont} mb-8`}>
-              {homeContent.subText || "Discover our latest collection of premium clothing and accessories."}
+              {homeContent.subText || ""}
             </p>
             <div className="flex md:gap-8 gap-4 justify-center">
               <Link
