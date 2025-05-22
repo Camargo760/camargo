@@ -27,7 +27,7 @@ export default function ReviewCard({ review, siteTheme }) {
 
   return (
     <div
-      className="p-4 rounded-lg"
+      className="p-4 rounded-lg mb-4"
       style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
     >
       <div className="flex justify-between items-start mb-2">
