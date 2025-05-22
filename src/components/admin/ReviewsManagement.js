@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight, Trash2, Star, Type } from "lucide-react"
-import ImageLightBox from "../ImageLightbox"
+import ImageLightbox from "../ImageLightBox"
 
 export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) {
   const [currentReviewPage, setCurrentReviewPage] = useState(1)
@@ -225,7 +225,7 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
       )}
 
       {/* Lightbox component */}
-      <ImageLightBox
+      <ImageLightbox
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
         images={lightboxImages}
