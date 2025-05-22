@@ -7,10 +7,12 @@ import ImageLightbox from "../ImageLightBox"
 
 export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) {
   const [currentReviewPage, setCurrentReviewPage] = useState(1)
-  const [totalReviewPages, setTotalReviewPages] = useState(Math.ceil(reviews.length / 10) || 1)
+  const [reviewsPerPage] = useState(10)
   const [loadingReviews, setLoadingReviews] = useState(false)
-  const reviewsPerPage = 10
   const [expandedReviews, setExpandedReviews] = useState({})
+
+  // Calculate total pages
+  const totalReviewPages = Math.ceil(reviews.length / reviewsPerPage) || 1
 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -99,8 +101,9 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
           <div className="space-y-4">
             {currentReviews.map((review) => {
               const isExpanded = expandedReviews[review._id]
-              const contentPreview = review.text?.substring(0, 100) || ""
-              const needsTruncation = review.text?.length > 100
+              const contentPreview = review.content || review.text
+              const contentText = contentPreview?.substring(0, 100) || ""
+              const needsTruncation = contentPreview?.length > 100
 
               return (
                 <div
@@ -111,7 +114,7 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center">
-                        <div className="font-semibold">{review.user?.name || "Anonymous"}</div>
+                        <div className="font-semibold">{review.name || review.user?.name || "Anonymous"}</div>
                         <div className="ml-2 text-sm opacity-70">{review.user?.email || ""}</div>
                       </div>
                       <div className="flex mt-1">
@@ -135,10 +138,12 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
                     </button>
                   </div>
 
+                  <h3 className="font-medium mt-2">{review.title}</h3>
+
                   <div className="mt-2">
                     {isExpanded || !needsTruncation ? (
                       <div>
-                        <p>{review.text}</p>
+                        <p>{contentPreview}</p>
                         {needsTruncation && (
                           <button
                             onClick={() => toggleExpandReview(review._id)}
@@ -151,7 +156,7 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
                       </div>
                     ) : (
                       <p>
-                        {contentPreview}
+                        {contentText}
                         <button
                           onClick={() => toggleExpandReview(review._id)}
                           className="ml-1 font-medium hover:underline"
@@ -204,7 +209,7 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
                   cursor: currentReviewPage === 1 ? "not-allowed" : "pointer",
                 }}
               >
-                <ChevronLeft size={16} className="mr-1" /> Previous 10
+                <ChevronLeft size={16} className="mr-1" /> Previous
               </button>
               <button
                 onClick={handleNextReviewPage}
@@ -217,7 +222,7 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
                   cursor: currentReviewPage === totalReviewPages ? "not-allowed" : "pointer",
                 }}
               >
-                Next 10 <ChevronRight size={16} className="ml-1" />
+                Next <ChevronRight size={16} className="ml-1" />
               </button>
             </div>
           </div>
