@@ -67,7 +67,8 @@ export async function PUT(request, { params }) {
     }
 
     // Check if the user owns the review or is an admin
-    if (!review.userId.equals(user._id) && session.user.email !== "camargo_co@outlook.com") {
+    // Handle case where userId might not exist (anonymous reviews)
+    if (review.userId && !review.userId.equals(user._id) && session.user.email !== "camargo_co@outlook.com") {
       return NextResponse.json({ error: "You can only edit your own reviews" }, { status: 403 })
     }
 
@@ -130,21 +131,29 @@ export async function DELETE(request, { params }) {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Get user ID
-    const user = await db.collection("users").findOne({ email: session.user.email })
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
-    }
-
-    // Get the review
+    // Get the review first
     const review = await db.collection("reviews").findOne({ _id: new ObjectId(id) })
     if (!review) {
       return NextResponse.json({ error: "Review not found" }, { status: 404 })
     }
 
-    // Check if the user owns the review or is an admin
-    if (!review.userId.equals(user._id) && session.user.email !== "camargo_co@outlook.com") {
-      return NextResponse.json({ error: "You can only delete your own reviews" }, { status: 403 })
+    // Get user ID
+    const user = await db.collection("users").findOne({ email: session.user.email })
+
+    // Check if the user is an admin (always allow admin to delete)
+    const isAdmin = session.user.email === "camargo_co@outlook.com"
+
+    // For anonymous reviews (no userId) or admin, allow deletion
+    // Otherwise check if the user owns the review
+    if (!isAdmin && review.userId) {
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 })
+      }
+
+      // Check if the user owns the review
+      if (!review.userId.equals(user._id)) {
+        return NextResponse.json({ error: "You can only delete your own reviews" }, { status: 403 })
+      }
     }
 
     // Delete the review
