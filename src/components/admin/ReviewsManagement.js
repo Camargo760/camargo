@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight, Trash2, Star, Type } from "lucide-react"
-import ImageLightbox from "../ImageLightBox"
+import ImageLightbox from "../ImageLightbox"
 
 export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) {
   const [currentReviewPage, setCurrentReviewPage] = useState(1)
@@ -41,17 +41,22 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
         setLoadingReviews(true)
         const res = await fetch(`/api/reviews/${reviewId}`, {
           method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
         })
+
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}))
           console.error("Error deleting review:", errorData)
           throw new Error(errorData.error || "Failed to delete review")
         }
+
         await fetchReviews()
         alert("Review deleted successfully!")
       } catch (err) {
         console.error("Error deleting review:", err)
-        alert("Failed to delete review. Please try again.")
+        alert(`Failed to delete review: ${err.message}`)
       } finally {
         setLoadingReviews(false)
       }
@@ -94,8 +99,8 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
           <div className="space-y-4">
             {currentReviews.map((review) => {
               const isExpanded = expandedReviews[review._id]
-              const contentPreview = review.content?.substring(0, 400) || ""
-              const needsTruncation = review.content?.length > 400
+              const contentPreview = review.text?.substring(0, 100) || ""
+              const needsTruncation = review.text?.length > 100
 
               return (
                 <div
@@ -106,7 +111,7 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="flex items-center">
-                        <div className="font-semibold">{review.name || review.user?.name || "Anonymous"}</div>
+                        <div className="font-semibold">{review.user?.name || "Anonymous"}</div>
                         <div className="ml-2 text-sm opacity-70">{review.user?.email || ""}</div>
                       </div>
                       <div className="flex mt-1">
@@ -130,12 +135,10 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
                     </button>
                   </div>
 
-                  <h3 className="font-medium mt-2">{review.title}</h3>
-
                   <div className="mt-2">
                     {isExpanded || !needsTruncation ? (
                       <div>
-                        <p>{review.content}</p>
+                        <p>{review.text}</p>
                         {needsTruncation && (
                           <button
                             onClick={() => toggleExpandReview(review._id)}
