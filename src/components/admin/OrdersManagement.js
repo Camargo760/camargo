@@ -2,13 +2,32 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { ChevronLeft, ChevronRight, X, Download, ShoppingBag } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Download,
+  ShoppingBag,
+  Bell,
+  Check,
+  Trash2,
+  CheckCheck,
+  Trash,
+  RefreshCw,
+} from "lucide-react"
 
 export default function OrdersManagement({ siteTheme, orders }) {
   const [currentOrderPage, setCurrentOrderPage] = useState(1)
   const [ordersPerPage] = useState(10)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  // Notification colors
+  const newOrderColor = "#0A0F2C" // Light yellow for new orders
+  const readOrderColor = siteTheme.cardBgColor // Current theme color for read orders
 
   // Calculate total pages
   const totalOrderPages = Math.ceil(orders.length / ordersPerPage) || 1
@@ -19,15 +38,45 @@ export default function OrdersManagement({ siteTheme, orders }) {
       setIsMobile(window.innerWidth < 640)
     }
 
-    // Initial check
     checkIfMobile()
-
-    // Add event listener
     window.addEventListener("resize", checkIfMobile)
-
-    // Cleanup
     return () => window.removeEventListener("resize", checkIfMobile)
   }, [])
+
+  // Load notifications from database
+  useEffect(() => {
+    loadNotifications()
+    // Also create notifications for any orders that don't have them
+    createNotificationsForOrders()
+  }, [])
+
+
+  const loadNotifications = async () => {
+    try {
+      const response = await fetch("/api/notifications")
+      if (response.ok) {
+        const data = await response.json()
+        setNotifications(data.filter((n) => !n.isDeleted)) // Only show non-deleted notifications
+      }
+    } catch (error) {
+      console.error("Error loading notifications:", error)
+    }
+  }
+
+  const createNotificationsForOrders = async () => {
+    try {
+      await fetch("/api/notifications/create-for-orders", {
+        method: "POST",
+      })
+      // Reload notifications after creating new ones
+      loadNotifications()
+    } catch (error) {
+      console.error("Error creating notifications for orders:", error)
+    }
+  }
+
+  // Get unread notifications count
+  const unreadCount = notifications.filter((n) => !n.isRead && !n.isDeleted).length
 
   // Pagination handlers for orders
   const handlePreviousOrderPage = () => {
@@ -57,31 +106,11 @@ export default function OrdersManagement({ siteTheme, orders }) {
     document.body.removeChild(link)
   }
 
-  const handleUpdateStatus = async (orderId, newStatus) => {
-    try {
-      const res = await fetch(`/api/orders/${orderId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        console.error("Error updating order status:", errorData)
-        throw new Error(errorData.error || "Failed to update order status")
-      }
-
-      // Refresh orders after status update
-      window.location.reload()
-    } catch (err) {
-      console.error("Error updating order status:", err)
-      alert("Failed to update order status. Please try again.")
-    }
-  }
-
   // View order details
   const viewOrderDetails = (order) => {
     setSelectedOrder(order)
+    // Mark order as read when viewing details
+    markOrderAsRead(order.id)
   }
 
   // Close order details modal
@@ -89,29 +118,107 @@ export default function OrdersManagement({ siteTheme, orders }) {
     setSelectedOrder(null)
   }
 
-  // Get status color
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case "processing":
-        return "#3B82F6" // blue
-      case "shipped":
-        return "#10B981" // green
-      case "delivered":
-        return "#059669" // darker green
-      case "cancelled":
-        return "#EF4444" // red
-      case "completed":
-        return "#059669" // darker green
-      default:
-        return "#F59E0B" // amber for pending
+  // Mark single notification as read
+  const markNotificationAsRead = async (notificationId) => {
+    setLoading(true)
+    try {
+      const response = await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "markAsRead", notificationId }),
+      })
+
+      if (response.ok) {
+        await loadNotifications() // Reload notifications
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error)
     }
+    setLoading(false)
+  }
+
+  // Delete single notification
+  const deleteNotification = async (notificationId) => {
+    setLoading(true)
+    try {
+      const response = await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", notificationId }),
+      })
+
+      if (response.ok) {
+        await loadNotifications() // Reload notifications
+        alert("Notification marked as read and deleted")
+      }
+    } catch (error) {
+      console.error("Error deleting notification:", error)
+    }
+    setLoading(false)
+  }
+
+  // Mark all notifications as read
+  const markAllAsRead = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "markAllAsRead" }),
+      })
+
+      if (response.ok) {
+        await loadNotifications() // Reload notifications
+      }
+    } catch (error) {
+      console.error("Error marking all as read:", error)
+    }
+    setLoading(false)
+  }
+
+  // Delete all notifications
+  const deleteAllNotifications = async () => {
+    if (confirm("This will mark all notifications as read and deleted. Are you sure?")) {
+      setLoading(true)
+      try {
+        const response = await fetch("/api/notifications", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "deleteAll" }),
+        })
+
+        if (response.ok) {
+          await loadNotifications() // Reload notifications
+          alert("All notifications marked as read and deleted")
+        }
+      } catch (error) {
+        console.error("Error deleting all notifications:", error)
+      }
+      setLoading(false)
+    }
+  }
+
+  // Mark order as read (for when viewing order details)
+  const markOrderAsRead = async (orderId) => {
+    const notification = notifications.find((n) => n.orderId === orderId)
+    if (notification && !notification.isRead) {
+      await markNotificationAsRead(notification._id)
+    }
+  }
+
+  // Get order background color based on read status
+  const getOrderBackgroundColor = (orderId) => {
+    const notification = notifications.find((n) => n.orderId === orderId)
+    if (notification) {
+      return notification.isRead ? readOrderColor : newOrderColor
+    }
+    return readOrderColor // Default to read color if no notification found
   }
 
   // Format text with line breaks after 100 characters
   const formatLongText = (text, maxLength = 20) => {
     if (!text || text.length <= maxLength) return text
 
-    // Split the text into chunks of maxLength
     const chunks = []
     for (let i = 0; i < text.length; i += maxLength) {
       chunks.push(text.substring(i, i + maxLength))
@@ -120,19 +227,120 @@ export default function OrdersManagement({ siteTheme, orders }) {
     return chunks.join("\n")
   }
 
-  // Debug function to log order structure
-  const debugOrder = (order) => {
-    console.log("Order structure:", order)
-    console.log("Product:", order.product)
-    console.log("Category:", order.product?.category)
-  }
-
   return (
     <div className="mt-8">
-      <h2 className="text-2xl font-bold mb-4 flex items-center">
-        <ShoppingBag className="mr-2" size={24} />
-        Orders Management
-      </h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold flex items-center">
+          <ShoppingBag className="mr-2" size={24} />
+          Orders Management
+        </h2>
+
+        {/* Notification Button */}
+        <div className="relative flex items-center space-x-2">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative p-2 rounded-lg flex items-center"
+            style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+          >
+            <Bell size={20} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Notifications Panel */}
+          {showNotifications && (
+            <div
+              className="absolute right-0 top-12 w-96 max-h-96 overflow-y-auto rounded-lg shadow-lg border z-50"
+              style={{
+                backgroundColor: siteTheme.bgColor,
+                borderColor: siteTheme.borderColor,
+              }}
+            >
+              {/* Notification Header */}
+              <div
+                className="p-4 border-b flex justify-between items-center"
+                style={{ borderColor: siteTheme.borderColor }}
+              >
+                <h3 className="font-semibold">Notifications ({unreadCount} unread)</h3>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={markAllAsRead}
+                    className="p-1 rounded hover:opacity-80"
+                    style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+                    title="Mark all as read"
+                    disabled={loading}
+                  >
+                    <CheckCheck size={16} />
+                  </button>
+                  <button
+                    onClick={deleteAllNotifications}
+                    className="p-1 rounded hover:opacity-80 bg-red-500 text-white"
+                    title="Delete all"
+                    disabled={loading}
+                  >
+                    <Trash size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Notifications List */}
+              <div className="max-h-64 overflow-y-auto">
+                {loading ? (
+                  <div className="p-4 text-center">
+                    <RefreshCw size={20} className="animate-spin mx-auto" />
+                    <p className="text-sm mt-2">Loading...</p>
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">No notifications</div>
+                ) : (
+                  notifications.map((notification) => (
+                    <div
+                      key={notification._id}
+                      className="p-3 border-b flex justify-between items-start"
+                      style={{
+                        borderColor: siteTheme.borderColor,
+                        backgroundColor: notification.isRead ? readOrderColor : newOrderColor,
+                      }}
+                    >
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{notification.message}</p>
+                        <p className="text-xs text-gray-600">Customer: {notification.customerName}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(notification.orderDate * 1000).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex space-x-1 ml-2">
+                        {!notification.isRead && (
+                          <button
+                            onClick={() => markNotificationAsRead(notification._id)}
+                            className="p-1 rounded hover:opacity-80"
+                            style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+                            title="Mark as read"
+                            disabled={loading}
+                          >
+                            <Check size={12} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteNotification(notification._id)}
+                          className="p-1 rounded hover:opacity-80 bg-red-500 text-white"
+                          title="Delete"
+                          disabled={loading}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {orders.length === 0 ? (
         <p>No recent orders.</p>
@@ -151,7 +359,6 @@ export default function OrdersManagement({ siteTheme, orders }) {
                   >
                     Order
                   </th>
-
                   <th
                     className="px-6 py-3 border-b-2 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{ borderColor: siteTheme.borderColor }}
@@ -183,61 +390,44 @@ export default function OrdersManagement({ siteTheme, orders }) {
                 </tr>
               </thead>
               <tbody>
-                {currentOrders.map((order) => {
-                  // Debug each order
-                  if (process.env.NODE_ENV === "development") {
-                    debugOrder(order)
-                  }
-
-                  return (
-                    <tr key={order.id} style={{ backgroundColor: siteTheme.cardBgColor }}>
+                {currentOrders.map((order) => (
+                  <tr key={order.id} style={{ backgroundColor: getOrderBackgroundColor(order.id) }}>
+                    <td className="px-6 py-4 whitespace-nowrap border-b" style={{ borderColor: siteTheme.borderColor }}>
+                      <span style={{ color: siteTheme.accentColor }}>{`#${order.id?.substring(0, 5) || "N/A"}`}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap border-b" style={{ borderColor: siteTheme.borderColor }}>
+                      {new Date(order.created * 1000).toLocaleDateString() || "N/A"}
+                    </td>
+                    {!isMobile && (
                       <td
                         className="px-6 py-4 whitespace-nowrap border-b"
                         style={{ borderColor: siteTheme.borderColor }}
                       >
-                        <span style={{ color: siteTheme.accentColor }}>{`#${order.id?.substring(0, 5) || "N/A"}`}</span>
+                        ${(order.amount_total / 100).toFixed(2) || "0.00"}
                       </td>
-
+                    )}
+                    {!isMobile && (
                       <td
                         className="px-6 py-4 whitespace-nowrap border-b"
                         style={{ borderColor: siteTheme.borderColor }}
                       >
-                        {new Date(order.created * 1000).toLocaleDateString() || "N/A"}
+                        {order.quantity || 1} item{order.quantity > 1 ? "s" : ""}
                       </td>
-
-                      {!isMobile && (
-                        <td
-                          className="px-6 py-4 whitespace-nowrap border-b"
-                          style={{ borderColor: siteTheme.borderColor }}
-                        >
-                          ${(order.amount_total / 100).toFixed(2) || "0.00"}
-                        </td>
-                      )}
-                      {!isMobile && (
-                        <td
-                          className="px-6 py-4 whitespace-nowrap border-b"
-                          style={{ borderColor: siteTheme.borderColor }}
-                        >
-                          
-                          {order.quantity || 1} item
-                          {order.quantity > 1 ? "s" : ""}
-                        </td>
-                      )}
-                      <td
-                        className="px-6 py-4 whitespace-nowrap border-b text-center"
-                        style={{ borderColor: siteTheme.borderColor }}
+                    )}
+                    <td
+                      className="px-6 py-4 whitespace-nowrap border-b text-center"
+                      style={{ borderColor: siteTheme.borderColor }}
+                    >
+                      <button
+                        onClick={() => viewOrderDetails(order)}
+                        className="px-4 py-1 rounded text-white text-sm flex items-center justify-center mx-auto"
+                        style={{ backgroundColor: siteTheme.accentColor }}
                       >
-                        <button
-                          onClick={() => viewOrderDetails(order)}
-                          className="px-4 py-1 rounded text-white text-sm flex items-center justify-center mx-auto"
-                          style={{ backgroundColor: siteTheme.accentColor }}
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -292,8 +482,9 @@ export default function OrdersManagement({ siteTheme, orders }) {
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-xl font-bold">
                     Order Details{" "}
+                    <span style={{ color: siteTheme.accentColor }}>#{selectedOrder.id?.substring(0, 5)}</span>
                   </h3>
-                  <button onClick={closeOrderDetails} className="text-gray-500 hover:text-gray-700 ">
+                  <button onClick={closeOrderDetails} className="text-gray-500 hover:text-gray-700">
                     <X size={24} />
                   </button>
                 </div>
@@ -375,8 +566,6 @@ export default function OrdersManagement({ siteTheme, orders }) {
                         )}
                       </p>
                       <p>
-                      </p>
-                      <p>
                         <span className="font-medium">Color:</span> {selectedOrder.selectedColor || "N/A"}
                       </p>
                       <p>
@@ -408,6 +597,7 @@ export default function OrdersManagement({ siteTheme, orders }) {
                             src={
                               selectedOrder.product.finalDesignImage ||
                               selectedOrder.product.customImage ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg"
                             }
