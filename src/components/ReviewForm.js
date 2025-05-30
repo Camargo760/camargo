@@ -1,3 +1,4 @@
+// components/ReviewForm.js
 "use client"
 
 import { useState, useEffect } from "react"
@@ -5,6 +6,7 @@ import { Star } from "lucide-react"
 import { Upload, X } from "lucide-react"
 import Image from "next/image"
 import { useSession } from "next-auth/react"
+import ImageLightbox from "./ImageLightBox"
 
 export default function ReviewForm({ onSubmit, siteTheme }) {
   const { data: session } = useSession()
@@ -15,6 +17,11 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [reviewImages, setReviewImages] = useState([])
   const [previewImages, setPreviewImages] = useState([])
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxImages, setLightboxImages] = useState([])
+  const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
 
   // Set name from session when available
   useEffect(() => {
@@ -58,6 +65,13 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
     setReviewImages(newReviewImages)
   }
 
+  // Open lightbox for preview images
+  const openLightbox = (index) => {
+    setLightboxImages(previewImages)
+    setLightboxInitialIndex(index)
+    setLightboxOpen(true)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -97,6 +111,9 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
         const errorData = await response.json()
         throw new Error(errorData.error || "Failed to submit review")
       }
+
+      // Clean up preview URLs before resetting
+      previewImages.forEach(url => URL.revokeObjectURL(url))
 
       // Reset form on success
       setRating(5)
@@ -224,19 +241,21 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
               {previewImages.map((src, index) => (
                 <div
                   key={index}
-                  className="relative w-20 h-20 rounded overflow-hidden"
+                  className="relative w-20 h-20 rounded overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                   style={{ borderColor: siteTheme.borderColor, borderWidth: "1px" }}
                 >
-                  <Image
-                    src={src || "/placeholder.svg"}
-                    alt={`Review image ${index + 1}`}
-                    fill
-                    style={{ objectFit: "cover" }}
-                  />
+                  <div onClick={() => openLightbox(index)} className="w-full h-full">
+                    <Image
+                      src={src || "/placeholder.svg"}
+                      alt={`Review image ${index + 1}`}
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute top-0 right-0 p-1 rounded-bl"
+                    className="absolute top-0 right-0 p-1 rounded-bl z-10"
                     style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
                   >
                     <X size={14} color="white" />
@@ -256,6 +275,15 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
       >
         {isSubmitting ? "Submitting..." : "Submit Review"}
       </button>
+
+      {/* Lightbox component */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        images={lightboxImages}
+        initialIndex={lightboxInitialIndex}
+        altText="Review Preview"
+      />
     </form>
   )
 }
