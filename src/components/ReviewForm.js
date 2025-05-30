@@ -3,10 +3,9 @@
 
 import { useState, useEffect } from "react"
 import { Star } from "lucide-react"
-import { Upload, X } from "lucide-react"
+import { Upload, X, Info } from "lucide-react"
 import Image from "next/image"
 import { useSession } from "next-auth/react"
-import ImageLightbox from "./ImageLightBox"
 
 export default function ReviewForm({ onSubmit, siteTheme }) {
   const { data: session } = useSession()
@@ -17,6 +16,7 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [reviewImages, setReviewImages] = useState([])
   const [previewImages, setPreviewImages] = useState([])
+  const [showTooltip, setShowTooltip] = useState(false)
 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -41,6 +41,15 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
     if (reviewImages.length + files.length > 3) {
       alert("You can upload a maximum of 3 images")
       return
+    }
+
+    // Check file sizes (5MB max per file)
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size exceeds 5MB limit")
+        e.target.value = ""
+        return
+      }
     }
 
     // Create preview URLs
@@ -137,7 +146,41 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold">Write a Review</h3>
+        <div className="relative">
+          <button
+            type="button"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            className="p-1 rounded-full hover:bg-opacity-20"
+            style={{ backgroundColor: showTooltip ? siteTheme.accentColor : 'transparent' }}
+          >
+            <Info size={16} color={siteTheme.accentColor} />
+          </button>
+          {showTooltip && (
+            <div
+              className="absolute right-0 top-8 w-80 p-3 rounded-lg shadow-lg z-10 text-sm"
+              style={{
+                backgroundColor: siteTheme.cardBgColor,
+                borderColor: siteTheme.borderColor,
+                borderWidth: '1px',
+                borderStyle: 'solid'
+              }}
+            >
+              <div className="relative">
+                <div
+                  className="absolute -top-2 right-4 w-4 h-4 transform rotate-45"
+                  style={{ backgroundColor: siteTheme.cardBgColor }}
+                ></div>
+                <p style={{ color: siteTheme.textColor }}>
+                  Your feedback is invaluable in shaping the final version. We will reach out to discuss the logo and any necessary revisions. If a second upload is required, we will contact you by phone to confirm. The final logo will be delivered upon your approval.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="mb-4">
         <label htmlFor="name" className="block text-sm font-medium mb-2">
@@ -236,6 +279,10 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
             />
           </label>
 
+          <div className="text-xs" style={{ color: "#b0b0b0" }}>
+            JPG, PNG or GIF (Max 5MB per image)
+          </div>
+
           {previewImages.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {previewImages.map((src, index) => (
@@ -275,15 +322,6 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
       >
         {isSubmitting ? "Submitting..." : "Submit Review"}
       </button>
-
-      {/* Lightbox component */}
-      <ImageLightbox
-        isOpen={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-        images={lightboxImages}
-        initialIndex={lightboxInitialIndex}
-        altText="Review Preview"
-      />
     </form>
   )
 }
