@@ -160,14 +160,14 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
           </button>
           {showTooltip && (
             <div
-              className="absolute right-0 top-8 w-80 p-3 rounded-lg shadow-lg z-10 text-sm"
+              className="absolute right-0 top-8 w-80 p-3 rounded-lg shadow-lg z-10 text-sm max-w-[200px]"
               style={{
                 backgroundColor: siteTheme.cardBgColor,
                 borderColor: siteTheme.borderColor,
                 borderWidth: '1px',
                 borderStyle: 'solid'
               }}
-            >
+              >
               <div className="relative">
                 <div
                   className="absolute -top-2 right-4 w-4 h-4 transform rotate-45"
