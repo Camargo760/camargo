@@ -7,7 +7,8 @@ import ImageLightbox from "./ImageLightBox"
 
 export default function ReviewCard({ review, siteTheme }) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [lightboxImages, setLightboxImages] = useState([])
+  const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
   const [expanded, setExpanded] = useState(false)
 
   const formattedDate = new Date(review.createdAt).toLocaleDateString("en-US", {
@@ -17,7 +18,8 @@ export default function ReviewCard({ review, siteTheme }) {
   })
 
   const openLightbox = (index) => {
-    setCurrentImageIndex(index)
+    setLightboxImages(review.images)
+    setLightboxInitialIndex(index)
     setLightboxOpen(true)
   }
 
@@ -82,7 +84,7 @@ export default function ReviewCard({ review, siteTheme }) {
           {review.images.map((image, index) => (
             <div
               key={index}
-              className="relative w-16 h-16 rounded overflow-hidden cursor-pointer"
+              className="relative w-16 h-16 rounded overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => openLightbox(index)}
               style={{ borderColor: siteTheme.borderColor, borderWidth: "1px" }}
             >
@@ -97,14 +99,14 @@ export default function ReviewCard({ review, siteTheme }) {
         </div>
       )}
 
-      {lightboxOpen && review.images && (
-        <ImageLightbox
-          images={review.images}
-          currentIndex={currentImageIndex}
-          setCurrentIndex={setCurrentImageIndex}
-          onClose={() => setLightboxOpen(false)}
-        />
-      )}
+      {/* Lightbox component */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        images={lightboxImages}
+        initialIndex={lightboxInitialIndex}
+        altText="Review"
+      />
     </div>
   )
 }
