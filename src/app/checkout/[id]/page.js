@@ -211,9 +211,7 @@ export default function Checkout({ params }) {
       const { id: sessionId } = await response.json()
 
       // Redirect to Stripe Checkout
-      const stripe = await loadStripe(
-        "pk_test_51P2GkSSEzW86D25YUkzW9QoZE31ODA3vRCoQpwmKlue7nrsuj7MI0MVD5w8oVUXwsSYhjbV7Xvq2iNu12Mi6vpjQ00a8DAondY",
-      )
+      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
       await stripe.redirectToCheckout({ sessionId })
     } catch (err) {
       console.error("Error creating checkout session:", err)
