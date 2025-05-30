@@ -3,6 +3,7 @@
 import { useState, useRef } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import ImageLightbox from "../ImageLightBox"
 
 export default function ProductManagement({ siteTheme, fetchProducts, products, sortOrder, setSortOrder }) {
   const [name, setName] = useState("")
@@ -15,6 +16,11 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
   const [editingProduct, setEditingProduct] = useState(null)
   const [error, setError] = useState(null)
   const productImagesRefs = useRef({})
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxImages, setLightboxImages] = useState([])
+  const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -148,6 +154,20 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
     }
   }
 
+  // Open lightbox for product images
+  const openProductImageLightbox = (product, index) => {
+    setLightboxImages(product.images)
+    setLightboxInitialIndex(index)
+    setLightboxOpen(true)
+  }
+
+  // Open lightbox for form images
+  const openFormImageLightbox = (index) => {
+    setLightboxImages(images)
+    setLightboxInitialIndex(index)
+    setLightboxOpen(true)
+  }
+
   return (
     <div className="mb-8">
       {error && (
@@ -159,7 +179,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
       {/* Product Form */}
       <form
         onSubmit={handleSubmit}
-        className="mb-8 p-4 sm:p-6 rounded-lg"
+        className="mb-8 p-6 rounded-lg"
         style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
       >
         <h2 className="text-2xl font-bold mb-4">
@@ -243,13 +263,15 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
         <div className="mb-4 flex flex-wrap gap-2">
           {images.map((image, index) => (
             <div key={index} className="relative">
-              <Image
-                src={image || "/assets/placeholder.svg"}
-                alt={`Product image ${index + 1}`}
-                width={100}
-                height={100}
-                className="rounded-md"
-              />
+              <div className="cursor-pointer" onClick={() => openFormImageLightbox(index)}>
+                <Image
+                  src={image || "/placeholder.svg"}
+                  alt={`Product image ${index + 1}`}
+                  width={100}
+                  height={100}
+                  className="rounded-md"
+                />
+              </div>
               <button
                 type="button"
                 onClick={() => removeImage(index)}
@@ -369,6 +391,12 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
               <p className="text-sm mb-2">
                 <span className="font-semibold">Uploaded:</span> {new Date(product.uploadTime).toLocaleString()}
               </p>
+              <p className="text-sm mb-2">
+                <span className="font-semibold">Status:</span>{" "}
+                <span style={{ color: product.published ? "#10B981" : "#EF4444" }}>
+                  {product.published ? "Published" : "Not Published"}
+                </span>
+              </p>
               {product.images && product.images.length > 0 && (
                 <div className="mb-2 relative">
                   {product.images.length > 3 && (
@@ -389,15 +417,16 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
                     {product.images.map((image, index) => (
                       <div
                         key={index}
-                        className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden"
+                        className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden cursor-pointer"
                         style={{
                           backgroundColor: siteTheme.secondaryBgColor,
                           borderColor: siteTheme.borderColor,
                           borderWidth: "1px",
                         }}
+                        onClick={() => openProductImageLightbox(product, index)}
                       >
                         <Image
-                          src={image || "/assets/placeholder.svg"}
+                          src={image || "/placeholder.svg"}
                           alt={`${product.name} - Image ${index + 1}`}
                           fill
                           style={{ objectFit: "cover" }}
@@ -447,6 +476,15 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
           ))}
         </div>
       )}
+
+      {/* Lightbox component */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        images={lightboxImages}
+        initialIndex={lightboxInitialIndex}
+        altText="Product"
+      />
     </div>
   )
 }
