@@ -355,12 +355,47 @@ export default function CustomOrder() {
                 boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
               }}
             >
-              <h2
-                className="font-['Kanit'] text-2xl uppercase tracking-wide mt-0 mb-6"
-                style={{ color: siteTheme.accentColor }}
-              >
-                CUSTOMIZE YOUR TEE
-              </h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2
+                  className="font-['Kanit'] text-2xl uppercase tracking-wide mt-0"
+                  style={{ color: siteTheme.accentColor }}
+                >
+                  CUSTOMIZE YOUR TEE
+                </h2>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onMouseEnter={() => setShowTooltip(true)}
+                    onMouseLeave={() => setShowTooltip(false)}
+                    className="p-1 rounded-full hover:bg-opacity-20"
+                    style={{ backgroundColor: showTooltip ? siteTheme.accentColor : 'transparent' }}
+                  >
+                    <Info size={16} color={siteTheme.accentColor} />
+                  </button>
+                  {showTooltip && (
+                    <div
+                      className="absolute right-0 top-8 w-80 p-3 rounded-lg shadow-lg z-10 text-sm max-w-[200px]"
+                      style={{
+                        backgroundColor: siteTheme.cardBgColor,
+                        borderColor: siteTheme.borderColor,
+                        borderWidth: '1px',
+                        borderStyle: 'solid'
+                      }}
+                    >
+                      <div className="relative">
+                        <div
+                          className="absolute -top-2 right-4 w-4 h-4 transform rotate-45"
+                          style={{ backgroundColor: siteTheme.cardBgColor }}
+                        ></div>
+                        <p style={{ color: siteTheme.textColor }}>
+                          Your feedback is invaluable in shaping the final version. We will reach out to discuss the logo and any necessary revisions. If a second upload is required, we will contact you by phone to confirm. The final logo will be delivered upon your approval.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div className="mb-6">
                 <span
