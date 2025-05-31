@@ -439,7 +439,7 @@ export default function Checkout({ params }) {
               id="coupon"
               type="text"
               placeholder="Enter coupon code"
-              value={couponCode}
+              value={coupon}
               onChange={(e) => setCoupon(e.target.value)}
             />
           </div>
