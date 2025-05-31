@@ -21,6 +21,7 @@ export async function POST(request) {
       productId,
       name,
       email,
+      coupon,
       phone,
       address,
       color,
@@ -83,6 +84,7 @@ export async function POST(request) {
         customer: {
           name,
           email,
+          coupon,
           phone,
           address,
         },
