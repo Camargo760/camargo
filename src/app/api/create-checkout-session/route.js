@@ -22,6 +22,7 @@ export async function POST(request) {
       productId,
       name,
       email,
+      coupon,
       phone,
       address,
       color,
