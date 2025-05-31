@@ -81,6 +81,7 @@ export async function POST(request) {
     // Create metadata for the session
     const metadata = {
       userId: name,
+      coupon: coupon || "",
       phone: phone || "",
       address: address || "",
       productId,
