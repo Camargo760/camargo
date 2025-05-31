@@ -441,6 +441,7 @@ export default function Checkout({ params }) {
               placeholder="Enter coupon code"
               value={coupon}
               onChange={(e) => setCoupon(e.target.value)}
+              required
             />
           </div>
 
