@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Upload, Type } from "lucide-react"
 import html2canvas from "html2canvas"
 import Header from "@/components/Header"
+import { Info } from "lucide-react"
 
 export default function CustomOrder() {
   const [currentBgColor, setCurrentBgColor] = useState("#1a1a1a")
