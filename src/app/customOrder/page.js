@@ -20,6 +20,7 @@ export default function CustomOrder() {
   const [loading, setLoading] = useState(false)
   const [finalDesignImage, setFinalDesignImage] = useState(null)
   const [showTextOptions, setShowTextOptions] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
