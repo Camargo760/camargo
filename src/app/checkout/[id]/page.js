@@ -25,6 +25,7 @@ export default function Checkout({ params }) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
+  const [coupon, setCoupon] = useState("")
   const [address, setAddress] = useState("")
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isDeliveryFormOpen, setIsDeliveryFormOpen] = useState(false)
@@ -191,6 +192,7 @@ export default function Checkout({ params }) {
           productId: id,
           name,
           email,
+          coupon,
           phone,
           address,
           color,
@@ -422,6 +424,26 @@ export default function Checkout({ params }) {
                 />
               </div>
 
+                             <div className="mb-4">
+            <label className="block text-sm font-bold mb-2" htmlFor="coupon" style={{ color: siteTheme.textColor }}>
+              Coupon Code (Optional)
+            </label>
+            <input
+              className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
+              style={{
+                backgroundColor: siteTheme.secondaryBgColor,
+                color: siteTheme.textColor,
+                borderColor: siteTheme.borderColor,
+                borderWidth: "1px",
+              }}
+              id="coupon"
+              type="text"
+              placeholder="Enter coupon code"
+              value={couponCode}
+              onChange={(e) => setCoupon(e.target.value)}
+            />
+          </div>
+
               <div className="mb-4">
                 <label
                   className="block text-sm font-bold mb-2"
@@ -521,6 +543,7 @@ export default function Checkout({ params }) {
           customerInfo={{
             name,
             email,
+            coupon,
             phone,
             address,
           }}
