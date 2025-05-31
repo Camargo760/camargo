@@ -62,10 +62,12 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
           productId: productDetails.id,
           name: customerInfo.name,
           email: customerInfo.email,
+          coupon: customerInfo.coupon,
           phone: customerInfo.phone,
           address: customerInfo.address,
           color: productDetails.color,
           size: productDetails.size,
+          category: productDetails.category,
           isCustomProduct: productDetails.isCustomProduct || false, // Ensure this is explicitly set
           customText: productDetails.customText,
           quantity: productDetails.quantity,
