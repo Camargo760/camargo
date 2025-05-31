@@ -46,6 +46,7 @@ export async function GET(request) {
           customer: {
             name: order.customer.name || "N/A",
             email: order.customer.email || "N/A",
+            coupon: order.customer.coupon || "N/A",
             phone: order.customer.phone || "N/A",
             address: order.customer.address || "N/A",
           },
@@ -107,6 +108,7 @@ export async function GET(request) {
             address: order.customer_details?.address
               ? `${order.customer_details.address.line1 || ""}, ${order.customer_details.address.city || ""}, ${order.customer_details.address.state || ""}, ${order.customer_details.address.postal_code || ""}, ${order.customer_details.address.country || ""}`.trim()
               : "N/A",
+            coupon: order.metadata?.coupon || "N/A",
             phone: order.metadata?.phone || "N/A",
           },
           product: {
