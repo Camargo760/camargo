@@ -506,6 +506,9 @@ export default function OrdersManagement({ siteTheme, orders }) {
                     <p>
                       <span className="font-medium">Email:</span> {selectedOrder.customer?.email || "N/A"}
                     </p>
+                                        <p>
+                      <span className="font-medium">Email:</span> {selectedOrder.customer?.coupon || "N/A"}
+                    </p>
                     <p>
                       <span className="font-medium">Phone:</span> {selectedOrder.customer?.phone || "N/A"}
                     </p>
