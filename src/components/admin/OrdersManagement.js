@@ -577,9 +577,6 @@ export default function OrdersManagement({ siteTheme, orders }) {
                       <p>
                         <span className="font-medium">Quantity:</span> {selectedOrder.quantity || 1}
                       </p>
-                      <p>
-                        <span className="font-medium">Category:</span> {selectedOrder.category || "N/A"}
-                      </p>
                       {selectedOrder.product?.customText && selectedOrder.product?.customText !== "N/A" && (
                         <p style={{ whiteSpace: "pre-wrap" }}>
                           <span className="font-medium">Custom Text:</span>{" "}
