@@ -377,7 +377,7 @@ export default function CustomOrder() {
                   </button>
                   {showTooltip && (
                     <div
-                      className="absolute right-0 top-8 w-80 p-3 rounded-lg shadow-lg z-10 text-sm max-w-[200px]"
+                      className="absolute right-0 top-8 w-80 p-3 rounded-lg shadow-lg z-10 text-sm max-w-[250px]"
                       style={{
                         backgroundColor: siteTheme.cardBgColor,
                         borderColor: siteTheme.borderColor,
