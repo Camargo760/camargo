@@ -1,13 +1,9 @@
-// api/order-details/route.js
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import clientPromise from "../../../lib/mongodb"
 import { ObjectId } from "mongodb"
 
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY ||
-    "sk_test_51QZg9BD8mrcLYX2ej1ccqQNpzzOfbBKQbKjEsMJsXbhglF3mflOy8b8fvokUICannuHbARZ9pvrRyEXzuLZ5KV5e00Q4zzI8bm",
-)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 export async function GET(request) {
   try {
@@ -78,6 +74,12 @@ export async function GET(request) {
             finalDesignImage: finalDesignImage, // Include the actual image data
             price: order.product.price,
           },
+          status: order.status || "pending",
+          // Add coupon information
+          originalPrice: order.originalPrice || order.product.price,
+          finalPrice: order.finalPrice || order.product.price,
+          couponCode: order.couponCode || null,
+          discountPercentage: order.discountPercentage || 0,
         })
       } catch (error) {
         console.error("Error fetching delivery order details:", error)
@@ -161,6 +163,9 @@ export async function GET(request) {
     const quantity = Number.parseInt(session.metadata.quantity || "1", 10)
 
     // Build response even if product is not found
+    const order = await db.collection("orders").findOne({ stripeSessionId: session.id })
+    const orderStatus = order ? order.status : "pending"
+
     const orderDetails = {
       id: session.id,
       paymentMethod: "stripe",
@@ -169,6 +174,12 @@ export async function GET(request) {
       amount_total: session.amount_total,
       quantity: quantity,
       isCustomProduct: isCustomProduct,
+      status: orderStatus,
+      // Add coupon information
+      originalPrice: order ? order.originalPrice : null,
+      finalPrice: order ? order.finalPrice : null,
+      couponCode: order ? order.couponCode : null,
+      discountPercentage: order ? order.discountPercentage : 0,
       product: product
         ? {
             name: product.name,
@@ -204,4 +215,3 @@ export async function GET(request) {
     )
   }
 }
-
