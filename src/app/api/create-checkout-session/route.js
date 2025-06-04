@@ -4,10 +4,7 @@ import Stripe from "stripe"
 import clientPromise from "../../../lib/mongodb"
 import { ObjectId } from "mongodb"
 
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY ||
-    "sk_test_51P2GkSSEzW86D25YTF33BP83Rf4ffGJORl0gfTr3YBvpr5dejYm8bfO6hH3DYBu9saWy9TEDCUELfJNOW1S80rkG00SEhjrTCo",
-)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 export async function POST(request) {
   try {
@@ -22,15 +19,17 @@ export async function POST(request) {
       productId,
       name,
       email,
-      coupon,
       phone,
       address,
+      price,
       color,
       size,
       isCustomProduct,
       customText,
       quantity = 1,
-      designImageId, // New parameter for the image ID
+      designImageId,
+      category,
+      coupon, // Add coupon parameter
     } = requestData
 
     // Validate required fields
@@ -54,8 +53,28 @@ export async function POST(request) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
+    // Calculate the original price
+    const originalPrice = product.price
+    let finalPrice = originalPrice
+    let discountPercentage = 0
+    let couponCode = null
+
+    // Validate coupon if provided
+    if (coupon && coupon.trim()) {
+      const couponDoc = await db.collection("coupons").findOne({
+        code: coupon.toUpperCase(),
+        isActive: true,
+      })
+
+      if (couponDoc) {
+        discountPercentage = couponDoc.discountPercentage
+        couponCode = couponDoc.code
+        finalPrice = originalPrice * (1 - discountPercentage / 100)
+      }
+    }
+
     // Calculate the total price based on quantity
-    const totalPrice = product.price * quantity
+    const totalPrice = finalPrice * quantity
 
     // Create line items for Stripe
     const lineItems = [
@@ -63,16 +82,22 @@ export async function POST(request) {
         price_data: {
           currency: "usd",
           product_data: {
-            name: `${product.name} ${color ? `(${color}` : ""}${size ? ` - ${size})` : color ? ")" : ""}`,
+            name: `${product.name} ${color ? `(${color}` : ""}${size ? ` - ${size})` : color ? ")" : ""}${couponCode ? ` - ${discountPercentage}% OFF` : ""}`,
             metadata: {
               productId,
+              price,
               color,
               size,
               isCustomProduct: isCustomProduct ? "true" : "false",
               customText: customText || "",
+              category: category || product.category || "N/A",
+              originalPrice: originalPrice.toString(),
+              finalPrice: finalPrice.toString(),
+              coupon: coupon || "",
+              discountPercentage: discountPercentage.toString(),
             },
           },
-          unit_amount: Math.round(product.price * 100), // Convert to cents
+          unit_amount: Math.round(finalPrice * 100), // Convert to cents
         },
         quantity: Number.parseInt(quantity, 10),
       },
@@ -81,14 +106,19 @@ export async function POST(request) {
     // Create metadata for the session
     const metadata = {
       userId: name,
-      coupon: coupon || "",
       phone: phone || "",
       address: address || "",
       productId,
+      price: price || product.price || "N/A",
       color: color || "",
       size: size || "",
       isCustomProduct: isCustomProduct ? "true" : "false",
       quantity: quantity.toString(),
+      category: category || product.category || "N/A",
+      originalPrice: originalPrice.toString(),
+      finalPrice: finalPrice.toString(),
+      coupon: coupon || "",
+      discountPercentage: discountPercentage.toString(),
     }
 
     // Add customText to metadata if it exists
@@ -128,4 +158,3 @@ export async function POST(request) {
     )
   }
 }
-
