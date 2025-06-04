@@ -284,7 +284,7 @@ function ProductCard({ product, siteTheme }) {
         className="rounded-lg overflow-hidden shadow-md transition-transform hover:scale-105 min-h-[300px]"
         style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
       >
-        <div className="relative h-48 w-full">
+        <div className="relative h-80 w-full">
           {product.images && product.images.length > 0 ? (
             <Image
               src={product.images[0] || "/assets/placeholder.svg"}
