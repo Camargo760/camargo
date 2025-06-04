@@ -506,9 +506,6 @@ export default function OrdersManagement({ siteTheme, orders }) {
                     <p>
                       <span className="font-medium">Email:</span> {selectedOrder.customer?.email || "N/A"}
                     </p>
-                                        <p>
-                      <span className="font-medium">Coupon:</span> {selectedOrder.customer?.coupon || "N/A"}
-                    </p>
                     <p>
                       <span className="font-medium">Phone:</span> {selectedOrder.customer?.phone || "N/A"}
                     </p>
@@ -545,6 +542,15 @@ export default function OrdersManagement({ siteTheme, orders }) {
                       </p>
                     )}
                     <p>
+                      <span className="font-medium">Quantity:</span> {selectedOrder.quantity || 1}
+                    </p>
+                    <p>
+                      <span className="font-medium">Coupon:</span> {selectedOrder.coupon || "N/A"}
+                    </p>
+                    <p>
+                      <span className="font-medium">Discount percentage:</span> {(selectedOrder.discountPercentage)}% OFF
+                    </p>
+                    <p>
                       <span className="font-medium">Total:</span> ${(selectedOrder.amount_total / 100).toFixed(2)}
                     </p>
                   </div>
@@ -569,13 +575,16 @@ export default function OrdersManagement({ siteTheme, orders }) {
                         )}
                       </p>
                       <p>
+                        <span className="font-medium">Price:</span> {selectedOrder.product.price || "N/A"}
+                      </p>
+                      <p>
+                        <span className="font-medium">Category:</span> {selectedOrder.product.category || "N/A"}
+                      </p>
+                      <p>
                         <span className="font-medium">Color:</span> {selectedOrder.selectedColor || "N/A"}
                       </p>
                       <p>
                         <span className="font-medium">Size:</span> {selectedOrder.selectedSize || "N/A"}
-                      </p>
-                      <p>
-                        <span className="font-medium">Quantity:</span> {selectedOrder.quantity || 1}
                       </p>
                       {selectedOrder.product?.customText && selectedOrder.product?.customText !== "N/A" && (
                         <p style={{ whiteSpace: "pre-wrap" }}>
