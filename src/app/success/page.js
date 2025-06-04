@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation"
 import Header from "../../components/Header"
 import Link from "next/link"
 import Image from "next/image"
-import LoadingSpinner from "../../components/LoadingSpinner"
 
 function SuccessContent() {
   const [orderDetails, setOrderDetails] = useState(null)
@@ -89,9 +88,40 @@ function SuccessContent() {
     }
   }, [searchParams])
 
+  // Find the getStatusText function and make sure it's defined correctly
+  const getStatusText = (status) => {
+    switch (status) {
+      case "received":
+        return "Order Received"
+      case "out_for_delivery":
+        return "Out for Delivery"
+      case "delivered":
+        return "Delivered"
+      default:
+        return "Pending"
+    }
+  }
+
+  // Find the getStatusColor function and make sure it's defined correctly
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "received":
+        return "#3b82f6" // blue
+      case "out_for_delivery":
+        return "#eab308" // yellow
+      case "delivered":
+        return "#10b981" // green
+      default:
+        return "#f97316" // orange
+    }
+  }
 
   if (loading) {
-    return <LoadingSpinner siteTheme={siteTheme} />
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-90">
+        <div className="text-center text-white text-2xl font-bold">Loading...</div>
+      </div>
+    )
   }
 
   if (error) {
@@ -147,7 +177,47 @@ function SuccessContent() {
                 </span>
               )}
             </p>
+            <p className="mt-2">
+              Status:{" "}
+              <span className="font-medium" style={{ color: getStatusColor(orderDetails.status) }}>
+                {getStatusText(orderDetails.status)}
+              </span>
+            </p>
           </div>
+          {/* Add coupon information if available */}
+          {orderDetails.couponCode && (
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold">Discount Applied</h3>
+              <p>
+                Coupon Code:{" "}
+                <span className="font-medium" style={{ color: siteTheme.accentColor }}>
+                  {orderDetails.couponCode}
+                </span>
+              </p>
+              <p>
+                Discount: <span className="font-medium">{orderDetails.discountPercentage}%</span>
+              </p>
+              {orderDetails.originalPrice && orderDetails.finalPrice && (
+                <>
+                  <p>
+                    Original Price: <span className="line-through">${orderDetails.originalPrice.toFixed(2)}</span>
+                  </p>
+                  <p>
+                    Final Price:{" "}
+                    <span className="font-medium" style={{ color: siteTheme.accentColor }}>
+                      ${orderDetails.finalPrice.toFixed(2)}
+                    </span>
+                  </p>
+                  <p>
+                    You Saved:{" "}
+                    <span className="font-medium" style={{ color: "#10b981" }}>
+                      ${(orderDetails.originalPrice - orderDetails.finalPrice).toFixed(2)}
+                    </span>
+                  </p>
+                </>
+              )}
+            </div>
+          )}
           <div className="mb-4">
             <h3 className="text-xl font-semibold">Product Information</h3>
             <p>
@@ -244,7 +314,7 @@ function SuccessContent() {
           {orderDetails.paymentMethod === "delivery" && orderDetails.additionalNotes && (
             <div className="mb-4">
               <h3 className="text-xl font-semibold">Additional Notes</h3>
-              <p className="italic">{orderDetails.additionalNotes}</p>
+              <p className="italic">"{orderDetails.additionalNotes}"</p>
             </div>
           )}
 
