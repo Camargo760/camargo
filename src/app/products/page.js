@@ -302,7 +302,7 @@ function ProductCard({ product, siteTheme }) {
           )}
         </div>
         <div className="p-4">
-          <p className="text-sm font-bold" style={{ color: siteTheme.accentColor }}>
+          <p className="text-md font-bold" style={{ color: siteTheme.accentColor }}>
             ${product.price.toFixed(2)}
           </p>
           <p className="text-xs mt-2 line-clamp-2" style={{ color: siteTheme.textColor }}>
