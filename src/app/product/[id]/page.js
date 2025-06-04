@@ -1,7 +1,7 @@
 // product/[id]/page.js
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Header from "../../../components/Header"
@@ -15,6 +15,10 @@ export default function ProductDetail({ params }) {
   const [selectedSize, setSelectedSize] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [currentImage, setCurrentImage] = useState(0)
+  const [zoomLevel, setZoomLevel] = useState(1)
+  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -25,6 +29,7 @@ export default function ProductDetail({ params }) {
   })
   const router = useRouter()
   const { id } = params
+  const imageContainerRef = useRef(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,6 +71,120 @@ export default function ProductDetail({ params }) {
     }
   }, [id])
 
+  // Reset zoom when image changes
+  useEffect(() => {
+    setZoomLevel(1)
+    setZoomPosition({ x: 0, y: 0 })
+  }, [currentImage])
+
+  const zoomAtPoint = (newZoomLevel, mouseX, mouseY) => {
+    const container = imageContainerRef.current
+    if (!container) return
+
+    const containerRect = container.getBoundingClientRect()
+    
+    // Calculate mouse position relative to container center
+    const mouseRelativeX = mouseX - containerRect.left - containerRect.width / 2
+    const mouseRelativeY = mouseY - containerRect.top - containerRect.height / 2
+    
+    // Calculate the new position to keep the mouse point fixed
+    const zoomRatio = newZoomLevel / zoomLevel
+    const newX = mouseRelativeX - (mouseRelativeX - zoomPosition.x) * zoomRatio
+    const newY = mouseRelativeY - (mouseRelativeY - zoomPosition.y) * zoomRatio
+    
+    // Apply zoom and position
+    setZoomLevel(newZoomLevel)
+    
+    if (newZoomLevel > 1) {
+      // Limit boundaries
+      const maxX = (containerRect.width * (newZoomLevel - 1)) / 2
+      const maxY = (containerRect.height * (newZoomLevel - 1)) / 2
+      
+      setZoomPosition({
+        x: Math.max(-maxX, Math.min(maxX, newX)),
+        y: Math.max(-maxY, Math.min(maxY, newY))
+      })
+    } else {
+      setZoomPosition({ x: 0, y: 0 })
+    }
+  }
+
+  const handleZoomIn = (mouseX, mouseY) => {
+    const newZoomLevel = Math.min(zoomLevel * 1.5, 5)
+    if (mouseX !== undefined && mouseY !== undefined) {
+      zoomAtPoint(newZoomLevel, mouseX, mouseY)
+    } else {
+      // Default to center if no mouse position provided
+      const container = imageContainerRef.current
+      if (container) {
+        const rect = container.getBoundingClientRect()
+        zoomAtPoint(newZoomLevel, rect.left + rect.width / 2, rect.top + rect.height / 2)
+      }
+    }
+  }
+
+  const handleZoomOut = (mouseX, mouseY) => {
+    const newZoomLevel = Math.max(zoomLevel / 1.5, 1)
+    if (mouseX !== undefined && mouseY !== undefined) {
+      zoomAtPoint(newZoomLevel, mouseX, mouseY)
+    } else {
+      // Default to center if no mouse position provided
+      const container = imageContainerRef.current
+      if (container) {
+        const rect = container.getBoundingClientRect()
+        zoomAtPoint(newZoomLevel, rect.left + rect.width / 2, rect.top + rect.height / 2)
+      }
+    }
+  }
+
+  const handleResetZoom = () => {
+    setZoomLevel(1)
+    setZoomPosition({ x: 0, y: 0 })
+  }
+
+  const handleWheel = (e) => {
+    e.preventDefault()
+    if (e.deltaY < 0) {
+      handleZoomIn(e.clientX, e.clientY)
+    } else {
+      handleZoomOut(e.clientX, e.clientY)
+    }
+  }
+
+  const handleMouseDown = (e) => {
+    if (zoomLevel > 1) {
+      setIsDragging(true)
+      setDragStart({
+        x: e.clientX - zoomPosition.x,
+        y: e.clientY - zoomPosition.y
+      })
+    }
+  }
+
+  const handleMouseMove = (e) => {
+    if (isDragging && zoomLevel > 1) {
+      const newX = e.clientX - dragStart.x
+      const newY = e.clientY - dragStart.y
+      
+      // Limit drag boundaries
+      const container = imageContainerRef.current
+      if (container) {
+        const containerRect = container.getBoundingClientRect()
+        const maxX = (containerRect.width * (zoomLevel - 1)) / 2
+        const maxY = (containerRect.height * (zoomLevel - 1)) / 2
+        
+        setZoomPosition({
+          x: Math.max(-maxX, Math.min(maxX, newX)),
+          y: Math.max(-maxY, Math.min(maxY, newY))
+        })
+      }
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
   const handleBuyNow = () => {
     if (!selectedColor) {
       alert("Please select a color")
@@ -81,7 +200,7 @@ export default function ProductDetail({ params }) {
   }
 
   if (loading) {
-        return <LoadingSpinner siteTheme={siteTheme} />
+    return <LoadingSpinner siteTheme={siteTheme} />
   }
 
   if (error || !product) {
@@ -111,27 +230,114 @@ export default function ProductDetail({ params }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Product Images */}
           <div>
-            <div
-              className="relative h-96 w-full rounded-lg overflow-hidden mb-4"
-              style={{
-                backgroundColor: siteTheme.secondaryBgColor,
-                borderColor: siteTheme.borderColor,
-                borderWidth: "1px",
-              }}
-            >
-              {product.images && product.images.length > 0 ? (
-                <Image
-                  src={product.images[currentImage] || "/assets/placeholder.svg"}
-                  alt={product.name}
-                  fill
-                  style={{ objectFit: "contain" }}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span style={{ color: siteTheme.textColor }}>No Image</span>
+            {/* Current image box with zoom functionality */}
+            <div className="relative mb-4">
+              <div
+                ref={imageContainerRef}
+                className="relative h-96 w-full rounded-lg overflow-hidden cursor-grab"
+                style={{
+                  backgroundColor: siteTheme.secondaryBgColor,
+                  borderColor: siteTheme.borderColor,
+                  borderWidth: "1px",
+                  cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'
+                }}
+                onWheel={handleWheel}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+              >
+                {product.images && product.images.length > 0 ? (
+                  <div
+                    style={{
+                      transform: `scale(${zoomLevel}) translate(${zoomPosition.x / zoomLevel}px, ${zoomPosition.y / zoomLevel}px)`,
+                      transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+                      transformOrigin: 'center center',
+                      width: '100%',
+                      height: '100%',
+                      position: 'relative'
+                    }}
+                  >
+                    <Image
+                      src={product.images[currentImage] || "/assets/placeholder.svg"}
+                      alt={product.name}
+                      fill
+                      style={{ objectFit: "contain" }}
+                      draggable={false}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span style={{ color: siteTheme.textColor }}>No Image</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Zoom Controls */}
+              <div className="absolute top-4 right-4 flex flex-col space-y-2">
+                <button
+                  onClick={() => handleZoomIn()}
+                  disabled={zoomLevel >= 5}
+                  className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-80 transition-opacity"
+                  style={{
+                    backgroundColor: siteTheme.cardBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                    borderWidth: "1px",
+                  }}
+                  title="Zoom In"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => handleZoomOut()}
+                  disabled={zoomLevel <= 1}
+                  className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-80 transition-opacity"
+                  style={{
+                    backgroundColor: siteTheme.cardBgColor,
+                    color: siteTheme.textColor,
+                    borderColor: siteTheme.borderColor,
+                    borderWidth: "1px",
+                  }}
+                  title="Zoom Out"
+                >
+                  −
+                </button>
+                {zoomLevel > 1 && (
+                  <button
+                    onClick={handleResetZoom}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold hover:opacity-80 transition-opacity"
+                    style={{
+                      backgroundColor: siteTheme.accentColor,
+                      color: siteTheme.textColor,
+                    }}
+                    title="Reset Zoom"
+                  >
+                    1:1
+                  </button>
+                )}
+              </div>
+
+              {/* Zoom Level Indicator */}
+              {zoomLevel > 1 && (
+                <div className="absolute bottom-4 right-4 px-2 py-1 rounded text-sm"
+                     style={{
+                       backgroundColor: siteTheme.cardBgColor,
+                       color: siteTheme.textColor,
+                       borderColor: siteTheme.borderColor,
+                       borderWidth: "1px",
+                     }}>
+                  {Math.round(zoomLevel * 100)}%
                 </div>
               )}
             </div>
+
+            {/* Zoom Instructions */}
+            <div className="text-sm mb-4 opacity-70" style={{ color: siteTheme.textColor }}>
+              Use mouse wheel to zoom • Click and drag to pan when zoomed
+            </div>
+
+            {/* Thumbnail images */}
             {product.images && product.images.length > 1 && (
               <div className="flex space-x-2 overflow-x-auto">
                 {product.images.map((image, index) => (
@@ -173,9 +379,9 @@ export default function ProductDetail({ params }) {
               {product.description}
             </p>
 
-              <p className="text-sm mb-4" style={{ color: siteTheme.textColor }}>
-                Category: <span className="font-semibold">{product.category}</span>
-              </p>
+            <p className="text-sm mb-4" style={{ color: siteTheme.textColor }}>
+              Category: <span className="font-semibold">{product.category}</span>
+            </p>
 
             {/* Color Selection */}
             {product.availableColors && product.availableColors.length > 0 && (
@@ -272,7 +478,6 @@ export default function ProductDetail({ params }) {
                     color: siteTheme.textColor,
                     borderColor: siteTheme.borderColor,
                     borderWidth: "1px",
-
                   }}
                 >
                   +
