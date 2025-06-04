@@ -6,10 +6,7 @@ import Stripe from "stripe"
 import clientPromise from "../../../lib/mongodb"
 import { ObjectId } from "mongodb"
 
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY ||
-    "sk_test_51P2GkSSEzW86D25YTF33BP83Rf4ffGJORl0gfTr3YBvpr5dejYm8bfO6hH3DYBu9saWy9TEDCUELfJNOW1S80rkG00SEhjrTCo",
-)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 export async function GET(request) {
   const session = await getServerSession(authOptions)
@@ -46,13 +43,13 @@ export async function GET(request) {
           customer: {
             name: order.customer.name || "N/A",
             email: order.customer.email || "N/A",
-            coupon: order.customer.coupon || "N/A",
             phone: order.customer.phone || "N/A",
             address: order.customer.address || "N/A",
           },
           product: {
             name: order.product.name || "N/A",
             category: order.product.category || "N/A",
+            price: order.product.price || "N/A",
             isCustomProduct: order.product.isCustomProduct || false,
             customText: order.product.customText || "N/A",
             // customImage: order.product.customImage || null,
@@ -61,6 +58,8 @@ export async function GET(request) {
           selectedColor: order.selectedColor || "N/A",
           selectedSize: order.selectedSize || "N/A",
           quantity: order.quantity || 1,
+          coupon: order.couponCode || "N/A",
+          discountPercentage: order.discountPercentage || 0,
           amount_total: order.amount_total || 0,
           created: order.created ? order.created.getTime() / 1000 : Date.now() / 1000,
         }
@@ -102,21 +101,20 @@ export async function GET(request) {
         formattedStripeOrders.push({
           id: order.id,
           paymentMethod: "stripe",
+          coupon: order.metadata?.coupon || "N/A",
+          discountPercentage: order.metadata?.discountPercentage || 0,
           customer: {
             name: order.metadata?.userId || "N/A",
             email: order.customer_details?.email || "N/A",
             address: order.customer_details?.address
               ? `${order.customer_details.address.line1 || ""}, ${order.customer_details.address.city || ""}, ${order.customer_details.address.state || ""}, ${order.customer_details.address.postal_code || ""}, ${order.customer_details.address.country || ""}`.trim()
               : "N/A",
-            coupon: order.metadata?.coupon || "N/A",
             phone: order.metadata?.phone || "N/A",
           },
           product: {
-            name:
-              order.line_items?.data && order.line_items.data[0]
-                ? order.line_items.data[0].description || "N/A"
-                : "N/A",
+            name: product ? product.name : "N/A",
             category: product ? product.category : "N/A",
+            price: product ? product.price : "N/A",
             isCustomProduct: isCustomProduct,
             customText: order.metadata?.customText || "N/A",
             // customImage: product && isCustomProduct ? product.customImage : null,
