@@ -263,7 +263,7 @@ export default function ProductsPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-[repeat(auto-fit,_minmax(150px,_1fr))] gap-y-6 gap-x-4">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product._id} product={product} siteTheme={siteTheme} />
                 ))}
@@ -281,13 +281,13 @@ function ProductCard({ product, siteTheme }) {
   return (
     <Link href={`/product/${product._id}`}>
       <div
-        className="rounded-lg overflow-hidden shadow-md transition-transform hover:scale-105 min-h-[440px] max-h-[440px]"
+        className="rounded-lg overflow-hidden shadow-md transition-transform hover:scale-105 min-h-[300px] max-w-[160px]"
         style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
       >
-        <div className="relative h-80 w-full">
+        <div className="relative h-50 w-full">
           {product.images && product.images.length > 0 ? (
             <Image
-              src={product.images[0] || "/assets/placeholder.svg"}
+              src={"/assets/camargo.webp" || "/assets/placeholder.svg"}
               alt={product.name || product.title}
               fill
               className="object-cover"
@@ -302,10 +302,10 @@ function ProductCard({ product, siteTheme }) {
           )}
         </div>
         <div className="p-4">
-          <p className="text-lg font-bold" style={{ color: siteTheme.accentColor }}>
+          <p className="text-sm font-bold" style={{ color: siteTheme.accentColor }}>
             ${product.price.toFixed(2)}
           </p>
-          <p className="text-sm mt-2 line-clamp-2" style={{ color: siteTheme.textColor }}>
+          <p className="text-xs mt-2 line-clamp-2" style={{ color: siteTheme.textColor }}>
             {product.description || "No description available"}
           </p>
         </div>
