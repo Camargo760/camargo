@@ -1,14 +1,17 @@
+// delivery-payment-form.js
 "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Truck, X } from "lucide-react"
+import { Truck, X, Tag } from "lucide-react"
 
-export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, customerInfo, onSubmit }) {
+const DeliveryPaymentForm = ({ isOpen, onClose, productDetails, customerInfo, onSubmit }) => {
   const [preferredMethod, setPreferredMethod] = useState("")
   const [additionalNotes, setAdditionalNotes] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [couponValidation, setCouponValidation] = useState(null)
+  const [discountedPrice, setDiscountedPrice] = useState(productDetails.price)
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -37,6 +40,45 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
     fetchSiteTheme()
   }, [])
 
+  // Validate coupon when component opens or coupon changes
+  useEffect(() => {
+    const validateCoupon = async () => {
+      if (!customerInfo.coupon || !customerInfo.coupon.trim()) {
+        setCouponValidation(null)
+        setDiscountedPrice(productDetails.price)
+        return
+      }
+
+      try {
+        const response = await fetch("/api/coupons/validate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            code: customerInfo.coupon.trim(),
+          }),
+        })
+
+        if (response.ok) {
+          const couponData = await response.json()
+          setCouponValidation(couponData)
+          const newPrice = productDetails.price * (1 - couponData.discountPercentage / 100)
+          setDiscountedPrice(newPrice)
+        } else {
+          setCouponValidation(null)
+          setDiscountedPrice(productDetails.price)
+        }
+      } catch (err) {
+        console.error("Error validating coupon:", err)
+        setCouponValidation(null)
+        setDiscountedPrice(productDetails.price)
+      }
+    }
+
+    validateCoupon()
+  }, [customerInfo.coupon, productDetails.price])
+
   if (!isOpen) return null
 
   const handleSubmit = async (e) => {
@@ -62,19 +104,24 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
           productId: productDetails.id,
           name: customerInfo.name,
           email: customerInfo.email,
-          coupon: customerInfo.coupon,
           phone: customerInfo.phone,
           address: customerInfo.address,
+          price: productDetails.price,
           color: productDetails.color,
           size: productDetails.size,
           category: productDetails.category,
-          isCustomProduct: productDetails.isCustomProduct || false, // Ensure this is explicitly set
+          isCustomProduct: productDetails.isCustomProduct || false,
           customText: productDetails.customText,
           quantity: productDetails.quantity,
           preferredMethod,
           additionalNotes,
           price: productDetails.price,
-          designImageId: productDetails.designImageId || null, // Pass the image ID
+          designImageId: productDetails.designImageId || null,
+          // Add discount information
+          // originalPrice: productDetails.price,
+          finalPrice: discountedPrice,
+          couponCode: couponValidation ? customerInfo.coupon.toUpperCase() : null,
+          discountPercentage: couponValidation ? couponValidation.discountPercentage : 0,
         }),
       })
 
@@ -82,11 +129,9 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
         const errorText = await response.text()
 
         try {
-          // Try to parse as JSON if possible
           const errorData = JSON.parse(errorText)
           throw new Error(errorData.error || "Failed to create order")
         } catch (jsonError) {
-          // If not JSON, use the text directly
           throw new Error(`Server error (${response.status}): ${errorText.substring(0, 100)}...`)
         }
       }
@@ -102,6 +147,8 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
       setLoading(false)
     }
   }
+
+  const totalPrice = discountedPrice * productDetails.quantity
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -120,6 +167,43 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
           <div className="flex items-center justify-center mb-6">
             <div className="p-3 rounded-full" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
               <Truck style={{ color: "#10b981" }} size={32} />
+            </div>
+          </div>
+
+          {/* Order Summary with Discount */}
+          <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
+            <h3 className="font-semibold mb-3">Order Summary</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span>{productDetails.name}</span>
+                <span>${productDetails.price.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Quantity</span>
+                <span>{productDetails.quantity}</span>
+              </div>
+              {couponValidation && (
+                <>
+                  <div className="flex justify-between text-sm" style={{ color: siteTheme.accentColor }}>
+                    <span className="flex items-center">
+                      <Tag size={14} className="mr-1" />
+                      Coupon ({customerInfo.coupon.toUpperCase()})
+                    </span>
+                    <span>-{couponValidation.discountPercentage}%</span>
+                  </div>
+                  <div className="flex justify-between text-sm line-through opacity-60">
+                    <span>Original Total</span>
+                    <span>${(productDetails.price * productDetails.quantity).toFixed(2)}</span>
+                  </div>
+                </>
+              )}
+              <div
+                className="flex justify-between font-bold text-lg border-t pt-2"
+                style={{ borderColor: siteTheme.borderColor }}
+              >
+                <span>Total</span>
+                <span style={{ color: siteTheme.accentColor }}>${totalPrice.toFixed(2)}</span>
+              </div>
             </div>
           </div>
 
@@ -211,7 +295,7 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
                 style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
                 disabled={loading}
               >
-                {loading ? "Processing..." : "Place Order"}
+                {loading ? "Processing..." : `Place Order - $${totalPrice.toFixed(2)}`}
               </button>
             </div>
           </form>
@@ -220,3 +304,5 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
     </div>
   )
 }
+
+export default DeliveryPaymentForm
