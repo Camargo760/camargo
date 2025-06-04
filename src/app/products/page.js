@@ -263,7 +263,7 @@ export default function ProductsPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-[repeat(auto-fit,_minmax(150px,_1fr))] gap-y-6 gap-x-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product._id} product={product} siteTheme={siteTheme} />
                 ))}
