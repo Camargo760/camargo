@@ -180,7 +180,7 @@ function SuccessContent() {
             <p className="mt-2">
               Status:{" "}
               <span className="font-medium" style={{ color: getStatusColor(orderDetails.status) }}>
-                {getStatusText(orderDetails.status)}
+                // {getStatusText(orderDetails.status)}
               </span>
             </p>
           </div>
