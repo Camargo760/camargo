@@ -19,6 +19,13 @@ export default function ProductDetail({ params }) {
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  
+  // Mobile touch states
+  const [touchStart, setTouchStart] = useState(null)
+  const [lastTouchDistance, setLastTouchDistance] = useState(0)
+  const [initialZoomLevel, setInitialZoomLevel] = useState(1)
+  const [touchCenter, setTouchCenter] = useState({ x: 0, y: 0 })
+  
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -76,6 +83,21 @@ export default function ProductDetail({ params }) {
     setZoomLevel(1)
     setZoomPosition({ x: 0, y: 0 })
   }, [currentImage])
+
+  // Helper function to get distance between two touch points
+  const getTouchDistance = (touch1, touch2) => {
+    const dx = touch1.clientX - touch2.clientX
+    const dy = touch1.clientY - touch2.clientY
+    return Math.sqrt(dx * dx + dy * dy)
+  }
+
+  // Helper function to get center point between two touches
+  const getTouchCenter = (touch1, touch2) => {
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2
+    }
+  }
 
   const zoomAtPoint = (newZoomLevel, mouseX, mouseY) => {
     const container = imageContainerRef.current
@@ -142,6 +164,7 @@ export default function ProductDetail({ params }) {
     setZoomPosition({ x: 0, y: 0 })
   }
 
+  // Mouse wheel zoom (for desktop)
   const handleWheel = (e) => {
     e.preventDefault()
     if (e.deltaY < 0) {
@@ -151,6 +174,7 @@ export default function ProductDetail({ params }) {
     }
   }
 
+  // Mouse events (for desktop)
   const handleMouseDown = (e) => {
     if (zoomLevel > 1) {
       setIsDragging(true)
@@ -183,6 +207,84 @@ export default function ProductDetail({ params }) {
 
   const handleMouseUp = () => {
     setIsDragging(false)
+  }
+
+  // Touch events (for mobile)
+  const handleTouchStart = (e) => {
+    e.preventDefault()
+    
+    if (e.touches.length === 2) {
+      // Two finger pinch gesture
+      const distance = getTouchDistance(e.touches[0], e.touches[1])
+      const center = getTouchCenter(e.touches[0], e.touches[1])
+      
+      setLastTouchDistance(distance)
+      setInitialZoomLevel(zoomLevel)
+      setTouchCenter(center)
+      setTouchStart({ touches: [...e.touches], center })
+    } else if (e.touches.length === 1 && zoomLevel > 1) {
+      // Single finger drag when zoomed
+      setIsDragging(true)
+      setDragStart({
+        x: e.touches[0].clientX - zoomPosition.x,
+        y: e.touches[0].clientY - zoomPosition.y
+      })
+    }
+  }
+
+  const handleTouchMove = (e) => {
+    e.preventDefault()
+    
+    if (e.touches.length === 2 && touchStart) {
+      // Handle pinch zoom
+      const distance = getTouchDistance(e.touches[0], e.touches[1])
+      const center = getTouchCenter(e.touches[0], e.touches[1])
+      
+      if (lastTouchDistance > 0) {
+        const scale = distance / lastTouchDistance
+        let newZoomLevel = initialZoomLevel * scale
+        
+        // Clamp zoom level
+        newZoomLevel = Math.max(1, Math.min(5, newZoomLevel))
+        
+        // Use the initial touch center for consistent zooming
+        zoomAtPoint(newZoomLevel, touchStart.center.x, touchStart.center.y)
+      }
+    } else if (e.touches.length === 1 && isDragging && zoomLevel > 1) {
+      // Handle single finger drag when zoomed
+      const newX = e.touches[0].clientX - dragStart.x
+      const newY = e.touches[0].clientY - dragStart.y
+      
+      // Limit drag boundaries
+      const container = imageContainerRef.current
+      if (container) {
+        const containerRect = container.getBoundingClientRect()
+        const maxX = (containerRect.width * (zoomLevel - 1)) / 2
+        const maxY = (containerRect.height * (zoomLevel - 1)) / 2
+        
+        setZoomPosition({
+          x: Math.max(-maxX, Math.min(maxX, newX)),
+          y: Math.max(-maxY, Math.min(maxY, newY))
+        })
+      }
+    }
+  }
+
+  const handleTouchEnd = (e) => {
+    e.preventDefault()
+    
+    if (e.touches.length === 0) {
+      // All fingers lifted
+      setIsDragging(false)
+      setTouchStart(null)
+      setLastTouchDistance(0)
+      setInitialZoomLevel(zoomLevel)
+    } else if (e.touches.length === 1) {
+      // One finger remaining, stop pinch gesture
+      setTouchStart(null)
+      setLastTouchDistance(0)
+      setInitialZoomLevel(zoomLevel)
+    }
   }
 
   const handleBuyNow = () => {
@@ -239,13 +341,17 @@ export default function ProductDetail({ params }) {
                   backgroundColor: siteTheme.secondaryBgColor,
                   borderColor: siteTheme.borderColor,
                   borderWidth: "1px",
-                  cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'
+                  cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                  touchAction: 'none' // Prevent default touch behaviors
                 }}
                 onWheel={handleWheel}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
               >
                 {product.images && product.images.length > 0 ? (
                   <div
@@ -334,7 +440,7 @@ export default function ProductDetail({ params }) {
 
             {/* Zoom Instructions */}
             <div className="text-sm mb-4 opacity-70" style={{ color: siteTheme.textColor }}>
-              Use mouse wheel to zoom • Click and drag to pan when zoomed
+              Use mouse wheel to zoom • Pinch with two fingers on mobile • Click and drag to pan when zoomed
             </div>
 
             {/* Thumbnail images */}
