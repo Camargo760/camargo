@@ -21,7 +21,6 @@ export async function POST(request) {
       productId,
       name,
       email,
-      coupon,
       phone,
       address,
       color,
@@ -32,7 +31,12 @@ export async function POST(request) {
       preferredMethod,
       additionalNotes,
       price,
-      designImageId, // New parameter for the image ID
+      designImageId,
+      category,
+      originalPrice, // Add these new parameters
+      finalPrice,
+      couponCode,
+      discountPercentage,
     } = requestData
 
     // Validate required fields
@@ -84,7 +88,6 @@ export async function POST(request) {
         customer: {
           name,
           email,
-          coupon,
           phone,
           address,
         },
@@ -92,17 +95,23 @@ export async function POST(request) {
           id: productId,
           name: product.name,
           price: product.price,
+          category: category || product.category || "N/A",
           isCustomProduct: isCustomProduct || false,
           customText: customText || "",
           customImage: product.customImage || null,
-          designImageId: designImageId || product.finalDesignImageId || null, // Store the image ID reference
+          designImageId: designImageId || product.finalDesignImageId || null,
         },
         selectedColor: color,
         selectedSize: size,
         quantity,
-        amount_total: totalPrice * 100, // Store in cents like Stripe does
+        originalPrice: originalPrice || product.price,
+        finalPrice: finalPrice || product.price,
+        couponCode: couponCode || null,
+        discountPercentage: discountPercentage || 0,
+        amount_total: (finalPrice || product.price) * quantity * 100, // Store in cents
         created: new Date(),
         status: "pending",
+        isOrderReceived: true, // Mark as new order received
       }
 
       console.log("Creating order record:", JSON.stringify(orderRecord))
@@ -134,4 +143,3 @@ export async function POST(request) {
     )
   }
 }
-
