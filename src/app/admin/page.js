@@ -16,6 +16,7 @@ import ReviewsManagement from "../../components/admin/ReviewsManagement"
 import HomeContentManagement from "../../components/admin/HomeContentManagement"
 import AboutContentManagement from "../../components/admin/AboutContentManagement"
 import ThemeSettings from "../../components/admin/ThemeSettings"
+import DiscountManagement from "../../components/admin/DiscountManagement"
 
 export default function Admin() {
   const [products, setProducts] = useState([])
@@ -303,6 +304,16 @@ export default function Admin() {
           >
             Theme Settings
           </button>
+                        <button
+            onClick={() => setActiveTab("discountManagement")}
+            className={`px-4 py-2 rounded ${activeTab === "discountManagement" ? "bg-accent" : "bg-secondary"}`}
+            style={{
+              backgroundColor: activeTab === "discountManagement" ? siteTheme.accentColor : siteTheme.secondaryBgColor,
+              color: siteTheme.textColor,
+            }}
+          >
+            Discount Management
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -365,6 +376,8 @@ export default function Admin() {
         {activeTab === "themeSettings" && (
           <ThemeSettings siteTheme={siteTheme} setSiteTheme={setSiteTheme} fetchSiteTheme={fetchSiteTheme} />
         )}
+
+                  {activeTab === "discountManagement" && <DiscountManagement siteTheme={siteTheme} />}
       </main>
     </div>
   )
