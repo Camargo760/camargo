@@ -314,7 +314,7 @@ function SuccessContent() {
           {orderDetails.paymentMethod === "delivery" && orderDetails.additionalNotes && (
             <div className="mb-4">
               <h3 className="text-xl font-semibold">Additional Notes</h3>
-              <p className="italic">"{orderDetails.additionalNotes}"</p>
+                          <p className="italic">{`"${orderDetails.additionalNotes}"`}</p>
             </div>
           )}
 
