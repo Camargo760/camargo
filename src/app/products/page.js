@@ -281,7 +281,7 @@ function ProductCard({ product, siteTheme }) {
   return (
     <Link href={`/product/${product._id}`}>
       <div
-        className="rounded-lg overflow-hidden shadow-md transition-transform hover:scale-105 min-h-[400px]"
+        className="rounded-lg overflow-hidden shadow-md transition-transform hover:scale-105 min-h-[500px]"
         style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
       >
         <div className="relative h-48 w-full">
