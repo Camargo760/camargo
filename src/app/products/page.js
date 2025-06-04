@@ -7,8 +7,7 @@ import Header from "../../components/Header"
 import { Clock, ListOrderedIcon, DollarSign, Filter, Loader2 } from "lucide-react"
 import Link from "next/link"
 import LoadingSpinner from "../../components/LoadingSpinner"
-
-
+ 
 export default function ProductsPage() {
   const [products, setProducts] = useState([])
   const [filteredProducts, setFilteredProducts] = useState([])
