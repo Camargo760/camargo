@@ -177,12 +177,6 @@ function SuccessContent() {
                 </span>
               )}
             </p>
-            <p className="mt-2">
-              // Status:{" "}
-              // <span className="font-medium" style={{ color: getStatusColor(orderDetails.status) }}>
-              //   // {getStatusText(orderDetails.status)}
-              // </span>
-            </p>
           </div>
           {/* Add coupon information if available */}
           {orderDetails.couponCode && (
