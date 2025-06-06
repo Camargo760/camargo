@@ -178,38 +178,101 @@ function SuccessContent() {
               )}
             </p>
           </div>
+          <div className="mb-4">
+            <p>
+              Price: <span className="font-medium">${(orderDetails.product?.price || 0).toFixed(2)}</span>
+            </p>
+            <p>
+              Quantity:{" "}
+              <span className="font-medium">
+                {orderDetails.quantity || orderDetails.line_items?.[0]?.quantity || 1}
+              </span>
+            </p>
+            <p>
+              Total:{" "}
+              <span className="font-medium" style={{ color: siteTheme.accentColor }}>
+                ${((orderDetails.amount_total || 0) / 100).toFixed(2)}
+              </span>
+            </p>
+          </div>
           {/* Add coupon information if available */}
           {orderDetails.couponCode && (
-            <div className="mb-4">
-              <h3 className="text-xl font-semibold">Discount Applied</h3>
-              <p>
-                Coupon Code:{" "}
-                <span className="font-medium" style={{ color: siteTheme.accentColor }}>
-                  {orderDetails.couponCode}
-                </span>
-              </p>
-              <p>
-                Discount: <span className="font-medium">{orderDetails.discountPercentage}%</span>
-              </p>
-              {orderDetails.originalPrice && orderDetails.finalPrice && (
-                <>
-                  <p>
-                    Original Price: <span className="line-through">${orderDetails.originalPrice.toFixed(2)}</span>
-                  </p>
-                  <p>
-                    Final Price:{" "}
-                    <span className="font-medium" style={{ color: siteTheme.accentColor }}>
-                      ${orderDetails.finalPrice.toFixed(2)}
-                    </span>
-                  </p>
-                  <p>
-                    You Saved:{" "}
-                    <span className="font-medium" style={{ color: "#10b981" }}>
-                      ${(orderDetails.originalPrice - orderDetails.finalPrice).toFixed(2)}
-                    </span>
-                  </p>
-                </>
-              )}
+            <div>
+              <div className="mb-4">
+                <h3 className="text-xl font-semibold">Discount Applied <small className="text-xs">(Each product)</small></h3>
+                <p>
+                  Coupon Code:{" "}
+                  <span className="font-medium" style={{ color: siteTheme.accentColor }}>
+                    {orderDetails.couponCode}
+                  </span>
+                </p>
+                <p>
+                  Discount: <span className="font-medium">{orderDetails.discountPercentage}%</span>
+                </p>
+                {orderDetails.originalPrice && orderDetails.finalPrice && (
+                  <>
+                    <p>
+                      Original Price: <span className="line-through">${orderDetails.originalPrice.toFixed(2)}</span>
+                    </p>
+                    <p>
+                      Final Price:{" "}
+                      <span className="font-medium" style={{ color: siteTheme.accentColor }}>
+                        ${orderDetails.finalPrice.toFixed(2)}
+                      </span>
+                    </p>
+                    <p>
+                      You Saved:{" "}
+                      <span className="font-medium" style={{ color: "#10b981" }}>
+                        ${(orderDetails.originalPrice - orderDetails.finalPrice).toFixed(2)}
+                      </span>
+                    </p>
+                  </>
+                )}
+              </div>
+              <div className="mb-4">
+                <h3 className="text-xl font-semibold">Discount Applied <small className="text-xs">(All products)</small></h3>
+                <p>
+                  Coupon Code:{" "}
+                  <span className="font-medium" style={{ color: siteTheme.accentColor }}>
+                    {orderDetails.couponCode}
+                  </span>
+                </p>
+                <p>
+                  Discount: <span className="font-medium">{orderDetails.discountPercentage}%</span>
+                </p>
+
+                {orderDetails.originalPrice && orderDetails.quantity && orderDetails.discountPercentage && (
+                  <>
+                    <p>
+                      Original Total:{" "}
+                      <span className="line-through">
+                        ${(orderDetails.originalPrice * orderDetails.quantity).toFixed(2)}
+                      </span>
+                    </p>
+                    <p>
+                      Final Price:{" "}
+                      <span className="font-medium" style={{ color: siteTheme.accentColor }}>
+                        ${(
+                          orderDetails.originalPrice *
+                          orderDetails.quantity *
+                          (1 - orderDetails.discountPercentage / 100)
+                        ).toFixed(2)}
+                      </span>
+                    </p>
+                    <p>
+                      You Saved:{" "}
+                      <span className="font-medium" style={{ color: "#10b981" }}>
+                        ${(
+                          orderDetails.originalPrice *
+                          orderDetails.quantity *
+                          (orderDetails.discountPercentage / 100)
+                        ).toFixed(2)}
+                      </span>
+                    </p>
+                  </>
+                )}
+              </div>
+
             </div>
           )}
           <div className="mb-4">
@@ -263,23 +326,6 @@ function SuccessContent() {
             )}
           </div>
           <div className="mb-4">
-            <p>
-              Price: <span className="font-medium">${(orderDetails.product?.price || 0).toFixed(2)}</span>
-            </p>
-            <p>
-              Quantity:{" "}
-              <span className="font-medium">
-                {orderDetails.quantity || orderDetails.line_items?.[0]?.quantity || 1}
-              </span>
-            </p>
-            <p>
-              Total:{" "}
-              <span className="font-medium" style={{ color: siteTheme.accentColor }}>
-                ${((orderDetails.amount_total || 0) / 100).toFixed(2)}
-              </span>
-            </p>
-          </div>
-          <div className="mb-4">
             <h3 className="text-xl font-semibold">Shipping Information</h3>
             <p>
               Name: <span className="font-medium">{orderDetails.customer_details?.name || "N/A"}</span>
@@ -308,7 +354,7 @@ function SuccessContent() {
           {orderDetails.paymentMethod === "delivery" && orderDetails.additionalNotes && (
             <div className="mb-4">
               <h3 className="text-xl font-semibold">Additional Notes</h3>
-                          <p className="italic">{`"${orderDetails.additionalNotes}"`}</p>
+              <p className="italic">{`"${orderDetails.additionalNotes}"`}</p>
             </div>
           )}
 
