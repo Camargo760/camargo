@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Header from "../../components/Header"
 import InstagramCard from "../../components/InstagramCard"
 import FacebookCard from "../../components/FacebookCard"
+import LoadingSpinner from "../../components/LoadingSpinner"
 
 export default function AboutPage() {
   const [aboutContent, setAboutContent] = useState({
@@ -64,15 +65,8 @@ export default function AboutPage() {
     fetchData()
   }, []) // Remove the dependency array item
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: siteTheme.bgColor }}>
-        <div
-          className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
-          style={{ borderColor: siteTheme.accentColor }}
-        ></div>
-      </div>
-    )
+    if (loading) {
+    return <LoadingSpinner siteTheme={siteTheme} />
   }
 
   // Destructure textStyles with fallbacks
