@@ -59,6 +59,8 @@ export async function GET(request) {
           selectedSize: order.selectedSize || "N/A",
           quantity: order.quantity || 1,
           coupon: order.couponCode || "N/A",
+          originalPrice: order.originalPrice || order.product.price,
+          finalPrice: order.finalPrice || order.product.price,
           discountPercentage: order.discountPercentage || 0,
           amount_total: order.amount_total || 0,
           created: order.created ? order.created.getTime() / 1000 : Date.now() / 1000,
@@ -103,6 +105,8 @@ export async function GET(request) {
           paymentMethod: "stripe",
           coupon: order.metadata?.coupon || "N/A",
           discountPercentage: order.metadata?.discountPercentage || 0,
+          originalPrice: session.metadata?.originalPrice ? parseFloat(session.metadata.originalPrice) : null,
+          finalPrice: session.metadata?.finalPrice ? parseFloat(session.metadata.finalPrice) : null,
           customer: {
             name: order.metadata?.userId || "N/A",
             email: order.customer_details?.email || "N/A",
