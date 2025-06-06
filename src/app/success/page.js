@@ -166,7 +166,7 @@ function SuccessContent() {
             <p className="mt-2">
               Order ID: <span className="font-medium">{orderDetails.id}</span>
             </p>
-            <p className="mt-2">
+            <p>
               Payment Method: <span className="font-medium capitalize">{orderDetails.paymentMethod || "Stripe"}</span>
               {orderDetails.paymentMethod === "delivery" && orderDetails.preferredMethod && (
                 <span
@@ -177,10 +177,11 @@ function SuccessContent() {
                 </span>
               )}
             </p>
-          </div>
-          <div className="mb-4">
             <p>
-              Price: <span className="font-medium">${(orderDetails.product?.price || 0).toFixed(2)}</span>
+              Discount: <span className="font-medium" style={{ color: siteTheme.accentColor }}>{orderDetails.discountPercentage}% OFF</span>
+            </p>
+            <p>
+              Price <small>(Each Product)</small>: <span className="font-medium">${(orderDetails.finalPrice.toFixed(2))}</span>
             </p>
             <p>
               Quantity:{" "}
@@ -279,6 +280,9 @@ function SuccessContent() {
             <h3 className="text-xl font-semibold">Product Information</h3>
             <p>
               Name: <span className="font-medium">{orderDetails.product?.name || "N/A"}</span>
+            </p>
+            <p>
+              Name: <span className="font-medium">{orderDetails.product?.price || "N/A"}</span>
             </p>
             <p>
               Description: <span className="font-medium">{orderDetails.product?.description || "N/A"}</span>
