@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, CreditCard, Truck, DollarSign, Send } from "lucide-react"
+import { X, CreditCard, Truck, DollarSign, Send, Tag } from "lucide-react"
 
-export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, productDetails }) {
+export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, productDetails, couponCode }) {
   const [selectedMethod, setSelectedMethod] = useState(null)
+  const [couponValidation, setCouponValidation] = useState(null)
+  const [discountedPrice, setDiscountedPrice] = useState(productDetails.price)
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -32,6 +34,45 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
     fetchSiteTheme()
   }, [])
 
+  // Validate coupon when modal opens or coupon changes
+  useEffect(() => {
+    const validateCoupon = async () => {
+      if (!couponCode || !couponCode.trim()) {
+        setCouponValidation(null)
+        setDiscountedPrice(productDetails.price)
+        return
+      }
+
+      try {
+        const response = await fetch("/api/coupons/validate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            code: couponCode.trim(),
+          }),
+        })
+
+        if (response.ok) {
+          const couponData = await response.json()
+          setCouponValidation(couponData)
+          const newPrice = productDetails.price * (1 - couponData.discountPercentage / 100)
+          setDiscountedPrice(newPrice)
+        } else {
+          setCouponValidation(null)
+          setDiscountedPrice(productDetails.price)
+        }
+      } catch (err) {
+        console.error("Error validating coupon:", err)
+        setCouponValidation(null)
+        setDiscountedPrice(productDetails.price)
+      }
+    }
+
+    validateCoupon()
+  }, [couponCode, productDetails.price])
+
   if (!isOpen) return null
 
   const handleSelectMethod = (method) => {
@@ -39,6 +80,8 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
     onSelectPaymentMethod(method)
     onClose()
   }
+
+  const totalPrice = discountedPrice * (productDetails.quantity || 1)
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -54,19 +97,6 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
         </div>
 
         <div className="p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold mb-2">Order Summary</h3>
-            <div className="p-3 rounded-md" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
-              <p className="font-medium">{productDetails.name}</p>
-              {productDetails.color && <p className="text-sm">Color: {productDetails.color}</p>}
-              {productDetails.size && <p className="text-sm">Size: {productDetails.size}</p>}
-              <p className="text-sm">Quantity: {productDetails.quantity || 1}</p>
-              <p className="font-bold mt-2" style={{ color: siteTheme.accentColor }}>
-                Total: ${(productDetails.price * (productDetails.quantity || 1)).toFixed(2)}
-              </p>
-            </div>
-          </div>
-
           <div className="space-y-3">
             <button
               onClick={() => handleSelectMethod("stripe")}
@@ -81,7 +111,6 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
                 <span className="text-sm opacity-70">Visa, Mastercard, etc.</span>
               </div>
               <CreditCard style={{ color: "#3b82f6" }} className="mr-3" size={24} />
-
             </button>
 
             <button
@@ -97,7 +126,6 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
                 <span className="text-sm opacity-70">Cash on delivery</span>
               </div>
               <Truck style={{ color: "#10b981" }} className="mr-3" size={24} />
-
             </button>
           </div>
 
