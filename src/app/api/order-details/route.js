@@ -78,8 +78,8 @@ export async function GET(request) {
           // Add coupon information
           originalPrice: order.originalPrice || order.product.price,
           finalPrice: order.finalPrice || order.product.price,
-          couponCode: order.couponCode || null,
           discountPercentage: order.discountPercentage || 0,
+          couponCode: order.couponCode || null,
         })
       } catch (error) {
         console.error("Error fetching delivery order details:", error)
@@ -175,32 +175,32 @@ export async function GET(request) {
       quantity: quantity,
       isCustomProduct: isCustomProduct,
       status: orderStatus,
-      // Add coupon information
-      originalPrice: order ? order.originalPrice : null,
-      finalPrice: order ? order.finalPrice : null,
-      couponCode: order ? order.couponCode : null,
-      discountPercentage: order ? order.discountPercentage : 0,
+      // Get coupon information from session metadata (this is the key fix!)
+      couponCode: session.metadata?.coupon || null,
+      originalPrice: session.metadata?.originalPrice ? parseFloat(session.metadata.originalPrice) : null,
+      finalPrice: session.metadata?.finalPrice ? parseFloat(session.metadata.finalPrice) : null,
+      discountPercentage: session.metadata?.discountPercentage ? parseFloat(session.metadata.discountPercentage) : 0,
       product: product
         ? {
-            name: product.name,
-            description: product.description,
-            category: product.category || "Custom",
-            selectedColor: session.metadata.color || "N/A",
-            selectedSize: session.metadata.size || "N/A",
-            customText: session.metadata.customText || "",
-            customImage: product.customImage || null,
-            finalDesignImage: finalDesignImage, // Include the actual image data
-            price: product.price || 0,
-          }
+          name: product.name,
+          description: product.description,
+          category: product.category || "Custom",
+          selectedColor: session.metadata.color || "N/A",
+          selectedSize: session.metadata.size || "N/A",
+          customText: session.metadata.customText || "",
+          customImage: product.customImage || null,
+          finalDesignImage: finalDesignImage, // Include the actual image data
+          price: product.price || 0,
+        }
         : {
-            name: "Product not found",
-            description: "Product details could not be retrieved",
-            category: "Unknown",
-            selectedColor: session.metadata.color || "N/A",
-            selectedSize: session.metadata.size || "N/A",
-            customText: session.metadata.customText || "",
-            price: session.amount_total / 100 || 0,
-          },
+          name: "Product not found",
+          description: "Product details could not be retrieved",
+          category: "Unknown",
+          selectedColor: session.metadata.color || "N/A",
+          selectedSize: session.metadata.size || "N/A",
+          customText: session.metadata.customText || "",
+          price: session.amount_total / 100 || 0,
+        },
     }
 
     return NextResponse.json(orderDetails)
