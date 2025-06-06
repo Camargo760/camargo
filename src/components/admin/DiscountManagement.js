@@ -303,10 +303,6 @@ export default function DiscountManagement({ siteTheme }) {
 
         {loading && coupons.length === 0 ? (
           <div className="text-center py-8">
-            <div
-              className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 mx-auto"
-              style={{ borderColor: siteTheme.accentColor }}
-            ></div>
             <p className="mt-2">Loading coupons...</p>
           </div>
         ) : coupons.length === 0 ? (
