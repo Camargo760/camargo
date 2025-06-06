@@ -635,7 +635,7 @@ export default function OrdersManagement({ siteTheme, orders }) {
                         </span>
                       </p>
                       <p>
-                        <span className="font-medium">Original Price:</span>{" "}
+                        <span className="font-medium">Original Total:</span>{" "}
                         <span className="line-through">${selectedOrder.originalPrice * selectedOrder.quantity || "N/A"}</span>
                       </p>
                       <p>
