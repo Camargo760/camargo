@@ -110,7 +110,7 @@ export default function OrdersManagement({ siteTheme, orders }) {
   const viewOrderDetails = (order) => {
     setSelectedOrder(order)
     // Mark order as read when viewing details
-    markOrderAsRead(order.id)
+    // markOrderAsRead(order.id)
   }
 
   // Close order details modal
@@ -489,70 +489,184 @@ export default function OrdersManagement({ siteTheme, orders }) {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Customer Information */}
-                  <div
-                    className="p-4 rounded-lg"
-                    style={{
-                      backgroundColor: siteTheme.cardBgColor,
-                      borderColor: siteTheme.borderColor,
-                      borderWidth: "1px",
-                    }}
-                  >
-                    <h4 className="font-semibold mb-3">Customer Information</h4>
-                    <p>
-                      <span className="font-medium">Name:</span> {selectedOrder.customer?.name || "N/A"}
-                    </p>
-                    <p>
-                      <span className="font-medium">Email:</span> {selectedOrder.customer?.email || "N/A"}
-                    </p>
-                    <p>
-                      <span className="font-medium">Phone:</span> {selectedOrder.customer?.phone || "N/A"}
-                    </p>
-                    <p style={{ whiteSpace: "pre-wrap" }}>
-                      <span className="font-medium">Address:</span>{" "}
-                      {formatLongText(selectedOrder.customer?.address || "N/A")}
-                    </p>
-                  </div>
+                {/* Customer Information */}
 
-                  {/* Order Information */}
-                  <div
-                    className="p-4 rounded-lg"
-                    style={{
-                      backgroundColor: siteTheme.cardBgColor,
-                      borderColor: siteTheme.borderColor,
-                      borderWidth: "1px",
-                    }}
-                  >
-                    <h4 className="font-semibold mb-3">Order Information</h4>
-                    <p style={{ whiteSpace: "pre-wrap" }}>
-                      <span className="font-medium">Order ID:</span> {formatLongText(selectedOrder.id || "N/A")}
-                    </p>
+                <div
+                  className="p-4 rounded-lg"
+                  style={{
+                    backgroundColor: siteTheme.cardBgColor,
+                    borderColor: siteTheme.borderColor,
+                    borderWidth: "1px",
+                  }}
+                >
+                  <h4 className="font-semibold mb-3">Customer Information</h4>
+                  <p>
+                    <span className="font-medium">Name:</span> {selectedOrder.customer?.name || "N/A"}
+                  </p>
+                  <p>
+                    <span className="font-medium">Email:</span> {selectedOrder.customer?.email || "N/A"}
+                  </p>
+                  <p>
+                    <span className="font-medium">Phone:</span> {selectedOrder.customer?.phone || "N/A"}
+                  </p>
+                  <p style={{ whiteSpace: "pre-wrap" }}>
+                    <span className="font-medium">Address:</span>{" "}
+                    {formatLongText(selectedOrder.customer?.address || "N/A")}
+                  </p>
+                </div>
+
+                {/* Order Information */}
+
+                <div
+                  className="mt-6 p-4 rounded-lg"
+                  style={{
+                    backgroundColor: siteTheme.cardBgColor,
+                    borderColor: siteTheme.borderColor,
+                    borderWidth: "1px",
+                  }}
+                >
+                  <h4 className="font-semibold mb-3">Order Information</h4>
+                  <p style={{ whiteSpace: "pre-wrap" }}>
+                    <span className="font-medium">Order ID:</span> {formatLongText(selectedOrder.id || "N/A")}
+                  </p>
+                  <p>
+                    <span className="font-medium">Date:</span>{" "}
+                    {new Date(selectedOrder.created * 1000).toLocaleString()}
+                  </p>
+                  <p>
+                    <span className="font-medium">Payment Method:</span>{" "}
+                    {selectedOrder.paymentMethod === "delivery" ? "Delivery" : "Stripe"}
+                  </p>
+                  {selectedOrder.paymentMethod === "delivery" && selectedOrder.preferredMethod && (
                     <p>
-                      <span className="font-medium">Date:</span>{" "}
-                      {new Date(selectedOrder.created * 1000).toLocaleString()}
+                      <span className="font-medium">Preferred Method:</span> {selectedOrder.preferredMethod}
                     </p>
-                    <p>
-                      <span className="font-medium">Payment Method:</span>{" "}
-                      {selectedOrder.paymentMethod === "delivery" ? "Delivery" : "Stripe"}
-                    </p>
-                    {selectedOrder.paymentMethod === "delivery" && selectedOrder.preferredMethod && (
+                  )}
+                  <p>
+                    <span className="font-medium">Quantity:</span> {selectedOrder.quantity || 1}
+                  </p>
+                  <p>
+                    <span className="font-medium">Coupon:</span> {selectedOrder.coupon || "N/A"}
+                  </p>
+                  <p>
+                    <span className="font-medium">Discount percentage:</span> {(selectedOrder.discountPercentage)}% OFF
+                  </p>
+                  <p>
+                    <span className="font-medium">Total:</span> ${(selectedOrder.amount_total / 100).toFixed(2)}
+                  </p>
+                </div>
+
+                {/* Discount Information Section */}
+                <div
+                  className="mt-6 p-4 rounded-lg"
+                  style={{
+                    backgroundColor: siteTheme.cardBgColor,
+                    borderColor: siteTheme.borderColor,
+                    borderWidth: "1px",
+                  }}
+                >
+                  <h4 className="font-semibold mb-3">Discount Applied (<small className="text-xs">Each product</small>)</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
                       <p>
-                        <span className="font-medium">Preferred Method:</span> {selectedOrder.preferredMethod}
+                        <span className="font-medium">Coupon Code:</span>{" "}
+                        <span style={{ color: siteTheme.accentColor, fontWeight: "bold" }}>
+                          {selectedOrder.coupon || "N/A"}
+                        </span>
                       </p>
-                    )}
-                    <p>
-                      <span className="font-medium">Quantity:</span> {selectedOrder.quantity || 1}
-                    </p>
-                    <p>
-                      <span className="font-medium">Coupon:</span> {selectedOrder.coupon || "N/A"}
-                    </p>
-                    <p>
-                      <span className="font-medium">Discount percentage:</span> {(selectedOrder.discountPercentage)}% OFF
-                    </p>
-                    <p>
-                      <span className="font-medium">Total:</span> ${(selectedOrder.amount_total / 100).toFixed(2)}
-                    </p>
+                      <p>
+                        <span className="font-medium">Discount:</span>{" "}
+                        <span style={{ fontWeight: "bold" }}>
+                          {selectedOrder.discountPercentage ? `${selectedOrder.discountPercentage}%` : "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="font-medium">Original Price:</span>{" "}
+                        <span className="line-through">${selectedOrder.originalPrice || "N/A"}</span>
+                      </p>
+                      <p>
+                        <span className="font-medium">Final Price:</span>{" "}
+                        {selectedOrder.finalPrice ? (
+                          <span style={{ color: siteTheme.accentColor, fontWeight: "bold" }}>
+                            ${selectedOrder.finalPrice.toFixed(2)}
+                          </span>
+                        ) : (
+                          "N/A"
+                        )}
+                      </p>
+                      <p>
+                        <span className="font-medium">Customer Saved:</span>{" "}
+                        {selectedOrder.originalPrice && selectedOrder.finalPrice ? (
+                          <span style={{ color: "#10b981", fontWeight: "bold" }}>
+                            ${(selectedOrder.originalPrice - selectedOrder.finalPrice).toFixed(2)}
+                          </span>
+                        ) : (
+                          "N/A"
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+
+
+                {/* Discount Information Section */}
+                <div
+                  className="mt-6 p-4 rounded-lg"
+                  style={{
+                    backgroundColor: siteTheme.cardBgColor,
+                    borderColor: siteTheme.borderColor,
+                    borderWidth: "1px",
+                  }}
+                >
+                  <h4 className="font-semibold mb-3">Discount Applied (<small className="text-xs">All products</small>)</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p>
+                        <span className="font-medium">Coupon Code:</span>{" "}
+                        <span style={{ color: siteTheme.accentColor, fontWeight: "bold" }}>
+                          {selectedOrder.coupon || "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="font-medium">Discount:</span>{" "}
+                        <span style={{ fontWeight: "bold" }}>
+                          {selectedOrder.discountPercentage ? `${selectedOrder.discountPercentage}%` : "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        <span className="font-medium">Original Price:</span>{" "}
+                        <span className="line-through">${selectedOrder.originalPrice * selectedOrder.quantity || "N/A"}</span>
+                      </p>
+                      <p>
+                        <span className="font-medium">Final Price:</span>{" "}
+                        {selectedOrder.originalPrice && selectedOrder.quantity && selectedOrder.discountPercentage ? (
+                          <span style={{ color: siteTheme.accentColor, fontWeight: "bold" }}>
+                            ${(
+                              selectedOrder.originalPrice *
+                              selectedOrder.quantity *
+                              (1 - selectedOrder.discountPercentage / 100)
+                            ).toFixed(2)}
+                          </span>
+                        ) : (
+                          "N/A"
+                        )}
+                      </p>
+                      <p>
+                        <span className="font-medium">Customer Saved:</span>{" "}
+                        {selectedOrder.originalPrice && selectedOrder.quantity && selectedOrder.discountPercentage ? (
+                          <span style={{ color: "#10b981", fontWeight: "bold" }}>
+                            ${(
+                              selectedOrder.originalPrice *
+                              selectedOrder.quantity *
+                              (selectedOrder.discountPercentage / 100)
+                            ).toFixed(2)}
+                          </span>
+                        ) : (
+                          "N/A"
+                        )}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
