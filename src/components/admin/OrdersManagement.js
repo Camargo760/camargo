@@ -16,14 +16,16 @@ import {
   RefreshCw,
 } from "lucide-react"
 
-export default function OrdersManagement({ siteTheme, orders }) {
+export default function OrdersManagement({ siteTheme, orders: initialOrders = [] }) {
   const [currentOrderPage, setCurrentOrderPage] = useState(1)
   const [ordersPerPage] = useState(10)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [isMobile, setIsMobile] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifications, setNotifications] = useState([])
+  const [orders, setOrders] = useState(initialOrders)
   const [loading, setLoading] = useState(false)
+  const [shouldFetch, setShouldFetch] = useState(false)
 
   // Notification colors
   const newOrderColor = "#0A0F2C" // Light yellow for new orders
@@ -43,13 +45,52 @@ export default function OrdersManagement({ siteTheme, orders }) {
     return () => window.removeEventListener("resize", checkIfMobile)
   }, [])
 
-  // Load notifications from database
+  // Check navigation type to determine if we should fetch data
   useEffect(() => {
-    loadNotifications()
-    // Also create notifications for any orders that don't have them
-    createNotificationsForOrders()
-  }, [])
+    const navType = performance.getEntriesByType("navigation")[0]?.type;
+    if (navType === 'reload' || navType === 'navigate') {
+      setShouldFetch(true); // Full page load or reload
+    }
+  }, []);
 
+  // Load orders and notifications only on page visit/reload
+  useEffect(() => {
+    if (!shouldFetch) return;
+
+    const fetchOrdersAndNotifications = async () => {
+      setLoading(true);
+      try {
+        // Fetch orders if not provided via props or if we want fresh data
+        if (initialOrders.length === 0) {
+          await fetchOrders();
+        }
+
+        // Load notifications
+        await loadNotifications();
+
+        // Create notifications for orders that don't have them
+        await createNotificationsForOrders();
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrdersAndNotifications();
+  }, [shouldFetch]);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch("/api/orders");
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
+  };
 
   const loadNotifications = async () => {
     try {
@@ -69,7 +110,7 @@ export default function OrdersManagement({ siteTheme, orders }) {
         method: "POST",
       })
       // Reload notifications after creating new ones
-      loadNotifications()
+      await loadNotifications()
     } catch (error) {
       console.error("Error creating notifications for orders:", error)
     }
@@ -225,6 +266,33 @@ export default function OrdersManagement({ siteTheme, orders }) {
     }
 
     return chunks.join("\n")
+  }
+
+  // Show loading state if we should fetch but haven't loaded yet
+  if (shouldFetch && loading && orders.length === 0 && notifications.length === 0) {
+    return (
+      <div className="mt-8">
+        <div className="flex justify-center items-center p-8">
+          <RefreshCw size={24} className="animate-spin mr-2" />
+          <span>Loading orders and notifications...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no fetch should happen (client-side navigation)
+  if (!shouldFetch && orders.length === 0) {
+    return (
+      <div className="mt-8">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold flex items-center">
+            <ShoppingBag className="mr-2" size={24} />
+            Orders Management
+          </h2>
+        </div>
+        <p>Orders and notifications loaded only on page visit/reload (client-side navigation detected).</p>
+      </div>
+    );
   }
 
   return (
