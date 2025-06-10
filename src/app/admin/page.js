@@ -108,17 +108,22 @@ export default function Admin() {
   }
 
   const fetchSiteSettings = async () => {
-      const res = await fetch("/api/site-settings")
+    try {
+              const res = await fetch("/api/site-settings")
       if (res.ok) {
         const data = await res.json()
         if (data.logoUrl) {
           setLogoUrl(data.logoUrl)
         }
       }
+    } catch(err) {
+      
+    }
   }
 
   const fetchAboutContent = async () => {
-      const res = await fetch("/api/about-content")
+try {
+        const res = await fetch("/api/about-content")
       if (res.ok) {
         const data = await res.json()
         setAboutContent(data.description || "")
@@ -129,6 +134,9 @@ export default function Admin() {
           setAboutTextFont(data.textStyles.textFont || "font-normal")
         }
       }
+} catch (err) {
+  
+}
   }
 
   const fetchReviews = async () => {
@@ -148,13 +156,16 @@ export default function Admin() {
   }
 
   const fetchSiteTheme = async () => {
-      const res = await fetch("/api/site-theme")
+try {
+        const res = await fetch("/api/site-theme")
       if (res.ok) {
         const data = await res.json()
         if (data && data.theme) {
           setSiteTheme(data.theme)
         }
       }
+} catch (err) {
+}
   }
 
   useEffect(() => {
