@@ -63,7 +63,7 @@ export default function AboutPage() {
     }
 
     fetchData()
-  }, []) // Remove the dependency array item
+  }, [])
 
     if (loading) {
     return <LoadingSpinner siteTheme={siteTheme} />
