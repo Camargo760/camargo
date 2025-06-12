@@ -50,14 +50,12 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
 
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}))
-          console.error("Error deleting review:", errorData)
           throw new Error(errorData.error || "Failed to delete review")
         }
 
         await fetchReviews()
         alert("Review deleted successfully!")
       } catch (err) {
-        console.error("Error deleting review:", err)
         alert(`Failed to delete review: ${err.message}`)
       } finally {
         setLoadingReviews(false)
@@ -191,7 +189,6 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
             })}
           </div>
 
-          {/* Pagination controls for reviews */}
           <div className="flex justify-between items-center mt-4">
             <div className="text-sm">
               Showing {indexOfFirstReview + 1} to {Math.min(indexOfLastReview, reviews.length)} of {reviews.length}{" "}
@@ -229,7 +226,6 @@ export default function ReviewsManagement({ siteTheme, reviews, fetchReviews }) 
         </>
       )}
 
-      {/* Lightbox component */}
       <ImageLightbox
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
