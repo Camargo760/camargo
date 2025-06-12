@@ -29,12 +29,10 @@ export default function AboutPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch about content
         const aboutRes = await fetch("/api/about-content")
         if (aboutRes.ok) {
           const aboutData = await aboutRes.json()
 
-          // Create a merged object with default values
           const mergedContent = {
             description: aboutData.description || "",
             textStyles: aboutData.textStyles || {
@@ -47,7 +45,6 @@ export default function AboutPage() {
           setAboutContent(mergedContent)
         }
 
-        // Fetch site theme
         const themeRes = await fetch("/api/site-theme")
         if (themeRes.ok) {
           const themeData = await themeRes.json()
@@ -56,7 +53,6 @@ export default function AboutPage() {
           }
         }
       } catch (err) {
-        console.error("Error fetching data:", err)
       } finally {
         setLoading(false)
       }
@@ -69,7 +65,6 @@ export default function AboutPage() {
     return <LoadingSpinner siteTheme={siteTheme} />
   }
 
-  // Destructure textStyles with fallbacks
   const { textSize = "text-lg", textColor = "text-gray-700", textFont = "font-normal" } = aboutContent.textStyles || {}
 
   return (
@@ -91,11 +86,9 @@ export default function AboutPage() {
         </div>
 
         <div className="md:flex justify-center gap-20">
-          {/* 3D Instagram Card */}
           <div className="flex justify-center items-center box-border md:mb-0 mb-8">
             <InstagramCard />
           </div>
-          {/* Facebook Profile */}
           <div className="flex justify-center items-center box-border">
             <FacebookCard />
           </div>
