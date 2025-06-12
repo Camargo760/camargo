@@ -17,7 +17,6 @@ export default function AboutContentManagement({
   const [editAboutTextColor, setEditAboutTextColor] = useState(aboutTextColor)
   const [editAboutTextFont, setEditAboutTextFont] = useState(aboutTextFont)
 
-  // Font options
   const fontOptions = [
     { value: "font-normal", label: "Normal" },
     { value: "font-medium", label: "Medium" },
@@ -27,7 +26,6 @@ export default function AboutContentManagement({
     { value: "italic", label: "Italic" },
   ]
 
-  // Text size options
   const textSizeOptions = [
     { value: "text-sm", label: "Small" },
     { value: "text-base", label: "Base" },
@@ -40,7 +38,6 @@ export default function AboutContentManagement({
     { value: "text-6xl", label: "6XL" },
   ]
 
-  // Text color options
   const textColorOptions = [
     { value: "text-white", label: "White", color: "#ffffff" },
     { value: "text-gray-100", label: "Light Gray", color: "#f3f4f6" },
@@ -85,7 +82,6 @@ export default function AboutContentManagement({
       alert("About content saved successfully!")
       fetchAboutContent()
     } catch (err) {
-      console.error("Error saving about content:", err)
       alert("Failed to save about content. Please try again.")
     }
   }
@@ -214,7 +210,6 @@ export default function AboutContentManagement({
           <button
             onClick={() => {
               setEditingAbout(true)
-              // Ensure we start with current values
               setEditAboutContent(aboutContent)
               setEditAboutTextSize(aboutTextSize)
               setEditAboutTextColor(aboutTextColor)
