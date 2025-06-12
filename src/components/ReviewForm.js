@@ -1,4 +1,3 @@
-// components/ReviewForm.js
 "use client"
 
 import { useState, useEffect } from "react"
@@ -18,12 +17,10 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
   const [previewImages, setPreviewImages] = useState([])
   const [showTooltip, setShowTooltip] = useState(false)
 
-  // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState([])
   const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
 
-  // Set name from session when available
   useEffect(() => {
     if (session?.user?.name) {
       setName(session.user.name)
@@ -37,13 +34,11 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files)
 
-    // Limit to 3 images
     if (reviewImages.length + files.length > 3) {
       alert("You can upload a maximum of 3 images")
       return
     }
 
-    // Check file sizes (5MB max per file)
     for (const file of files) {
       if (file.size > 5 * 1024 * 1024) {
         alert("File size exceeds 5MB limit")
@@ -52,19 +47,15 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
       }
     }
 
-    // Create preview URLs
     const newPreviewImages = files.map((file) => URL.createObjectURL(file))
     setPreviewImages([...previewImages, ...newPreviewImages])
 
-    // Store the actual files
     setReviewImages([...reviewImages, ...files])
   }
 
   const removeImage = (index) => {
-    // Release the object URL to avoid memory leaks
     URL.revokeObjectURL(previewImages[index])
 
-    // Remove the image from both arrays
     const newPreviewImages = [...previewImages]
     newPreviewImages.splice(index, 1)
     setPreviewImages(newPreviewImages)
@@ -74,7 +65,6 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
     setReviewImages(newReviewImages)
   }
 
-  // Open lightbox for preview images
   const openLightbox = (index) => {
     setLightboxImages(previewImages)
     setLightboxInitialIndex(index)
@@ -92,7 +82,6 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
     setIsSubmitting(true)
 
     try {
-      // Create FormData for the request
       const formData = new FormData()
       formData.append("rating", rating)
       formData.append("title", title)
@@ -103,14 +92,12 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
         formData.append("userId", session.user.email)
       }
 
-      // Add images if any
       if (reviewImages.length > 0) {
         reviewImages.forEach((file) => {
           formData.append("images", file)
         })
       }
 
-      // Send the review data
       const response = await fetch("/api/reviews", {
         method: "POST",
         body: formData,
@@ -121,23 +108,19 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
         throw new Error(errorData.error || "Failed to submit review")
       }
 
-      // Clean up preview URLs before resetting
       previewImages.forEach(url => URL.revokeObjectURL(url))
 
-      // Reset form on success
       setRating(5)
       setTitle("")
       setContent("")
-      if (!session) setName("") // Only reset name if not logged in
+      if (!session) setName("") 
       setReviewImages([])
       setPreviewImages([])
 
-      // Call the onSubmit callback
       onSubmit && onSubmit(true)
 
       alert("Review submitted successfully!")
     } catch (error) {
-      console.error("Error submitting review:", error)
       alert("Failed to submit review. Please try again.")
     } finally {
       setIsSubmitting(false)
@@ -199,7 +182,7 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
             borderWidth: "1px",
           }}
           required
-          disabled={!!session?.user} // Disable if user is logged in
+          disabled={!!session?.user} 
         />
       </div>
 
