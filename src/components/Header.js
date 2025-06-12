@@ -5,7 +5,6 @@ import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 
-// Import FontAwesome icons
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faBars, faTimes } from "@fortawesome/free-solid-svg-icons"
 
@@ -16,7 +15,6 @@ export default function Header() {
   const [logoUrl, setLogoUrl] = useState("/assets/logo.png")
 
   useEffect(() => {
-    // Fetch site settings to get the logo URL
     const fetchSiteSettings = async () => {
       try {
         const res = await fetch("/api/site-settings")
@@ -27,7 +25,6 @@ export default function Header() {
           }
         }
       } catch (err) {
-        console.error("Error fetching site settings:", err)
       }
     }
 
@@ -39,7 +36,6 @@ export default function Header() {
     router.push(data.url)
   }
 
-  // Common link classes with responsive font sizes
   const linkClasses = "text-white md:text-sm lg:text-sm hover:text-green-400 transition-colors duration-300"
 
   return (
