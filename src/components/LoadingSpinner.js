@@ -1,4 +1,3 @@
-// components/LoadingSpinner.js
 import { Loader2 } from "lucide-react"
 
 const LoadingSpinner = ({ siteTheme }) => {
