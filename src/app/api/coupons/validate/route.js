@@ -27,7 +27,6 @@ export async function POST(request) {
       description: coupon.description,
     })
   } catch (error) {
-    console.error("Error validating coupon:", error)
     return NextResponse.json({ error: "Failed to validate coupon" }, { status: 500 })
   }
 }
