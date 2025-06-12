@@ -31,7 +31,6 @@ export default function ProductsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch site theme
         const themeRes = await fetch("/api/site-theme")
         if (themeRes.ok) {
           const themeData = await themeRes.json()
@@ -40,7 +39,6 @@ export default function ProductsPage() {
           }
         }
 
-        // Fetch products from MongoDB API - add published=true parameter
         const productsRes = await fetch("/api/products?published=true")
         if (!productsRes.ok) {
           throw new Error("Failed to fetch products")
@@ -48,11 +46,9 @@ export default function ProductsPage() {
         const productsData = await productsRes.json()
         setProducts(productsData)
 
-        // Extract unique categories
         const uniqueCategories = [...new Set(productsData.map((product) => product.category || "Uncategorized"))]
         setCategories(uniqueCategories)
       } catch (err) {
-        console.error("Error fetching data:", err)
         setError(err.message || "Failed to load products")
       } finally {
         setLoading(false)
@@ -62,16 +58,13 @@ export default function ProductsPage() {
     fetchData()
   }, [])
 
-  // Apply filters and sorting
   useEffect(() => {
     let result = [...products]
 
-    // Apply category filter
     if (selectedCategory !== "all") {
       result = result.filter((product) => (product.category || "Uncategorized") === selectedCategory)
     }
 
-    // Apply sorting
     switch (sortBy) {
       case "newest":
         result.sort((a, b) => new Date(b.uploadTime || b.createdAt) - new Date(a.uploadTime || a.createdAt))
@@ -125,9 +118,7 @@ export default function ProductsPage() {
         </h1>
 
         <div className="flex flex-col md:flex-row gap-6 mb-8">
-          {/* Products with Sorting - Right Side */}
           <div className="md:w-full">
-            {/* Filter and Sort Buttons */}
             <div className="flex flex-wrap items-center gap-3 mb-4 relative">
               <div className="relative">
                 <button
@@ -246,7 +237,6 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            {/* Products Grid */}
             {filteredProducts.length === 0 ? (
               <div className="text-center p-8 rounded-lg" style={{ backgroundColor: siteTheme.cardBgColor }}>
                 <p className="text-lg">No products found matching your criteria.</p>
