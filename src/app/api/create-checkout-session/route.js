@@ -1,4 +1,3 @@
-// api/create-checkout-session/route.js
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import clientPromise from "../../../lib/mongodb"
@@ -8,7 +7,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 export async function POST(request) {
   try {
-    // Parse the request body
     const requestData = await request.json()
 
     if (!requestData) {
@@ -29,10 +27,9 @@ export async function POST(request) {
       quantity = 1,
       designImageId,
       category,
-      coupon, // Add coupon parameter
+      coupon, 
     } = requestData
 
-    // Validate required fields
     if (!productId || !email) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
@@ -40,12 +37,10 @@ export async function POST(request) {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Validate ObjectId format
     if (!ObjectId.isValid(productId)) {
       return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
     }
 
-    // Determine which collection to query based on isCustomProduct flag
     const collection = isCustomProduct ? "customProducts" : "products"
     const product = await db.collection(collection).findOne({ _id: new ObjectId(productId) })
 
@@ -53,13 +48,11 @@ export async function POST(request) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
-    // Calculate the original price
     const originalPrice = product.price
     let finalPrice = originalPrice
     let discountPercentage = 0
     let couponCode = null
 
-    // Validate coupon if provided
     if (coupon && coupon.trim()) {
       const couponDoc = await db.collection("coupons").findOne({
         code: coupon.toUpperCase(),
@@ -73,10 +66,8 @@ export async function POST(request) {
       }
     }
 
-    // Calculate the total price based on quantity
     const totalPrice = finalPrice * quantity
 
-    // Create line items for Stripe
     const lineItems = [
       {
         price_data: {
@@ -97,13 +88,12 @@ export async function POST(request) {
               discountPercentage: discountPercentage.toString(),
             },
           },
-          unit_amount: Math.round(finalPrice * 100), // Convert to cents
+          unit_amount: Math.round(finalPrice * 100), 
         },
         quantity: Number.parseInt(quantity, 10),
       },
     ]
 
-    // Create metadata for the session
     const metadata = {
       userId: name,
       phone: phone || "",
@@ -121,17 +111,14 @@ export async function POST(request) {
       discountPercentage: discountPercentage.toString(),
     }
 
-    // Add customText to metadata if it exists
     if (customText) {
       metadata.customText = customText
     }
 
-    // Add designImageId to metadata if it exists
     if (designImageId) {
       metadata.designImageId = designImageId
     }
 
-    // Create the Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
@@ -148,7 +135,6 @@ export async function POST(request) {
 
     return NextResponse.json({ id: session.id })
   } catch (error) {
-    console.error("Error details:", error)
     return NextResponse.json(
       {
         error: error.message || "An error occurred while processing your request",
