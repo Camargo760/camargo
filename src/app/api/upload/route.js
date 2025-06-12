@@ -5,7 +5,6 @@ import clientPromise from "../../../lib/mongodb"
 
 export async function POST(request) {
   try {
-    // Check authentication
     const session = await getServerSession(authOptions)
     if (!session || session.user.email !== "camargo_co@outlook.com") {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 })
@@ -18,13 +17,11 @@ export async function POST(request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    // Convert file to base64
     const buffer = await file.arrayBuffer()
     const base64 = Buffer.from(buffer).toString("base64")
     const fileType = file.type
     const dataUrl = `data:${fileType};base64,${base64}`
 
-    // Store in MongoDB
     const client = await clientPromise
     const db = client.db("ecommerce")
 
@@ -41,7 +38,6 @@ export async function POST(request) {
       id: result.insertedId.toString(),
     })
   } catch (error) {
-    console.error("Error uploading file:", error)
     return NextResponse.json({ error: "Failed to upload file" }, { status: 500 })
   }
 }
