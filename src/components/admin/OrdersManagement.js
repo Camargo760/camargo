@@ -27,14 +27,11 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
   const [loading, setLoading] = useState(false)
   const [shouldFetch, setShouldFetch] = useState(false)
 
-  // Notification colors
-  const newOrderColor = "#0A0F2C" // Light yellow for new orders
-  const readOrderColor = siteTheme.cardBgColor // Current theme color for read orders
+  const newOrderColor = "#0A0F2C" 
+  const readOrderColor = siteTheme.cardBgColor
 
-  // Calculate total pages
   const totalOrderPages = Math.ceil(orders.length / ordersPerPage) || 1
 
-  // Check if device is mobile
   useEffect(() => {
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 640)
@@ -45,30 +42,25 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
     return () => window.removeEventListener("resize", checkIfMobile)
   }, [])
 
-  // Check navigation type to determine if we should fetch data
   useEffect(() => {
     const navType = performance.getEntriesByType("navigation")[0]?.type;
     if (navType === 'reload' || navType === 'navigate') {
-      setShouldFetch(true); // Full page load or reload
+      setShouldFetch(true); 
     }
   }, []);
 
-  // Load orders and notifications only on page visit/reload
   useEffect(() => {
     if (!shouldFetch) return;
 
     const fetchOrdersAndNotifications = async () => {
       setLoading(true);
       try {
-        // Fetch orders if not provided via props or if we want fresh data
         if (initialOrders.length === 0) {
           await fetchOrders();
         }
 
-        // Load notifications
         await loadNotifications();
 
-        // Create notifications for orders that don't have them
         await createNotificationsForOrders();
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -97,7 +89,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
       const response = await fetch("/api/notifications")
       if (response.ok) {
         const data = await response.json()
-        setNotifications(data.filter((n) => !n.isDeleted)) // Only show non-deleted notifications
+        setNotifications(data.filter((n) => !n.isDeleted)) 
       }
     } catch (error) {
       console.error("Error loading notifications:", error)
@@ -109,17 +101,14 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
       await fetch("/api/notifications/create-for-orders", {
         method: "POST",
       })
-      // Reload notifications after creating new ones
       await loadNotifications()
     } catch (error) {
       console.error("Error creating notifications for orders:", error)
     }
   }
 
-  // Get unread notifications count
   const unreadCount = notifications.filter((n) => !n.isRead && !n.isDeleted).length
 
-  // Pagination handlers for orders
   const handlePreviousOrderPage = () => {
     if (currentOrderPage > 1) {
       setCurrentOrderPage(currentOrderPage - 1)
@@ -132,12 +121,10 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
     }
   }
 
-  // Get current orders for pagination
   const indexOfLastOrder = currentOrderPage * ordersPerPage
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage
   const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder)
 
-  // Function to download the final design image
   const downloadDesignImage = (imageUrl, orderId) => {
     const link = document.createElement("a")
     link.href = imageUrl
@@ -147,19 +134,14 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
     document.body.removeChild(link)
   }
 
-  // View order details
   const viewOrderDetails = (order) => {
     setSelectedOrder(order)
-    // Mark order as read when viewing details
-    // markOrderAsRead(order.id)
   }
 
-  // Close order details modal
   const closeOrderDetails = () => {
     setSelectedOrder(null)
   }
 
-  // Mark single notification as read
   const markNotificationAsRead = async (notificationId) => {
     setLoading(true)
     try {
@@ -170,7 +152,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
       })
 
       if (response.ok) {
-        await loadNotifications() // Reload notifications
+        await loadNotifications() 
       }
     } catch (error) {
       console.error("Error marking notification as read:", error)
@@ -178,7 +160,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
     setLoading(false)
   }
 
-  // Delete single notification
   const deleteNotification = async (notificationId) => {
     setLoading(true)
     try {
@@ -189,7 +170,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
       })
 
       if (response.ok) {
-        await loadNotifications() // Reload notifications
+        await loadNotifications() 
         alert("Notification marked as read and deleted")
       }
     } catch (error) {
@@ -198,7 +179,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
     setLoading(false)
   }
 
-  // Mark all notifications as read
   const markAllAsRead = async () => {
     setLoading(true)
     try {
@@ -209,7 +189,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
       })
 
       if (response.ok) {
-        await loadNotifications() // Reload notifications
+        await loadNotifications() 
       }
     } catch (error) {
       console.error("Error marking all as read:", error)
@@ -217,7 +197,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
     setLoading(false)
   }
 
-  // Delete all notifications
   const deleteAllNotifications = async () => {
     if (confirm("This will mark all notifications as read and deleted. Are you sure?")) {
       setLoading(true)
@@ -229,7 +208,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
         })
 
         if (response.ok) {
-          await loadNotifications() // Reload notifications
+          await loadNotifications()
           alert("All notifications marked as read and deleted")
         }
       } catch (error) {
@@ -239,7 +218,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
     }
   }
 
-  // Mark order as read (for when viewing order details)
   const markOrderAsRead = async (orderId) => {
     const notification = notifications.find((n) => n.orderId === orderId)
     if (notification && !notification.isRead) {
@@ -247,16 +225,14 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
     }
   }
 
-  // Get order background color based on read status
   const getOrderBackgroundColor = (orderId) => {
     const notification = notifications.find((n) => n.orderId === orderId)
     if (notification) {
       return notification.isRead ? readOrderColor : newOrderColor
     }
-    return readOrderColor // Default to read color if no notification found
+    return readOrderColor 
   }
 
-  // Format text with line breaks after 100 characters
   const formatLongText = (text, maxLength = 20) => {
     if (!text || text.length <= maxLength) return text
 
@@ -268,7 +244,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
     return chunks.join("\n")
   }
 
-  // Show loading state if we should fetch but haven't loaded yet
   if (shouldFetch && loading && orders.length === 0 && notifications.length === 0) {
     return (
       <div className="mt-8">
@@ -280,7 +255,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
     );
   }
 
-  // Show message if no fetch should happen (client-side navigation)
   if (!shouldFetch && orders.length === 0) {
     return (
       <div className="mt-8">
@@ -303,7 +277,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
           Orders Management
         </h2>
 
-        {/* Notification Button */}
         <div className="relative flex items-center space-x-2">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
@@ -318,7 +291,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
             )}
           </button>
 
-          {/* Notifications Panel */}
           {showNotifications && (
             <div
               className="absolute right-0 top-12 w-96 max-h-96 overflow-y-auto rounded-lg shadow-lg border z-50"
@@ -327,7 +299,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                 borderColor: siteTheme.borderColor,
               }}
             >
-              {/* Notification Header */}
               <div
                 className="p-4 border-b flex justify-between items-center"
                 style={{ borderColor: siteTheme.borderColor }}
@@ -354,7 +325,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                 </div>
               </div>
 
-              {/* Notifications List */}
               <div className="max-h-64 overflow-y-auto">
                 {loading ? (
                   <div className="p-4 text-center">
@@ -500,7 +470,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
             </table>
           </div>
 
-          {/* Pagination controls for orders */}
           <div className="flex justify-between items-center mt-4">
             <div className="text-sm">
               Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, orders.length)} of {orders.length} orders
@@ -535,7 +504,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
             </div>
           </div>
 
-          {/* Order Details Modal */}
           {selectedOrder && (
             <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
               <div
@@ -556,8 +524,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                     <X size={24} />
                   </button>
                 </div>
-
-                {/* Customer Information */}
 
                 <div
                   className="p-4 rounded-lg"
@@ -582,8 +548,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                     {formatLongText(selectedOrder.customer?.address || "N/A")}
                   </p>
                 </div>
-
-                {/* Order Information */}
 
                 <div
                   className="mt-6 p-4 rounded-lg"
@@ -624,7 +588,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                   </p>
                 </div>
 
-                {/* Discount Information Section */}
                 <div
                   className="mt-6 p-4 rounded-lg"
                   style={{
@@ -676,10 +639,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                   </div>
                 </div>
 
-
-
-                {/* Discount Information Section */}
-                <div
+                        <div
                   className="mt-6 p-4 rounded-lg"
                   style={{
                     backgroundColor: siteTheme.cardBgColor,
@@ -738,7 +698,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                   </div>
                 </div>
 
-                {/* Product Information */}
                 <div
                   className="mt-6 p-4 rounded-lg"
                   style={{
@@ -782,7 +741,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                       )}
                     </div>
 
-                    {/* Custom Design */}
                     {(selectedOrder.product?.customImage || selectedOrder.product?.finalDesignImage) && (
                       <div className="md:w-1/3 mt-4 md:mt-0">
                         <p className="font-medium mb-2">Custom Design:</p>
