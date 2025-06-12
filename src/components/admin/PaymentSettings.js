@@ -45,7 +45,6 @@ export default function PaymentSettings({ siteTheme }) {
         setSettings(data.settings)
       }
     } catch (error) {
-      console.error("Error fetching payment settings:", error)
     }
   }
 
@@ -117,7 +116,6 @@ export default function PaymentSettings({ siteTheme }) {
         setMessage("Error saving settings")
       }
     } catch (error) {
-      console.error("Error saving settings:", error)
       setMessage("Error saving settings")
     } finally {
       setLoading(false)
@@ -155,7 +153,6 @@ export default function PaymentSettings({ siteTheme }) {
         </div>
       )}
 
-      {/* Stripe Settings */}
       <div
         className="p-6 rounded-lg"
         style={{
@@ -227,7 +224,6 @@ export default function PaymentSettings({ siteTheme }) {
         </div>
       </div>
 
-      {/* Cash on Delivery Settings */}
       <div
         className="p-6 rounded-lg"
         style={{
@@ -291,7 +287,6 @@ export default function PaymentSettings({ siteTheme }) {
           </div>
         </div>
 
-        {/* Payment Methods */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="text-lg font-medium" style={{ color: siteTheme.textColor }}>
