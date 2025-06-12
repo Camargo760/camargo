@@ -8,7 +8,6 @@ export async function GET() {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Get the home content from the database
     const content = await db.collection("siteContent").findOne({ type: "home" })
 
     if (!content) {
@@ -30,14 +29,12 @@ export async function GET() {
 
     return NextResponse.json(content)
   } catch (error) {
-    console.error("Error fetching home content:", error)
     return NextResponse.json({ error: "Failed to fetch home content" }, { status: 500 })
   }
 }
 
 export async function POST(request) {
   try {
-    // Check authentication
     const session = await getServerSession(authOptions)
     if (!session || session.user.email !== "camargo_co@outlook.com") {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 })
@@ -48,7 +45,6 @@ export async function POST(request) {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Update or insert the home content
     const result = await db.collection("siteContent").updateOne(
       { type: "home" },
       {
@@ -69,7 +65,6 @@ export async function POST(request) {
       message: "Home content updated successfully",
     })
   } catch (error) {
-    console.error("Error updating home content:", error)
     return NextResponse.json({ error: "Failed to update home content" }, { status: 500 })
   }
 }
