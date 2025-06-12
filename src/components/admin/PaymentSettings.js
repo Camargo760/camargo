@@ -10,13 +10,6 @@ export default function PaymentSettings({ siteTheme }) {
       displayName: "Credit/Debit Card",
       description: "Pay securely with your credit or debit card",
     },
-    // paypal: {
-    //   enabled: true,
-    //   displayName: "PayPal",
-    //   description: "Pay with your PayPal account",
-    //   clientId: "",
-    //   clientSecret: "",
-    // },
     cashOnDelivery: {
       enabled: true,
       displayName: "Cash on Delivery",
