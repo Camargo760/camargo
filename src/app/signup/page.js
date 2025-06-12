@@ -33,7 +33,7 @@ export default function SignUp() {
           }
         }
       } catch (err) {
-        console.error("Error fetching site theme:", err)
+        
       }
     }
 
@@ -42,12 +42,10 @@ export default function SignUp() {
 
   useEffect(() => {
     if (success) {
-      // Clear the form fields
       setName("")
       setEmail("")
       setPassword("")
       
-      // Redirect to login page after 3 seconds
       const timer = setTimeout(() => {
         router.push("/login")
       }, 3000)
@@ -63,7 +61,6 @@ export default function SignUp() {
     setLoading(true)
 
     try {
-      // Register the user in your backend
       const response = await fetch("/api/signup", {
         method: "POST",
         headers: {
@@ -75,7 +72,6 @@ export default function SignUp() {
       const contentType = response.headers.get("content-type")
       if (!contentType || !contentType.includes("application/json")) {
         const text = await response.text()
-        console.error("Non-JSON response:", text)
         throw new Error("Server returned non-JSON response")
       }
 
@@ -85,12 +81,10 @@ export default function SignUp() {
         throw new Error(data.error || "Failed to sign up")
       }
 
-      // Set success state to show success message and trigger redirect
       setSuccess(true)
       setLoading(false)
       
     } catch (err) {
-      console.error("Signup error:", err)
       setError(err.message || "An error occurred during sign up")
       setLoading(false)
     }
