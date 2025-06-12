@@ -105,8 +105,9 @@ export async function GET(request) {
           paymentMethod: "stripe",
           coupon: order.metadata?.coupon || "N/A",
           discountPercentage: order.metadata?.discountPercentage || 0,
-          originalPrice: session.metadata?.originalPrice ? parseFloat(session.metadata.originalPrice) : null,
-          finalPrice: session.metadata?.finalPrice ? parseFloat(session.metadata.finalPrice) : null,
+          // Corrected code
+originalPrice: order.metadata?.originalPrice ? parseFloat(order.metadata.originalPrice) : null,
+finalPrice: order.metadata?.finalPrice ? parseFloat(order.metadata.finalPrice) : null,
           customer: {
             name: order.metadata?.userId || "N/A",
             email: order.customer_details?.email || "N/A",
