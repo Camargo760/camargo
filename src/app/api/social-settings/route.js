@@ -9,7 +9,6 @@ export async function GET() {
     const settings = await db.collection("socialSettings").findOne({})
 
     if (!settings) {
-      // Return default settings if none exist
       const defaultSettings = {
         instagram: {
           enabled: true,
@@ -44,7 +43,6 @@ export async function GET() {
 
     return NextResponse.json({ settings })
   } catch (error) {
-    console.error("Error fetching social settings:", error)
     return NextResponse.json({ error: "Failed to fetch social settings" }, { status: 500 })
   }
 }
@@ -56,15 +54,12 @@ export async function POST(request) {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Remove _id from settings if it exists to prevent immutable field error
     const { _id, ...settingsWithoutId } = settings
 
-    // Use updateOne with $set instead of replaceOne to avoid _id conflicts
     await db.collection("socialSettings").updateOne({}, { $set: settingsWithoutId }, { upsert: true })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error saving social settings:", error)
     return NextResponse.json({ error: "Failed to save social settings" }, { status: 500 })
   }
 }
