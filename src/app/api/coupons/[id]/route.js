@@ -21,7 +21,6 @@ export async function DELETE(request, { params }) {
 
     return NextResponse.json({ message: "Coupon deleted successfully" })
   } catch (error) {
-    console.error("Error deleting coupon:", error)
     return NextResponse.json({ error: "Failed to delete coupon" }, { status: 500 })
   }
 }
@@ -54,7 +53,6 @@ export async function PATCH(request, { params }) {
 
     return NextResponse.json({ message: "Coupon updated successfully" })
   } catch (error) {
-    console.error("Error updating coupon:", error)
     return NextResponse.json({ error: "Failed to update coupon" }, { status: 500 })
   }
 }
