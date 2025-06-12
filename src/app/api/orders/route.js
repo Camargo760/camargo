@@ -1,4 +1,3 @@
-// api/orders/route.js
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
@@ -18,13 +17,10 @@ export async function GET(request) {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Get orders from MongoDB (delivery orders)
     const deliveryOrders = await db.collection("orders").find({ paymentMethod: "delivery" }).toArray()
 
-    // Format delivery orders to match the structure of Stripe orders
     const formattedDeliveryOrders = await Promise.all(
       deliveryOrders.map(async (order) => {
-        // Check if there's a design image ID and fetch the image data
         let finalDesignImage = null
         if (order.product.designImageId && ObjectId.isValid(order.product.designImageId)) {
           const imageDoc = await db.collection("customProductImages").findOne({
@@ -52,8 +48,7 @@ export async function GET(request) {
             price: order.product.price || "N/A",
             isCustomProduct: order.product.isCustomProduct || false,
             customText: order.product.customText || "N/A",
-            // customImage: order.product.customImage || null,
-            finalDesignImage: finalDesignImage, // Include the actual image data
+            finalDesignImage: finalDesignImage, 
           },
           selectedColor: order.selectedColor || "N/A",
           selectedSize: order.selectedSize || "N/A",
@@ -68,7 +63,6 @@ export async function GET(request) {
       }),
     )
 
-    // Get orders from Stripe
     const stripeOrders = await stripe.checkout.sessions.list({
       limit: 100,
       expand: ["data.line_items", "data.customer"],
@@ -82,12 +76,10 @@ export async function GET(request) {
         const isCustomProduct = order.metadata?.isCustomProduct === "true"
 
         if (order.metadata && order.metadata.productId && ObjectId.isValid(order.metadata.productId)) {
-          // Determine which collection to query based on isCustomProduct flag
           const collection = isCustomProduct ? "customProducts" : "products"
           product = await db.collection(collection).findOne({ _id: new ObjectId(order.metadata.productId) })
         }
 
-        // Check if there's a design image ID and fetch the image data
         let finalDesignImage = null
         const designImageId = order.metadata?.designImageId || (product ? product.finalDesignImageId : null)
 
@@ -105,7 +97,6 @@ export async function GET(request) {
           paymentMethod: "stripe",
           coupon: order.metadata?.coupon || "N/A",
           discountPercentage: order.metadata?.discountPercentage || 0,
-          // Corrected code
 originalPrice: order.metadata?.originalPrice ? parseFloat(order.metadata.originalPrice) : null,
 finalPrice: order.metadata?.finalPrice ? parseFloat(order.metadata.finalPrice) : null,
           customer: {
@@ -122,8 +113,7 @@ finalPrice: order.metadata?.finalPrice ? parseFloat(order.metadata.finalPrice) :
             price: product ? product.price : "N/A",
             isCustomProduct: isCustomProduct,
             customText: order.metadata?.customText || "N/A",
-            // customImage: product && isCustomProduct ? product.customImage : null,
-            finalDesignImage: finalDesignImage, // Include the actual image data
+            finalDesignImage: finalDesignImage, 
           },
           selectedColor: order.metadata?.color || "N/A",
           selectedSize: order.metadata?.size || "N/A",
@@ -132,17 +122,13 @@ finalPrice: order.metadata?.finalPrice ? parseFloat(order.metadata.finalPrice) :
           created: order.created || Date.now() / 1000,
         })
       } catch (itemError) {
-        console.error("Error processing individual order:", itemError, order.id)
-        // Continue processing other orders instead of failing completely
       }
     }
 
-    // Combine and sort all orders by creation date (newest first)
     const allOrders = [...formattedStripeOrders, ...formattedDeliveryOrders].sort((a, b) => b.created - a.created)
 
     return NextResponse.json(allOrders)
   } catch (error) {
-    console.error("Error fetching orders:", error)
     return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
   }
 }
