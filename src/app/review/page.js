@@ -8,12 +8,11 @@ import Header from "@/components/Header"
 import { Filter, Star, StarHalf } from "lucide-react"
 
 export default function ReviewsPage() {
-  // const { data: session } = useSession()
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
   const [sortOption, setSortOption] = useState("newest")
   const [siteTheme, setSiteTheme] = useState({
-    bgColor: "#ffffff",            // Changed from primaryBgColor to bgColor
+    bgColor: "#ffffff",            
     secondaryBgColor: "#f9fafb",
     cardBgColor: "#ffffff",
     textColor: "#111827",
@@ -21,7 +20,6 @@ export default function ReviewsPage() {
     borderColor: "#e5e7eb",
   })
 
-  // Calculate rating statistics
   const calculateRatingStats = (reviewsData) => {
     if (!reviewsData || reviewsData.length === 0) {
       return {
@@ -31,12 +29,10 @@ export default function ReviewsPage() {
       };
     }
 
-    // Calculate average rating
     const sum = reviewsData.reduce((acc, review) => acc + review.rating, 0);
     const avg = sum / reviewsData.length;
 
-    // Count ratings by star
-    const counts = [0, 0, 0, 0, 0]; // For 5, 4, 3, 2, 1 stars
+    const counts = [0, 0, 0, 0, 0]; 
     reviewsData.forEach(review => {
       const index = 5 - review.rating;
       if (index >= 0 && index < 5) {
@@ -44,7 +40,6 @@ export default function ReviewsPage() {
       }
     });
 
-    // Calculate percentages
     const percentages = counts.map(count => 
       reviewsData.length > 0 ? (count / reviewsData.length) * 100 : 0
     );
@@ -56,7 +51,6 @@ export default function ReviewsPage() {
     };
   };
 
-  // Initialize rating statistics
   const [ratingStats, setRatingStats] = useState({
     averageRating: 0,
     ratingCounts: [0, 0, 0, 0, 0],
@@ -64,32 +58,23 @@ export default function ReviewsPage() {
   });
 
   useEffect(() => {
-    // Fetch site theme
     const fetchSiteTheme = async () => {
       try {
-        console.log("Fetching site theme...")
         const res = await fetch("/api/site-theme")
-        console.log("Site theme response status:", res.status)
         
         if (res.ok) {
           const data = await res.json()
-          console.log("Received theme data:", data)
           
-          // Check if the theme data is nested inside a 'theme' property
           if (data.theme) {
-            console.log("Using nested theme data")
             setSiteTheme(data.theme)
           } else {
-            console.log("Using direct theme data")
             setSiteTheme(data)
           }
         }
       } catch (error) {
-        console.error("Error fetching site theme:", error)
       }
     }
 
-    // Fetch reviews
     const fetchReviews = async () => {
       try {
         setLoading(true)
@@ -98,11 +83,10 @@ export default function ReviewsPage() {
           const data = await res.json()
           setReviews(data)
           
-          // Calculate and set rating statistics
           setRatingStats(calculateRatingStats(data))
         }
       } catch (error) {
-        console.error("Error fetching reviews:", error)
+        
       } finally {
         setLoading(false)
       }
@@ -114,23 +98,19 @@ export default function ReviewsPage() {
 
   const handleSubmitReview = async (reviewData) => {
     try {
-      // Refresh reviews after submission
       const res = await fetch("/api/reviews")
       if (res.ok) {
         const data = await res.json()
         setReviews(data)
         
-        // Recalculate rating statistics
         setRatingStats(calculateRatingStats(data))
       }
       return true
     } catch (error) {
-      console.error("Error refreshing reviews:", error)
       return false
     }
   }
 
-  // Sort reviews based on selected option
   const sortedReviews = [...reviews].sort((a, b) => {
     switch (sortOption) {
       case "newest":
@@ -144,16 +124,12 @@ export default function ReviewsPage() {
     }
   });
 
-  // Destructure rating statistics for easier access
   const { averageRating, ratingCounts, ratingPercentages } = ratingStats;
 
-  // Custom scrollbar styles
   const scrollbarStyle = {
-    // Firefox
     scrollbarWidth: "thin",
     scrollbarColor: `${siteTheme.accentColor}80 ${siteTheme.secondaryBgColor}`,
     
-    // For Chrome, Edge, and Safari
     "&::-webkit-scrollbar": {
       width: "8px",
       height: "8px",
@@ -218,7 +194,6 @@ export default function ReviewsPage() {
         <h1 className="text-3xl font-bold mb-8 text-center">Customer Reviews</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Review Form with fixed height */}
           <div className="lg:col-span-1">
             <div 
               className="sticky top-4 p-6 rounded-lg custom-scrollbar"
@@ -277,7 +252,6 @@ export default function ReviewsPage() {
             </div>
           </div>
 
-          {/* Reviews List */}
           <div className="md:col-span-2">
             {loading ? (
               <div className="text-center py-12">Loading reviews...</div>
