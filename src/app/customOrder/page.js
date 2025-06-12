@@ -14,7 +14,7 @@ export default function CustomOrder() {
   const [customTextColor, setCustomTextColor] = useState("#ffffff")
   const [customTextFont, setCustomTextFont] = useState("font-['Kanit']")
   const [customTextSize, setCustomTextSize] = useState("text-4xl")
-  const [customTextFontSize, setCustomTextFontSize] = useState(24) // Default font size in px
+  const [customTextFontSize, setCustomTextFontSize] = useState(24)
   const [uploadedImage, setUploadedImage] = useState(null)
   const [fileName, setFileName] = useState("No file chosen")
   const [quantity, setQuantity] = useState(1)
@@ -41,12 +41,11 @@ export default function CustomOrder() {
           const data = await res.json()
           if (data.theme) {
             setSiteTheme(data.theme)
-            // Set the current background color to the card background color from the theme
             setCurrentBgColor(data.theme.cardBgColor)
           }
         }
       } catch (err) {
-        console.error("Error fetching site theme:", err)
+        
       }
     }
 
@@ -102,7 +101,6 @@ export default function CustomOrder() {
 
   const sizeOptions = ["S", "M", "L", "XL", "XXL"]
 
-  // Function to get color title from color value
   const getColorTitle = (colorValue) => {
     const colorOption = colorOptions.find((option) => option.color === colorValue)
     return colorOption ? colorOption.title : colorValue
@@ -112,7 +110,6 @@ export default function CustomOrder() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
 
-      // Check file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
         alert("File size exceeds 5MB limit")
         e.target.value = ""
@@ -133,30 +130,25 @@ export default function CustomOrder() {
     }
   }
 
-  // Capture the design as an image
   const captureDesign = async () => {
     if (!canvasRef.current) return null
 
     try {
-      // Use html2canvas directly on the canvas element
       const canvas = await html2canvas(canvasRef.current, {
         backgroundColor: currentBgColor,
-        scale: 2, // Higher quality
+        scale: 2, 
         logging: false,
-        useCORS: true, // To handle cross-origin images
+        useCORS: true,
       })
 
       return canvas.toDataURL("image/png")
     } catch (error) {
-      console.error("Error capturing design:", error)
       return null
     }
   }
 
-  // Store the design image in the database
   const storeDesignImage = async (imageData, productId) => {
     try {
-      // Prepare simple design data for storage
       const designData = {
         backgroundColor: currentBgColor,
         customText: customText,
@@ -174,7 +166,7 @@ export default function CustomOrder() {
         body: JSON.stringify({
           imageData,
           productId,
-          designData, // Include the design data
+          designData, 
         }),
       })
 
@@ -183,9 +175,8 @@ export default function CustomOrder() {
       }
 
       const data = await response.json()
-      return data.id // Return the image ID
+      return data.id 
     } catch (error) {
-      console.error("Error storing design image:", error)
       return null
     }
   }
@@ -193,7 +184,7 @@ export default function CustomOrder() {
   const handlePlaceOrder = async () => {
     setLoading(true)
     try {
-      // Capture the design as an image
+      
       const designImage = await captureDesign()
 
       if (!designImage) {
@@ -201,11 +192,9 @@ export default function CustomOrder() {
       }
 
       setFinalDesignImage(designImage)
-
-      // Get the color title instead of the color value
+      
       const colorTitle = getColorTitle(currentBgColor)
 
-      // Create a custom product in the database
       const customProduct = {
         name: "Custom Designed T-Shirt",
         description: "Personalized t-shirt with custom design",
@@ -223,7 +212,6 @@ export default function CustomOrder() {
         },
       }
 
-      // Create the custom product first
       const productResponse = await fetch("/api/customProducts", {
         method: "POST",
         headers: {
@@ -239,14 +227,12 @@ export default function CustomOrder() {
       const productData = await productResponse.json()
       const productId = productData.id
 
-      // Now store the design image and get its ID
       const imageId = await storeDesignImage(designImage, productId)
 
       if (!imageId) {
         throw new Error("Failed to store design image")
       }
 
-      // Update the product with the image ID reference
       const updateResponse = await fetch(`/api/customProducts/${productId}`, {
         method: "PUT",
         headers: {
@@ -261,12 +247,10 @@ export default function CustomOrder() {
         throw new Error("Failed to update product with image reference")
       }
 
-      // Redirect to checkout with the new product ID and color title
       router.push(
         `/checkout/${productId}?color=${encodeURIComponent(colorTitle)}&size=${selectedSize}&price=29.99&customText=${encodeURIComponent(customText)}&quantity=${quantity}&customProduct=true&imageId=${imageId}`,
       )
     } catch (error) {
-      console.error("Error creating custom product:", error)
       alert("Failed to process your order. Please try again.")
     } finally {
       setLoading(false)
@@ -295,11 +279,10 @@ export default function CustomOrder() {
                 className="w-full h-[400px] md:h-[500px] mb-6 flex flex-col items-center justify-center relative overflow-hidden rounded border"
                 style={{
                   backgroundColor: currentBgColor,
-                  minHeight: "400px", // Ensure minimum height
+                  minHeight: "400px", 
                   borderColor: siteTheme.borderColor,
                 }}
               >
-                {/* Static centered design */}
                 {uploadedImage && (
                   <div className="mb-4 relative" style={{ maxWidth: "60%", maxHeight: "60%" }}>
                     <img
@@ -537,7 +520,6 @@ export default function CustomOrder() {
                         value={customTextSize}
                         onChange={(e) => {
                           setCustomTextSize(e.target.value)
-                          // Update font size in pixels
                           const selectedOption = textSizeOptions.find((option) => option.value === e.target.value)
                           if (selectedOption) {
                             setCustomTextFontSize(selectedOption.size)
