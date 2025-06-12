@@ -13,7 +13,6 @@ export default function ResetPasswordModal({ isOpen, onClose, siteTheme }) {
   const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
 
-  // Password validation
   const validatePassword = (password) => {
     const errors = []
     if (password.length < 6) errors.push("Password must be at least 6 characters long")
@@ -31,7 +30,6 @@ export default function ResetPasswordModal({ isOpen, onClose, siteTheme }) {
     setError("")
     setLoading(true)
 
-    // Check if trying to reset admin password
     if (email.toLowerCase() === "camargo_co@outlook.com") {
       setError("You cannot change the admin password here")
       setLoading(false)
@@ -53,10 +51,8 @@ export default function ResetPasswordModal({ isOpen, onClose, siteTheme }) {
         throw new Error(data.error || "User verification failed")
       }
 
-      // Move to password reset step
       setStep(2)
     } catch (err) {
-      console.error("Error verifying user:", err)
       setError(err.message || "Failed to verify user. Please check your credentials.")
     } finally {
       setLoading(false)
@@ -68,14 +64,12 @@ export default function ResetPasswordModal({ isOpen, onClose, siteTheme }) {
     setError("")
     setLoading(true)
 
-    // Validate passwords match
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match")
       setLoading(false)
       return
     }
 
-    // Validate password strength
     const passwordErrors = validatePassword(newPassword)
     if (passwordErrors.length > 0) {
       setError(passwordErrors.join(". "))
@@ -100,13 +94,11 @@ export default function ResetPasswordModal({ isOpen, onClose, siteTheme }) {
 
       setSuccess("Password reset successful! You can now log in with your new password.")
 
-      // Reset form after 3 seconds and close modal
       setTimeout(() => {
         resetForm()
         onClose()
       }, 3000)
     } catch (err) {
-      console.error("Error resetting password:", err)
       setError(err.message || "Failed to reset password. Please try again.")
     } finally {
       setLoading(false)
