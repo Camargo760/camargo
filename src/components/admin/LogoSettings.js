@@ -43,7 +43,6 @@ export default function LogoSettings({ siteTheme, logoUrl, fetchSiteSettings }) 
         const uploadData = await uploadRes.json()
         const logoUrlFromServer = uploadData.url
 
-        // Save the logo URL to site settings
         const res = await fetch("/api/site-settings", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -64,7 +63,6 @@ export default function LogoSettings({ siteTheme, logoUrl, fetchSiteSettings }) 
         alert("No new logo selected")
       }
     } catch (err) {
-      console.error("Error saving logo:", err)
       alert("Failed to save logo. Please try again.")
     }
   }
@@ -110,7 +108,7 @@ export default function LogoSettings({ siteTheme, logoUrl, fetchSiteSettings }) 
               onClick={() => {
                 setEditingLogo(false)
                 setPreviewLogoUrl(logoUrl)
-                fetchSiteSettings() // Reset to original values
+                fetchSiteSettings() 
               }}
               className="font-bold py-2 px-4 rounded"
               style={{ backgroundColor: "#4B5563", color: siteTheme.textColor }}
@@ -130,7 +128,7 @@ export default function LogoSettings({ siteTheme, logoUrl, fetchSiteSettings }) 
           <button
             onClick={() => {
               setEditingLogo(true)
-              setPreviewLogoUrl(logoUrl) // Ensure we start with current logo
+              setPreviewLogoUrl(logoUrl)
             }}
             className="font-bold py-2 px-4 rounded flex items-center"
             style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
