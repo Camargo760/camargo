@@ -1,17 +1,18 @@
-// delivery-payment-form.js
 "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Truck, X, Tag } from "lucide-react"
 
-const DeliveryPaymentForm = ({ isOpen, onClose, productDetails, customerInfo, onSubmit }) => {
+export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, customerInfo, onSubmit }) {
   const [preferredMethod, setPreferredMethod] = useState("")
   const [additionalNotes, setAdditionalNotes] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [couponValidation, setCouponValidation] = useState(null)
   const [discountedPrice, setDiscountedPrice] = useState(productDetails.price)
+  const [paymentSettings, setPaymentSettings] = useState(null)
+  const [availableMethods, setAvailableMethods] = useState([])
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -37,7 +38,40 @@ const DeliveryPaymentForm = ({ isOpen, onClose, productDetails, customerInfo, on
       }
     }
 
+    const fetchPaymentSettings = async () => {
+      try {
+        const res = await fetch("/api/payment-settings")
+        if (res.ok) {
+          const data = await res.json()
+          setPaymentSettings(data.settings)
+
+          // Filter enabled COD methods
+          if (data.settings?.cashOnDelivery?.methods) {
+            const enabledMethods = data.settings.cashOnDelivery.methods.filter((method) => method.enabled)
+            setAvailableMethods(enabledMethods)
+
+            // Set first available method as default
+            if (enabledMethods.length > 0) {
+              setPreferredMethod(enabledMethods[0].id)
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching payment settings:", err)
+        // Fallback to default methods if API fails
+        const defaultMethods = [
+          { id: "cash", name: "Cash", enabled: true },
+          { id: "zelle", name: "Zelle", enabled: true },
+          { id: "cashapp", name: "Cash App Pay", enabled: true },
+          { id: "paypal", name: "PayPal", enabled: true },
+        ]
+        setAvailableMethods(defaultMethods)
+        setPreferredMethod("cash")
+      }
+    }
+
     fetchSiteTheme()
+    fetchPaymentSettings()
   }, [])
 
   // Validate coupon when component opens or coupon changes
@@ -115,10 +149,8 @@ const DeliveryPaymentForm = ({ isOpen, onClose, productDetails, customerInfo, on
           quantity: productDetails.quantity,
           preferredMethod,
           additionalNotes,
-          price: productDetails.price,
           designImageId: productDetails.designImageId || null,
           // Add discount information
-          // originalPrice: productDetails.price,
           finalPrice: discountedPrice,
           couponCode: couponValidation ? customerInfo.coupon.toUpperCase() : null,
           discountPercentage: couponValidation ? couponValidation.discountPercentage : 0,
@@ -221,52 +253,28 @@ const DeliveryPaymentForm = ({ isOpen, onClose, productDetails, customerInfo, on
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label className="block text-sm font-bold mb-2">Preferred Payment Method</label>
-              <div className="space-y-2">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash"
-                    checked={preferredMethod === "cash"}
-                    onChange={() => setPreferredMethod("cash")}
-                    className="mr-2"
-                  />
-                  <span>Cash</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cashapp"
-                    checked={preferredMethod === "cashapp"}
-                    onChange={() => setPreferredMethod("cashapp")}
-                    className="mr-2"
-                  />
-                  <span>Cash App Pay</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="zelle"
-                    checked={preferredMethod === "zelle"}
-                    onChange={() => setPreferredMethod("zelle")}
-                    className="mr-2"
-                  />
-                  <span>Zelle</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="paypal"
-                    checked={preferredMethod === "paypal"}
-                    onChange={() => setPreferredMethod("paypal")}
-                    className="mr-2"
-                  />
-                  <span>PayPal</span>
-                </label>
-              </div>
+              {availableMethods.length > 0 ? (
+                <div className="space-y-2">
+                  {availableMethods.map((method) => (
+                    <label key={method.id} className="flex items-center">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value={method.id}
+                        checked={preferredMethod === method.id}
+                        onChange={() => setPreferredMethod(method.id)}
+                        className="mr-2"
+                      />
+                      <span>{method.name}</span>
+                      {method.details && <span className="text-sm opacity-70 ml-2">({method.details})</span>}
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 opacity-70">
+                  <p>No payment methods available currently</p>
+                </div>
+              )}
             </div>
 
             <div className="mb-6">
@@ -291,9 +299,9 @@ const DeliveryPaymentForm = ({ isOpen, onClose, productDetails, customerInfo, on
             <div className="flex items-center justify-between">
               <button
                 type="submit"
-                className="font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+                className="font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full disabled:opacity-50"
                 style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
-                disabled={loading}
+                disabled={loading || availableMethods.length === 0}
               >
                 {loading ? "Processing..." : `Place Order - $${totalPrice.toFixed(2)}`}
               </button>
@@ -304,5 +312,3 @@ const DeliveryPaymentForm = ({ isOpen, onClose, productDetails, customerInfo, on
     </div>
   )
 }
-
-export default DeliveryPaymentForm
