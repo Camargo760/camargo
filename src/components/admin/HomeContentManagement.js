@@ -24,11 +24,9 @@ export default function HomeContentManagement({
     const [editHomeText, setEditHomeText] = useState(homeText)
     const [editHomeSubtext, setEditHomeSubtext] = useState(homeSubtext)
 
-    // Parse responsive text sizes into desktop and mobile components
     const parseResponsiveSize = (responsiveSize, defaultDesktop, defaultMobile) => {
         if (!responsiveSize) return { desktop: defaultDesktop, mobile: defaultMobile }
 
-        // Check if it's a responsive class like "text-xl md:text-3xl"
         const parts = responsiveSize.split("md:")
         if (parts.length === 2) {
             return {
@@ -37,37 +35,32 @@ export default function HomeContentManagement({
             }
         }
 
-        // If it's not responsive, use the same size for both
         return {
             desktop: responsiveSize,
             mobile: responsiveSize
         }
     }
 
-    // Parse the current text sizes
     const mainTextSizes = parseResponsiveSize(homeTextSize, "text-4xl", "text-2xl")
     const subtextSizes = parseResponsiveSize(homeSubtextSize, "text-xl", "text-base")
 
-    // State for separate desktop and mobile sizes
     const [editHomeTextSizeDesktop, setEditHomeTextSizeDesktop] = useState(mainTextSizes.desktop)
     const [editHomeTextSizeMobile, setEditHomeTextSizeMobile] = useState(mainTextSizes.mobile)
     const [editHomeSubtextSizeDesktop, setEditHomeSubtextSizeDesktop] = useState(subtextSizes.desktop)
     const [editHomeSubtextSizeMobile, setEditHomeSubtextSizeMobile] = useState(subtextSizes.mobile)
 
-    // Other state variables
     const [editHomeTextColor, setEditHomeTextColor] = useState(homeTextColor)
     const [editHomeTextFont, setEditHomeTextFont] = useState(homeTextFont)
     const [editHomeSubtextColor, setEditHomeSubtextColor] = useState(homeSubtextColor)
     const [editHomeSubtextFont, setEditHomeSubtextFont] = useState(homeSubtextFont)
     const [previewHomeBackground, setPreviewHomeBackground] = useState(homeBackground)
     const [previewHomeBackgroundMobile, setPreviewHomeBackgroundMobile] = useState(homeBackgroundMobile)
-    const [previewMode, setPreviewMode] = useState("desktop") // "desktop" or "mobile"
+    const [previewMode, setPreviewMode] = useState("desktop") 
 
     useEffect(() => {
         setEditHomeText(homeText)
         setEditHomeSubtext(homeSubtext)
 
-        // Update the parsed sizes when props change
         const newMainTextSizes = parseResponsiveSize(homeTextSize, "text-4xl", "text-2xl")
         const newSubtextSizes = parseResponsiveSize(homeSubtextSize, "text-xl", "text-base")
 
@@ -95,7 +88,6 @@ export default function HomeContentManagement({
         homeBackgroundMobile,
     ])
 
-    // Font options
     const fontOptions = [
         { value: "font-normal", label: "Normal" },
         { value: "font-medium", label: "Medium" },
@@ -105,7 +97,6 @@ export default function HomeContentManagement({
         { value: "italic", label: "Italic" },
     ]
 
-    // Text size options - expanded with more small sizes for mobile
     const textSizeOptions = [
         { value: "text-xs", label: "Extra Small (xs)" },
         { value: "text-sm", label: "Small (sm)" },
@@ -122,7 +113,6 @@ export default function HomeContentManagement({
         { value: "text-9xl", label: "9XL" },
     ]
 
-    // Mobile-specific smaller text options
     const mobileTextSizeOptions = [
         { value: "text-[0.5rem]", label: "Tiny (0.5rem)" },
         { value: "text-[0.625rem]", label: "Micro (0.625rem)" },
@@ -130,7 +120,6 @@ export default function HomeContentManagement({
         ...textSizeOptions
     ]
 
-    // Text color options
     const textColorOptions = [
         { value: "text-white", label: "White", color: "#ffffff" },
         { value: "text-gray-100", label: "Light Gray", color: "#f3f4f6" },
@@ -171,7 +160,6 @@ export default function HomeContentManagement({
 
     const saveHomeContent = async () => {
         try {
-            // First, upload the background images if there are new ones
             let backgroundImageUrl = previewHomeBackground
             let backgroundImageMobileUrl = previewHomeBackgroundMobile
 
@@ -209,11 +197,9 @@ export default function HomeContentManagement({
                 backgroundImageMobileUrl = uploadData.url
             }
 
-            // Combine mobile and desktop sizes into responsive classes
             const combinedMainTextSize = `${editHomeTextSizeMobile} md:${editHomeTextSizeDesktop}`
             const combinedSubtextSize = `${editHomeSubtextSizeMobile} md:${editHomeSubtextSizeDesktop}`
 
-            // Then save the home content with text styles
             const res = await fetch("/api/home-content", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -243,7 +229,6 @@ export default function HomeContentManagement({
             alert("Home content saved successfully!")
             fetchHomeContent()
         } catch (err) {
-            console.error("Error saving home content:", err)
             alert("Failed to save home content. Please try again.")
         }
     }
@@ -538,7 +523,6 @@ export default function HomeContentManagement({
                         </div>
                     </div>
 
-                    {/* Preview section */}
                     <div className="mt-6 border-t pt-4" style={{ borderColor: siteTheme.borderColor }}>
                         <h3 className="text-lg font-medium mb-3">Preview</h3>
 
@@ -577,7 +561,6 @@ export default function HomeContentManagement({
                                 margin: previewMode === "mobile" ? "0 auto" : "0"
                             }}
                         >
-                            {/* Background */}
                             {previewMode === "desktop" && previewHomeBackground ? (
                                 <div className="absolute inset-0">
                                     <Image
@@ -602,7 +585,6 @@ export default function HomeContentManagement({
                                 <div className="absolute inset-0" style={{ backgroundColor: siteTheme.secondaryBgColor }}></div>
                             )}
 
-                            {/* Text */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
                                 <p
                                     className={`${previewMode === "desktop" ? editHomeTextSizeDesktop : editHomeTextSizeMobile} ${editHomeTextColor} ${editHomeTextFont} mb-2`}
@@ -634,7 +616,6 @@ export default function HomeContentManagement({
                                 setEditHomeText(homeText)
                                 setEditHomeSubtext(homeSubtext)
 
-                                // Reset to original values
                                 const origMainTextSizes = parseResponsiveSize(homeTextSize, "text-4xl", "text-2xl")
                                 const origSubtextSizes = parseResponsiveSize(homeSubtextSize, "text-xl", "text-base")
 
@@ -736,13 +717,11 @@ export default function HomeContentManagement({
                     <button
                         onClick={() => {
                             setEditingHome(true)
-                            // Ensure we start with current values
                             setPreviewHomeBackground(homeBackground)
                             setPreviewHomeBackgroundMobile(homeBackgroundMobile)
                             setEditHomeText(homeText)
                             setEditHomeSubtext(homeSubtext)
 
-                            // Set the parsed sizes
                             const currentMainTextSizes = parseResponsiveSize(homeTextSize, "text-4xl", "text-2xl")
                             const currentSubtextSizes = parseResponsiveSize(homeSubtextSize, "text-xl", "text-base")
 
