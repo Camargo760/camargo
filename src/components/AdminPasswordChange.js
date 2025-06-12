@@ -11,7 +11,6 @@ export default function AdminPasswordChange({ siteTheme }) {
   const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
 
-  // Password validation
   const validatePassword = (password) => {
     const errors = []
     if (password.length < 6) errors.push("Password must be at least 6 characters long")
@@ -30,21 +29,18 @@ export default function AdminPasswordChange({ siteTheme }) {
     setSuccess("")
     setLoading(true)
 
-    // Validate email is admin email
     if (email.toLowerCase() !== "camargo_co@outlook.com") {
       setError("You can only change the admin password with this form.")
       setLoading(false)
       return
     }
 
-    // Validate passwords match
     if (newPassword !== confirmPassword) {
       setError("New passwords do not match")
       setLoading(false)
       return
     }
 
-    // Validate password strength
     const passwordErrors = validatePassword(newPassword)
     if (passwordErrors.length > 0) {
       setError(passwordErrors.join(". "))
@@ -69,13 +65,11 @@ export default function AdminPasswordChange({ siteTheme }) {
 
       setSuccess("Password changed successfully!")
 
-      // Reset form
       setName("")
       setEmail("")
       setNewPassword("")
       setConfirmPassword("")
     } catch (err) {
-      console.error("Error changing password:", err)
       setError(err.message || "Failed to change password. Please check your credentials.")
     } finally {
       setLoading(false)
