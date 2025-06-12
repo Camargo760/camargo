@@ -145,7 +145,6 @@ export default function SocialManagement({ siteTheme }) {
         </div>
       )}
 
-      {/* Instagram Settings */}
       <div
         className="p-6 rounded-lg"
         style={{
@@ -172,7 +171,6 @@ export default function SocialManagement({ siteTheme }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Profile Image Upload */}
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: siteTheme.textColor }}>
               Profile Image
@@ -199,7 +197,6 @@ export default function SocialManagement({ siteTheme }) {
             </div>
           </div>
 
-          {/* QR Code Upload */}
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: siteTheme.textColor }}>
               QR Code Image
@@ -226,7 +223,6 @@ export default function SocialManagement({ siteTheme }) {
             </div>
           </div>
 
-          {/* Text Fields */}
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: siteTheme.textColor }}>
               Display Name
@@ -373,7 +369,6 @@ export default function SocialManagement({ siteTheme }) {
         </div>
       </div>
 
-      {/* Facebook Settings */}
       <div
         className="p-6 rounded-lg"
         style={{
@@ -400,7 +395,6 @@ export default function SocialManagement({ siteTheme }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Profile Image Upload */}
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: siteTheme.textColor }}>
               Profile Image
@@ -427,7 +421,6 @@ export default function SocialManagement({ siteTheme }) {
             </div>
           </div>
 
-          {/* Banner Image Upload */}
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: siteTheme.textColor }}>
               Banner Image
@@ -454,7 +447,6 @@ export default function SocialManagement({ siteTheme }) {
             </div>
           </div>
 
-          {/* Text Fields */}
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: siteTheme.textColor }}>
               Display Name
