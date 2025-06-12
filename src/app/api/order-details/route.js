@@ -12,32 +12,22 @@ export async function GET(request) {
     const orderId = searchParams.get("order_id")
     const paymentMethod = searchParams.get("payment_method")
 
-    // Connect to MongoDB
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Handle delivery orders
     if (orderId && paymentMethod === "delivery") {
       try {
-        console.log("Fetching delivery order details for ID:", orderId)
 
-        // Validate ObjectId format
         if (!ObjectId.isValid(orderId)) {
-          console.log("Invalid order ID format:", orderId)
           return NextResponse.json({ error: "Invalid order ID format" }, { status: 400 })
         }
 
-        // Find the order in MongoDB
         const order = await db.collection("orders").findOne({ _id: new ObjectId(orderId) })
 
         if (!order) {
-          console.log("Order not found:", orderId)
           return NextResponse.json({ error: "Order not found" }, { status: 404 })
         }
 
-        console.log("Found delivery order:", order._id.toString())
-
-        // Check if there's a design image ID and fetch the image data
         let finalDesignImage = null
         if (order.product.designImageId && ObjectId.isValid(order.product.designImageId)) {
           const imageDoc = await db.collection("customProductImages").findOne({
@@ -48,7 +38,6 @@ export async function GET(request) {
           }
         }
 
-        // Format the response to match the Stripe response structure
         return NextResponse.json({
           id: order._id.toString(),
           paymentMethod: "delivery",
@@ -71,18 +60,16 @@ export async function GET(request) {
             selectedSize: order.selectedSize,
             customText: order.product.customText || "",
             customImage: order.product.customImage || null,
-            finalDesignImage: finalDesignImage, // Include the actual image data
+            finalDesignImage: finalDesignImage, 
             price: order.product.price,
           },
           status: order.status || "pending",
-          // Add coupon information
           originalPrice: order.originalPrice || order.product.price,
           finalPrice: order.finalPrice || order.product.price,
           discountPercentage: order.discountPercentage || 0,
           couponCode: order.couponCode || null,
         })
       } catch (error) {
-        console.error("Error fetching delivery order details:", error)
         return NextResponse.json(
           {
             error: "Failed to fetch delivery order details",
@@ -93,12 +80,11 @@ export async function GET(request) {
       }
     }
 
-    // Handle Stripe orders
     if (!sessionId) {
       return NextResponse.json({ error: "No session ID provided" }, { status: 400 })
     }
 
-    // First, retrieve the Stripe session
+
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ["line_items", "customer_details"],
     })
@@ -106,15 +92,7 @@ export async function GET(request) {
     if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 })
     }
-
-    // Log session details for debugging
-    console.log("Session retrieved:", {
-      id: session.id,
-      metadata: session.metadata,
-      lineItems: session.line_items?.data?.length || 0,
-    })
-
-    // Check if productId exists in metadata
+    
     if (!session.metadata?.productId) {
       return NextResponse.json({
         id: session.id,
@@ -133,12 +111,10 @@ export async function GET(request) {
       })
     }
 
-    // Validate ObjectId format
     if (!ObjectId.isValid(session.metadata.productId)) {
       return NextResponse.json({ error: "Invalid product ID format" }, { status: 400 })
     }
 
-    // Determine which collection to query based on isCustomProduct flag
     const isCustomProduct = session.metadata.isCustomProduct === "true"
     const collection = isCustomProduct ? "customProducts" : "products"
 
@@ -146,7 +122,6 @@ export async function GET(request) {
       _id: new ObjectId(session.metadata.productId),
     })
 
-    // Check if there's a design image ID and fetch the image data
     let finalDesignImage = null
     const designImageId = session.metadata.designImageId || (product ? product.finalDesignImageId : null)
 
@@ -159,10 +134,8 @@ export async function GET(request) {
       }
     }
 
-    // Calculate quantity from metadata or default to 1
     const quantity = Number.parseInt(session.metadata.quantity || "1", 10)
 
-    // Build response even if product is not found
     const order = await db.collection("orders").findOne({ stripeSessionId: session.id })
     const orderStatus = order ? order.status : "pending"
 
@@ -175,7 +148,6 @@ export async function GET(request) {
       quantity: quantity,
       isCustomProduct: isCustomProduct,
       status: orderStatus,
-      // Get coupon information from session metadata (this is the key fix!)
       couponCode: session.metadata?.coupon || null,
       originalPrice: session.metadata?.originalPrice ? parseFloat(session.metadata.originalPrice) : null,
       finalPrice: session.metadata?.finalPrice ? parseFloat(session.metadata.finalPrice) : null,
@@ -189,7 +161,7 @@ export async function GET(request) {
           selectedSize: session.metadata.size || "N/A",
           customText: session.metadata.customText || "",
           customImage: product.customImage || null,
-          finalDesignImage: finalDesignImage, // Include the actual image data
+          finalDesignImage: finalDesignImage, 
           price: product.price || 0,
         }
         : {
@@ -205,7 +177,6 @@ export async function GET(request) {
 
     return NextResponse.json(orderDetails)
   } catch (error) {
-    console.error("Error fetching order details:", error)
     return NextResponse.json(
       {
         error: "Failed to fetch order details",
