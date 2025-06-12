@@ -34,7 +34,6 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
           }
         }
       } catch (err) {
-        console.error("Error fetching site theme:", err)
       }
     }
 
@@ -45,20 +44,16 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
           const data = await res.json()
           setPaymentSettings(data.settings)
 
-          // Filter enabled COD methods
           if (data.settings?.cashOnDelivery?.methods) {
             const enabledMethods = data.settings.cashOnDelivery.methods.filter((method) => method.enabled)
             setAvailableMethods(enabledMethods)
 
-            // Set first available method as default
             if (enabledMethods.length > 0) {
               setPreferredMethod(enabledMethods[0].id)
             }
           }
         }
       } catch (err) {
-        console.error("Error fetching payment settings:", err)
-        // Fallback to default methods if API fails
         const defaultMethods = [
           { id: "cash", name: "Cash", enabled: true },
           { id: "zelle", name: "Zelle", enabled: true },
@@ -74,7 +69,6 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
     fetchPaymentSettings()
   }, [])
 
-  // Validate coupon when component opens or coupon changes
   useEffect(() => {
     const validateCoupon = async () => {
       if (!customerInfo.coupon || !customerInfo.coupon.trim()) {
@@ -104,7 +98,6 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
           setDiscountedPrice(productDetails.price)
         }
       } catch (err) {
-        console.error("Error validating coupon:", err)
         setCouponValidation(null)
         setDiscountedPrice(productDetails.price)
       }
@@ -127,7 +120,6 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
     setError(null)
 
     try {
-      console.log("Submitting delivery order with product details:", productDetails)
 
       const response = await fetch("/api/create-delivery-order", {
         method: "POST",
@@ -150,7 +142,6 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
           preferredMethod,
           additionalNotes,
           designImageId: productDetails.designImageId || null,
-          // Add discount information
           finalPrice: discountedPrice,
           couponCode: couponValidation ? customerInfo.coupon.toUpperCase() : null,
           discountPercentage: couponValidation ? couponValidation.discountPercentage : 0,
@@ -170,10 +161,8 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
 
       const orderData = await response.json()
 
-      // Redirect to success page
       router.push(`/success?order_id=${orderData.id}&payment_method=delivery`)
     } catch (err) {
-      console.error("Error creating delivery order:", err)
       setError(err.message || "Failed to create order. Please try again.")
     } finally {
       setLoading(false)
@@ -202,7 +191,6 @@ export default function DeliveryPaymentForm({ isOpen, onClose, productDetails, c
             </div>
           </div>
 
-          {/* Order Summary with Discount */}
           <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
             <h3 className="font-semibold mb-3">Order Summary</h3>
             <div className="space-y-2">
