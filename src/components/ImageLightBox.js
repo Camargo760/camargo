@@ -7,12 +7,10 @@ import { X, ChevronLeft, ChevronRight } from "lucide-react"
 export default function ImageLightbox({ isOpen, onClose, images, initialIndex = 0, altText = "Image" }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(initialIndex)
 
-  // Reset current image index when images change
   useEffect(() => {
     setCurrentImageIndex(initialIndex)
   }, [images, initialIndex])
 
-  // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!isOpen) return
@@ -28,7 +26,6 @@ export default function ImageLightbox({ isOpen, onClose, images, initialIndex = 
 
     window.addEventListener("keydown", handleKeyDown)
 
-    // Prevent scrolling when lightbox is open
     if (isOpen) {
       document.body.style.overflow = "hidden"
     }
