@@ -9,20 +9,12 @@ export async function GET() {
     const settings = await db.collection("paymentSettings").findOne({})
 
     if (!settings) {
-      // Return default settings if none exist
       const defaultSettings = {
         stripe: {
           enabled: true,
           displayName: "Credit/Debit Card",
           description: "Pay securely with your credit or debit card",
         },
-        // paypal: {
-        //   enabled: true,
-        //   displayName: "PayPal",
-        //   description: "Pay with your PayPal account",
-        //   clientId: process.env.PAYPAL_CLIENT_ID || "",
-        //   clientSecret: process.env.PAYPAL_CLIENT_SECRET || "",
-        // },
         cashOnDelivery: {
           enabled: true,
           displayName: "Cash on Delivery",
@@ -55,7 +47,6 @@ export async function GET() {
 
     return NextResponse.json({ settings })
   } catch (error) {
-    console.error("Error fetching payment settings:", error)
     return NextResponse.json({ error: "Failed to fetch payment settings" }, { status: 500 })
   }
 }
@@ -67,15 +58,12 @@ export async function POST(request) {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Remove _id from settings if it exists to prevent immutable field error
     const { _id, ...settingsWithoutId } = settings
 
-    // Use updateOne with $set instead of replaceOne to avoid _id conflicts
     await db.collection("paymentSettings").updateOne({}, { $set: settingsWithoutId }, { upsert: true })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error saving payment settings:", error)
     return NextResponse.json({ error: "Failed to save payment settings" }, { status: 500 })
   }
 }
