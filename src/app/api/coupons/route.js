@@ -10,7 +10,6 @@ export async function GET() {
 
     return NextResponse.json(coupons)
   } catch (error) {
-    console.error("Error fetching coupons:", error)
     return NextResponse.json({ error: "Failed to fetch coupons" }, { status: 500 })
   }
 }
@@ -30,7 +29,6 @@ export async function POST(request) {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Check if coupon code already exists
     const existingCoupon = await db.collection("coupons").findOne({ code: code.toUpperCase() })
     if (existingCoupon) {
       return NextResponse.json({ error: "Coupon code already exists" }, { status: 400 })
@@ -52,7 +50,6 @@ export async function POST(request) {
       ...coupon,
     })
   } catch (error) {
-    console.error("Error creating coupon:", error)
     return NextResponse.json({ error: "Failed to create coupon" }, { status: 500 })
   }
 }
