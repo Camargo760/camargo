@@ -15,7 +15,6 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [reviewImages, setReviewImages] = useState([])
   const [previewImages, setPreviewImages] = useState([])
-  const [showTooltip, setShowTooltip] = useState(false)
 
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState([])
@@ -131,38 +130,6 @@ export default function ReviewForm({ onSubmit, siteTheme }) {
     <form onSubmit={handleSubmit}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Write a Review</h3>
-        <div className="relative">
-          <button
-            type="button"
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            className="p-1 rounded-full hover:bg-opacity-20"
-            style={{ backgroundColor: showTooltip ? siteTheme.accentColor : 'transparent' }}
-          >
-            <Info size={16} color={siteTheme.accentColor} />
-          </button>
-          {showTooltip && (
-            <div
-              className="absolute right-0 top-8 w-80 p-3 rounded-lg shadow-lg z-10 text-sm max-w-[250px]"
-              style={{
-                backgroundColor: siteTheme.cardBgColor,
-                borderColor: siteTheme.borderColor,
-                borderWidth: '1px',
-                borderStyle: 'solid'
-              }}
-              >
-              <div className="relative">
-                <div
-                  className="absolute -top-2 right-4 w-4 h-4 transform rotate-45"
-                  style={{ backgroundColor: siteTheme.cardBgColor }}
-                ></div>
-                <p style={{ color: siteTheme.textColor }}>
-                  Your feedback is invaluable in shaping the final version. We will reach out to discuss the logo and any necessary revisions. If a second upload is required, we will contact you by phone to confirm. The final logo will be delivered upon your approval.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="mb-4">
