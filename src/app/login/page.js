@@ -34,7 +34,6 @@ export default function Login() {
           }
         }
       } catch (err) {
-        console.error("Error fetching site theme:", err)
       }
     }
 
@@ -59,10 +58,8 @@ export default function Login() {
         return
       }
 
-      // Redirect to home page on successful login
       router.push("/")
     } catch (err) {
-      console.error("Login error:", err)
       setError("An error occurred during login")
       setLoading(false)
     }
