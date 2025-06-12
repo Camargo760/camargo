@@ -10,11 +10,9 @@ import { loadStripe } from "@stripe/stripe-js"
 import { useSession } from "next-auth/react"
 import LoadingSpinner from "../../../components/LoadingSpinner"
 
-// Use React.use for params
 import { use } from "react"
 
 export default function Checkout({ params }) {
-  // Unwrap params with React.use
   const id = use(params).id
 
   const [product, setProduct] = useState(null)
@@ -51,7 +49,6 @@ export default function Checkout({ params }) {
   const imageId = searchParams.get("imageId") || ""
 
   useEffect(() => {
-    // Pre-fill user details if logged in
     if (session && session.user) {
       setEmail(session.user.email || "")
       setName(session.user.name || "")
@@ -69,14 +66,13 @@ export default function Checkout({ params }) {
           }
         }
       } catch (err) {
-        console.error("Error fetching site theme:", err)
+        
       }
     }
 
     fetchSiteTheme()
   }, [])
 
-  // Fetch the design image if we have an imageId
   useEffect(() => {
     const fetchDesignImage = async () => {
       if (!imageId) return
@@ -84,19 +80,17 @@ export default function Checkout({ params }) {
       try {
         const res = await fetch(`/api/customProductImages?id=${imageId}`)
         if (!res.ok) {
-          console.error("Failed to fetch design image")
           return
         }
 
         const data = await res.json()
         setDesignImage(data.imageData)
 
-        // Also store the design data
         if (data.designData) {
           setDesignData(data.designData)
         }
       } catch (err) {
-        console.error("Error fetching design image:", err)
+        
       }
     }
 
@@ -106,13 +100,10 @@ export default function Checkout({ params }) {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        // First try to fetch from regular products
         let res = await fetch(`/api/products/${id}`)
         let isCustom = false
 
-        // If not found in regular products, try custom products
         if (!res.ok) {
-          console.log("Product not found in regular products, trying custom products...")
           res = await fetch(`/api/customProducts/${id}`)
           isCustom = true
 
@@ -122,18 +113,14 @@ export default function Checkout({ params }) {
         }
 
         const data = await res.json()
-        console.log("Product found:", data)
-
-        // Set the isCustomProduct flag based on where we found the product
+        
         if (isCustom) {
-          // Add a URL parameter to indicate this is a custom product
           const currentUrl = new URL(window.location.href)
           if (!currentUrl.searchParams.has("customProduct")) {
             currentUrl.searchParams.set("customProduct", "true")
             router.replace(currentUrl.toString())
           }
 
-          // If the product has a finalDesignImageId but we don't have an imageId in the URL
           if (data.finalDesignImageId && !imageId) {
             const currentUrl = new URL(window.location.href)
             currentUrl.searchParams.set("imageId", data.finalDesignImageId)
@@ -143,7 +130,6 @@ export default function Checkout({ params }) {
 
         setProduct(data)
       } catch (err) {
-        console.error("Error fetching product:", err)
         setError("Failed to load product. Please try again.")
       } finally {
         setLoading(false)
@@ -158,13 +144,11 @@ export default function Checkout({ params }) {
   const handleProceedToPayment = (e) => {
     e.preventDefault()
 
-    // Validate form
     if (!name || !email || !phone || !address) {
       setError("Please fill in all required fields")
       return
     }
 
-    // Open payment method selection modal directly
     setIsPaymentModalOpen(true)
   }
 
@@ -174,7 +158,6 @@ export default function Checkout({ params }) {
     if (method === "stripe") {
       await handleStripeCheckout()
     } else if (method === "delivery") {
-      // Show delivery payment form
       setIsDeliveryFormOpen(true)
     }
   }
@@ -200,8 +183,8 @@ export default function Checkout({ params }) {
           isCustomProduct: isCustomProduct,
           customText,
           quantity,
-          designImageId: imageId || null, // Pass the image ID instead of the full image
-          designData: designData || null, // Pass the design data
+          designImageId: imageId || null, 
+          designData: designData || null, 
         }),
       })
 
@@ -212,11 +195,9 @@ export default function Checkout({ params }) {
 
       const { id: sessionId } = await response.json()
 
-      // Redirect to Stripe Checkout
       const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
       await stripe.redirectToCheckout({ sessionId })
     } catch (err) {
-      console.error("Error creating checkout session:", err)
       setError("Failed to process payment. Please try again.")
       setLoading(false)
     }
@@ -270,7 +251,6 @@ export default function Checkout({ params }) {
     )
   }
 
-  // Determine if this is a custom product with a design image
   const hasCustomDesign = !!designImage || !!product.finalDesignImageId
 
   return (
