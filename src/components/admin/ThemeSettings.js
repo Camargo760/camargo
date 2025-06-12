@@ -30,7 +30,6 @@ export default function ThemeSettings({ siteTheme, setSiteTheme, fetchSiteTheme 
       alert("Site theme saved successfully! Refresh the page to see changes.")
       fetchSiteTheme()
     } catch (err) {
-      console.error("Error saving site theme:", err)
       alert("Failed to save site theme. Please try again.")
     }
   }
@@ -51,7 +50,7 @@ export default function ThemeSettings({ siteTheme, setSiteTheme, fetchSiteTheme 
               setEditingTheme(false)
             } else {
               setEditingTheme(true)
-              setEditTheme({ ...siteTheme }) // Ensure we start with current theme
+              setEditTheme({ ...siteTheme })
             }
           }}
           className="flex items-center px-4 py-2 rounded"
