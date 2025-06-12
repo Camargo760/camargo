@@ -3,7 +3,6 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 import clientPromise from '../../../../lib/mongodb';
 
-// Handle potential ESM default exports
 const Auth = NextAuth.default || NextAuth;
 const Provider = CredentialsProvider.default || CredentialsProvider;
 
@@ -20,7 +19,6 @@ export const authOptions = {
           throw new Error('Missing email or password');
         }
 
-        // Email format validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(credentials.email)) {
           throw new Error('Invalid email format');
@@ -70,7 +68,6 @@ export const authOptions = {
   },
 };
 
-// Create the NextAuth handler
 const handler = Auth(authOptions);
 
 export { handler as GET, handler as POST };
