@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation"
 import Header from "../../components/Header"
 import LoadingSpinner from "../../components/LoadingSpinner"
 
-// Import admin components
 import ProductManagement from "../../components/admin/ProductManagement"
 import OrdersManagement from "../../components/admin/OrdersManagement"
 import LogoSettings from "../../components/admin/LogoSettings"
@@ -27,20 +26,16 @@ export default function Admin() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
-  // Reviews management
   const [reviews, setReviews] = useState([])
   const [loadingReviews, setLoadingReviews] = useState(false)
 
-  // Logo state
   const [logoUrl, setLogoUrl] = useState("/assets/logo.png")
 
-  // Home page background state
   const [homeBackground, setHomeBackground] = useState(null)
   const [homeBackgroundMobile, setHomeBackgroundMobile] = useState(null)
   const [homeText, setHomeText] = useState("")
   const [homeSubtext, setHomeSubtext] = useState("")
 
-  // Home page text customization
   const [homeTextSize, setHomeTextSize] = useState("text-4xl md:text-6xl")
   const [homeTextColor, setHomeTextColor] = useState("text-white")
   const [homeTextFont, setHomeTextFont] = useState("font-bold")
@@ -48,15 +43,12 @@ export default function Admin() {
   const [homeSubtextColor, setHomeSubtextColor] = useState("text-white")
   const [homeSubtextFont, setHomeSubtextFont] = useState("font-normal")
 
-  // About us content state
   const [aboutContent, setAboutContent] = useState("")
 
-  // About page text customization
   const [aboutTextSize, setAboutTextSize] = useState("text-lg")
   const [aboutTextColor, setAboutTextColor] = useState("text-gray-700")
   const [aboutTextFont, setAboutTextFont] = useState("font-normal")
 
-  // Website theme settings
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -66,10 +58,8 @@ export default function Admin() {
     borderColor: "#333",
   })
 
-  // State to manage the active tab
   const [activeTab, setActiveTab] = useState("ordersManagement")
 
-  // Define fetchProducts function before using it in useEffect
   const fetchProducts = async () => {
     try {
       const res = await fetch(`/api/products?sort=${sortOrder}`)
@@ -77,10 +67,8 @@ export default function Admin() {
         throw new Error("Failed to fetch products")
       }
       const data = await res.json()
-      console.log("Fetched products:", data)
       setProducts(data)
     } catch (err) {
-      console.error("Error fetching products:", err)
       setError("Failed to fetch products. Please try again.")
     }
   }
@@ -92,10 +80,8 @@ export default function Admin() {
         throw new Error("Failed to fetch orders")
       }
       const data = await res.json()
-      console.log("Fetched orders:", data)
       setOrders(data)
     } catch (err) {
-      console.error("Error fetching orders:", err)
       setError("Failed to fetch orders. Please try again.")
     }
   }
@@ -110,7 +96,6 @@ export default function Admin() {
         setHomeText(data.mainText || "")
         setHomeSubtext(data.subText || "")
 
-        // Set text customization if available
         if (data.textStyles) {
           setHomeTextSize(data.textStyles.mainTextSize || "text-4xl md:text-6xl")
           setHomeTextColor(data.textStyles.mainTextColor || "text-white")
@@ -121,7 +106,6 @@ export default function Admin() {
         }
       }
     } catch (err) {
-      console.error("Error fetching home content:", err)
     }
   }
 
@@ -135,7 +119,6 @@ export default function Admin() {
         }
       }
     } catch (err) {
-      console.error("Error fetching site settings:", err)
     }
   }
 
@@ -146,7 +129,6 @@ export default function Admin() {
         const data = await res.json()
         setAboutContent(data.description || "")
 
-        // Set text customization if available
         if (data.textStyles) {
           setAboutTextSize(data.textStyles.textSize || "text-lg")
           setAboutTextColor(data.textStyles.textColor || "text-gray-700")
@@ -154,7 +136,6 @@ export default function Admin() {
         }
       }
     } catch (err) {
-      console.error("Error fetching about content:", err)
     }
   }
 
@@ -168,7 +149,6 @@ export default function Admin() {
       const data = await res.json()
       setReviews(data)
     } catch (err) {
-      console.error("Error fetching reviews:", err)
       setError("Failed to fetch reviews. Please try again.")
     } finally {
       setLoadingReviews(false)
@@ -185,7 +165,6 @@ export default function Admin() {
         }
       }
     } catch (err) {
-      console.error("Error fetching site theme:", err)
     }
   }
 
@@ -223,7 +202,6 @@ export default function Admin() {
           </div>
         )}
 
-        {/* Tab Buttons */}
         <div className="flex flex-wrap gap-2 mb-4">
           <button
             onClick={() => setActiveTab("addNewProduct")}
@@ -339,7 +317,6 @@ export default function Admin() {
           </button>
         </div>
 
-        {/* Tab Content */}
         {activeTab === "addNewProduct" && (
           <ProductManagement
             siteTheme={siteTheme}
