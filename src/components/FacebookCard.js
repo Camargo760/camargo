@@ -35,7 +35,6 @@ const FacebookCard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch social settings
         const socialRes = await fetch("/api/social-settings")
         if (socialRes.ok) {
           const socialData = await socialRes.json()
@@ -44,7 +43,6 @@ const FacebookCard = () => {
           }
         }
 
-        // Fetch site theme
         const themeRes = await fetch("/api/site-theme")
         if (themeRes.ok) {
           const themeData = await themeRes.json()
@@ -53,14 +51,12 @@ const FacebookCard = () => {
           }
         }
       } catch (err) {
-        console.error("Error fetching data:", err)
       }
     }
 
     fetchData()
   }, [])
 
-  // Don't render if Facebook card is disabled
   if (!socialSettings.facebook.enabled) {
     return null
   }
