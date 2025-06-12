@@ -172,19 +172,6 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
                   .filter((method) => method.enabled)
                   .map((method) => (
                     <div key={method.id} className="flex items-center">
-                      {method.id === "cash" && <DollarSign style={{ color: "#10b981" }} className="mr-1" size={16} />}
-                      {method.id === "zelle" && <Send style={{ color: "#3b82f6" }} className="mr-1" size={16} />}
-                      {method.id === "venmo" && <DollarSign style={{ color: "#3b82f6" }} className="mr-1" size={16} />}
-                      {method.id === "paypal" && (
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          style={{ color: "#4169e1" }}
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.384a.641.641 0 0 1 .634-.546h4.778a.641.641 0 0 1 .633.738l-3.278 17.21a.641.641 0 0 1-.635.55zm7.348-11.1L13.3 14.862a.32.32 0 0 0 .318.276h2.745c.272 0 .553-.249.623-.51l1.235-4.303a.32.32 0 0 0-.318-.276h-2.745c-.272 0-.553.25-.623.51zm-1.25 6.394l1.944-6.83c.163-.583.688-1.007 1.297-1.007h3.858c.82 0 1.39.786 1.25 1.595l-1.961 6.835c-.163.583-.688 1.006-1.297 1.006h-3.843c-.82 0-1.39-.785-1.25-1.595l.002-.004z" />
-                        </svg>
-                      )}
                       <span className="text-sm">{method.name}</span>
                     </div>
                   ))}
