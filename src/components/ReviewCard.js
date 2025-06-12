@@ -23,7 +23,6 @@ export default function ReviewCard({ review, siteTheme }) {
     setLightboxOpen(true)
   }
 
-  // Handle content truncation with 400 character limit
   const contentPreview = review.content?.substring(0, 400) || ""
   const needsTruncation = review.content?.length > 400
 
@@ -99,7 +98,6 @@ export default function ReviewCard({ review, siteTheme }) {
         </div>
       )}
 
-      {/* Lightbox component */}
       <ImageLightbox
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
