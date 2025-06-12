@@ -36,7 +36,6 @@ const InstagramCard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch social settings
         const socialRes = await fetch("/api/social-settings")
         if (socialRes.ok) {
           const socialData = await socialRes.json()
@@ -45,7 +44,6 @@ const InstagramCard = () => {
           }
         }
 
-        // Fetch site theme
         const themeRes = await fetch("/api/site-theme")
         if (themeRes.ok) {
           const themeData = await themeRes.json()
@@ -54,14 +52,12 @@ const InstagramCard = () => {
           }
         }
       } catch (err) {
-        console.error("Error fetching data:", err)
       }
     }
 
     fetchData()
   }, [])
 
-  // Don't render if Instagram card is disabled
   if (!socialSettings.instagram.enabled) {
     return null
   }
@@ -82,7 +78,6 @@ const InstagramCard = () => {
             transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
           }}
         >
-          {/* Front of card */}
           <div
             className="absolute w-full h-full rounded-lg shadow-lg overflow-hidden"
             style={{
@@ -134,7 +129,6 @@ const InstagramCard = () => {
             </div>
           </div>
 
-          {/* Back of card */}
           <div
             className="absolute flex flex-col items-center justify-center w-full h-full rounded-lg shadow-lg overflow-hidden"
             style={{
