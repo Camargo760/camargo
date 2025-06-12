@@ -1,4 +1,4 @@
-// api/notifications/create-for-orders/route.js
+
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../auth/[...nextauth]/route"
@@ -6,10 +6,7 @@ import Stripe from "stripe"
 import clientPromise from "../../../../lib/mongodb"
 import { ObjectId } from "mongodb"
 
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY ||
-  "sk_test_51P2GkSSEzW86D25YTF33BP83Rf4ffGJORl0gfTr3YBvpr5dejYm8bfO6hH3DYBu9saWy9TEDCUELfJNOW1S80rkG00SEhjrTCo",
-)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 export async function POST(request) {
   const session = await getServerSession(authOptions)
@@ -21,19 +18,15 @@ export async function POST(request) {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Get delivery orders from MongoDB
     const deliveryOrders = await db.collection("orders").find({ paymentMethod: "delivery" }).toArray()
 
-    // Get Stripe orders
     const stripeOrders = await stripe.checkout.sessions.list({
       limit: 100,
       expand: ["data.line_items", "data.customer"],
     })
 
-    // Combine all orders
     const allOrders = []
 
-    // Add delivery orders
     for (const order of deliveryOrders) {
       allOrders.push({
         id: order._id.toString(),
@@ -47,7 +40,6 @@ export async function POST(request) {
       })
     }
 
-    // Add Stripe orders
     for (const order of stripeOrders.data) {
       allOrders.push({
         id: order.id,
@@ -61,11 +53,9 @@ export async function POST(request) {
       })
     }
 
-    // Get existing notifications
     const existingNotifications = await db.collection("notifications").find({}).toArray()
     const existingOrderIds = new Set(existingNotifications.map((n) => n.orderId))
 
-    // Create notifications for orders that don't have them
     const newNotifications = []
 
     for (const order of allOrders) {
@@ -101,7 +91,6 @@ export async function POST(request) {
       }
     })
   } catch (error) {
-    console.error("Error creating notifications for orders:", error)
     return NextResponse.json({ error: "Failed to create notifications" }, { status: 500 })
   }
 }
