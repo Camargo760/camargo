@@ -28,7 +28,6 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
           }
         }
       } catch (err) {
-        console.error("Error fetching site theme:", err)
       }
     }
 
@@ -40,7 +39,6 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
           setPaymentSettings(data.settings)
         }
       } catch (err) {
-        console.error("Error fetching payment settings:", err)
       }
     }
 
@@ -48,7 +46,6 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
     fetchPaymentSettings()
   }, [])
 
-  // Validate coupon when modal opens or coupon changes
   useEffect(() => {
     const validateCoupon = async () => {
       if (!couponCode || !couponCode.trim()) {
@@ -78,7 +75,6 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
           setDiscountedPrice(productDetails.price)
         }
       } catch (err) {
-        console.error("Error validating coupon:", err)
         setCouponValidation(null)
         setDiscountedPrice(productDetails.price)
       }
@@ -115,7 +111,6 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
 
         <div className="p-6">
          <div className="space-y-3">
-            {/* Stripe Payment Button */}
             <button
               onClick={isStripeEnabled ? () => handleSelectMethod("stripe") : undefined}
               className={`w-full flex items-center justify-between p-4 border rounded-lg transition-colors ${
@@ -140,7 +135,6 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
               <CreditCard style={{ color: isStripeEnabled ? "#3b82f6" : "#666" }} className="mr-3" size={24} />
             </button>
 
-            {/* Cash on Delivery Button */}
             <button
               onClick={isCashOnDeliveryEnabled ? () => handleSelectMethod("delivery") : undefined}
               className={`w-full flex items-center justify-between p-4 border rounded-lg transition-colors ${
@@ -170,7 +164,6 @@ export default function PaymentModal({ isOpen, onClose, onSelectPaymentMethod, p
             </button>
           </div>
 
-          {/* Available Payment Methods Display */}
           {isCashOnDeliveryEnabled && paymentSettings?.cashOnDelivery?.methods && (
             <div className="mt-6 pt-4 border-t text-center" style={{ borderColor: siteTheme.borderColor }}>
               <p className="text-sm mb-2 opacity-80">We accept</p>
