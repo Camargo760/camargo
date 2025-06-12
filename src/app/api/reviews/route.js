@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import clientPromise from "../../../lib/mongodb"
 
-// Helper function to convert image to base64
 async function imageToBase64(file) {
   const buffer = Buffer.from(await file.arrayBuffer())
   return `data:${file.type};base64,${buffer.toString("base64")}`
@@ -12,7 +11,6 @@ export async function GET() {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Get all reviews with user information
     const reviews = await db
       .collection("reviews")
       .aggregate([
@@ -56,35 +54,29 @@ export async function GET() {
 
     return NextResponse.json(reviews)
   } catch (error) {
-    console.error("Error fetching reviews:", error)
     return NextResponse.json({ error: "Failed to fetch reviews" }, { status: 500 })
   }
 }
 
 export async function POST(request) {
   try {
-    // Check content type to determine how to parse the request
     const contentType = request.headers.get("content-type") || ""
 
     let data
     let imageUrls = []
 
     if (contentType.includes("multipart/form-data")) {
-      // Handle form data (with images)
       const formData = await request.formData()
 
-      // Extract review data
       const rating = Number.parseInt(formData.get("rating"), 10)
       const title = formData.get("title")
       const content = formData.get("content")
       const name = formData.get("name")
       const userId = formData.get("userId")
 
-      // Process images
       const imageFiles = formData.getAll("images")
 
       if (imageFiles && imageFiles.length > 0) {
-        // Convert each image to base64
         for (const file of imageFiles) {
           if (file.size > 0) {
             const base64Image = await imageToBase64(file)
@@ -95,14 +87,12 @@ export async function POST(request) {
 
       data = { rating, title, content, name, userId }
     } else {
-      // Handle JSON data (no images)
       data = await request.json()
       imageUrls = data.imageUrls || []
     }
 
     const { rating, title, content, name, userId } = data
 
-    // Validate input
     if (!rating || rating < 1 || rating > 5) {
       return NextResponse.json({ error: "Invalid rating" }, { status: 400 })
     }
@@ -122,7 +112,6 @@ export async function POST(request) {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
-    // Create the review
     const review = {
       rating,
       title,
@@ -133,7 +122,6 @@ export async function POST(request) {
       updatedAt: new Date(),
     }
 
-    // If user is logged in, associate the review with their account
     if (userId) {
       const user = await db.collection("users").findOne({ email: userId })
       if (user) {
@@ -148,7 +136,6 @@ export async function POST(request) {
       ...review,
     })
   } catch (error) {
-    console.error("Error creating review:", error)
     return NextResponse.json({ error: "Failed to create review" }, { status: 500 })
   }
 }
