@@ -1,4 +1,4 @@
-// product/[id]/page.js
+
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -20,7 +20,6 @@ export default function ProductDetail({ params }) {
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   
-  // Mobile touch states
   const [touchStart, setTouchStart] = useState(null)
   const [lastTouchDistance, setLastTouchDistance] = useState(0)
   const [initialZoomLevel, setInitialZoomLevel] = useState(1)
@@ -41,7 +40,6 @@ export default function ProductDetail({ params }) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch product
         const productRes = await fetch(`/api/products/${id}`)
         if (!productRes.ok) {
           throw new Error("Failed to fetch product")
@@ -49,7 +47,6 @@ export default function ProductDetail({ params }) {
         const productData = await productRes.json()
         setProduct(productData)
 
-        // Set default color and size if available
         if (productData.availableColors && productData.availableColors.length > 0) {
           setSelectedColor(productData.availableColors[0])
         }
@@ -57,7 +54,6 @@ export default function ProductDetail({ params }) {
           setSelectedSize(productData.availableSizes[0])
         }
 
-        // Fetch site theme
         const themeRes = await fetch("/api/site-theme")
         if (themeRes.ok) {
           const themeData = await themeRes.json()
@@ -66,7 +62,6 @@ export default function ProductDetail({ params }) {
           }
         }
       } catch (err) {
-        console.error("Error fetching data:", err)
         setError(err.message || "Failed to load product")
       } finally {
         setLoading(false)
@@ -78,20 +73,17 @@ export default function ProductDetail({ params }) {
     }
   }, [id])
 
-  // Reset zoom when image changes
   useEffect(() => {
     setZoomLevel(1)
     setZoomPosition({ x: 0, y: 0 })
   }, [currentImage])
 
-  // Helper function to get distance between two touch points
   const getTouchDistance = (touch1, touch2) => {
     const dx = touch1.clientX - touch2.clientX
     const dy = touch1.clientY - touch2.clientY
     return Math.sqrt(dx * dx + dy * dy)
   }
 
-  // Helper function to get center point between two touches
   const getTouchCenter = (touch1, touch2) => {
     return {
       x: (touch1.clientX + touch2.clientX) / 2,
@@ -105,20 +97,16 @@ export default function ProductDetail({ params }) {
 
     const containerRect = container.getBoundingClientRect()
     
-    // Calculate mouse position relative to container center
     const mouseRelativeX = mouseX - containerRect.left - containerRect.width / 2
     const mouseRelativeY = mouseY - containerRect.top - containerRect.height / 2
     
-    // Calculate the new position to keep the mouse point fixed
     const zoomRatio = newZoomLevel / zoomLevel
     const newX = mouseRelativeX - (mouseRelativeX - zoomPosition.x) * zoomRatio
     const newY = mouseRelativeY - (mouseRelativeY - zoomPosition.y) * zoomRatio
     
-    // Apply zoom and position
     setZoomLevel(newZoomLevel)
     
     if (newZoomLevel > 1) {
-      // Limit boundaries
       const maxX = (containerRect.width * (newZoomLevel - 1)) / 2
       const maxY = (containerRect.height * (newZoomLevel - 1)) / 2
       
@@ -136,7 +124,6 @@ export default function ProductDetail({ params }) {
     if (mouseX !== undefined && mouseY !== undefined) {
       zoomAtPoint(newZoomLevel, mouseX, mouseY)
     } else {
-      // Default to center if no mouse position provided
       const container = imageContainerRef.current
       if (container) {
         const rect = container.getBoundingClientRect()
@@ -150,7 +137,6 @@ export default function ProductDetail({ params }) {
     if (mouseX !== undefined && mouseY !== undefined) {
       zoomAtPoint(newZoomLevel, mouseX, mouseY)
     } else {
-      // Default to center if no mouse position provided
       const container = imageContainerRef.current
       if (container) {
         const rect = container.getBoundingClientRect()
@@ -164,7 +150,6 @@ export default function ProductDetail({ params }) {
     setZoomPosition({ x: 0, y: 0 })
   }
 
-  // Mouse wheel zoom (for desktop)
   const handleWheel = (e) => {
     e.preventDefault()
     if (e.deltaY < 0) {
@@ -174,7 +159,6 @@ export default function ProductDetail({ params }) {
     }
   }
 
-  // Mouse events (for desktop)
   const handleMouseDown = (e) => {
     if (zoomLevel > 1) {
       setIsDragging(true)
@@ -190,7 +174,6 @@ export default function ProductDetail({ params }) {
       const newX = e.clientX - dragStart.x
       const newY = e.clientY - dragStart.y
       
-      // Limit drag boundaries
       const container = imageContainerRef.current
       if (container) {
         const containerRect = container.getBoundingClientRect()
@@ -209,12 +192,10 @@ export default function ProductDetail({ params }) {
     setIsDragging(false)
   }
 
-  // Touch events (for mobile)
   const handleTouchStart = (e) => {
     e.preventDefault()
     
     if (e.touches.length === 2) {
-      // Two finger pinch gesture
       const distance = getTouchDistance(e.touches[0], e.touches[1])
       const center = getTouchCenter(e.touches[0], e.touches[1])
       
@@ -223,7 +204,6 @@ export default function ProductDetail({ params }) {
       setTouchCenter(center)
       setTouchStart({ touches: [...e.touches], center })
     } else if (e.touches.length === 1 && zoomLevel > 1) {
-      // Single finger drag when zoomed
       setIsDragging(true)
       setDragStart({
         x: e.touches[0].clientX - zoomPosition.x,
@@ -236,7 +216,6 @@ export default function ProductDetail({ params }) {
     e.preventDefault()
     
     if (e.touches.length === 2 && touchStart) {
-      // Handle pinch zoom
       const distance = getTouchDistance(e.touches[0], e.touches[1])
       const center = getTouchCenter(e.touches[0], e.touches[1])
       
@@ -244,18 +223,14 @@ export default function ProductDetail({ params }) {
         const scale = distance / lastTouchDistance
         let newZoomLevel = initialZoomLevel * scale
         
-        // Clamp zoom level
         newZoomLevel = Math.max(1, Math.min(5, newZoomLevel))
         
-        // Use the initial touch center for consistent zooming
         zoomAtPoint(newZoomLevel, touchStart.center.x, touchStart.center.y)
       }
     } else if (e.touches.length === 1 && isDragging && zoomLevel > 1) {
-      // Handle single finger drag when zoomed
       const newX = e.touches[0].clientX - dragStart.x
       const newY = e.touches[0].clientY - dragStart.y
       
-      // Limit drag boundaries
       const container = imageContainerRef.current
       if (container) {
         const containerRect = container.getBoundingClientRect()
@@ -274,13 +249,11 @@ export default function ProductDetail({ params }) {
     e.preventDefault()
     
     if (e.touches.length === 0) {
-      // All fingers lifted
       setIsDragging(false)
       setTouchStart(null)
       setLastTouchDistance(0)
       setInitialZoomLevel(zoomLevel)
     } else if (e.touches.length === 1) {
-      // One finger remaining, stop pinch gesture
       setTouchStart(null)
       setLastTouchDistance(0)
       setInitialZoomLevel(zoomLevel)
@@ -297,7 +270,6 @@ export default function ProductDetail({ params }) {
       return
     }
 
-    // Redirect to checkout
     router.push(`/checkout/${id}?color=${encodeURIComponent(selectedColor)}&size=${selectedSize}&quantity=${quantity}`)
   }
 
@@ -330,9 +302,7 @@ export default function ProductDetail({ params }) {
       <Header />
       <main className="container mx-auto py-8 px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Product Images */}
           <div>
-            {/* Current image box with zoom functionality */}
             <div className="relative mb-4">
               <div
                 ref={imageContainerRef}
@@ -379,7 +349,6 @@ export default function ProductDetail({ params }) {
                 )}
               </div>
 
-              {/* Zoom Controls */}
               <div className="absolute top-4 right-4 flex flex-col space-y-2">
                 <button
                   onClick={() => handleZoomIn()}
@@ -424,7 +393,6 @@ export default function ProductDetail({ params }) {
                 )}
               </div>
 
-              {/* Zoom Level Indicator */}
               {zoomLevel > 1 && (
                 <div className="absolute bottom-4 right-4 px-2 py-1 rounded text-sm"
                      style={{
@@ -438,12 +406,10 @@ export default function ProductDetail({ params }) {
               )}
             </div>
 
-            {/* Zoom Instructions */}
             <div className="text-sm mb-4 opacity-70" style={{ color: siteTheme.textColor }}>
               Use mouse wheel to zoom • Pinch with two fingers on mobile • Click and drag to pan when zoomed
             </div>
 
-            {/* Thumbnail images */}
             {product.images && product.images.length > 1 && (
               <div className="flex space-x-2 overflow-x-auto">
                 {product.images.map((image, index) => (
@@ -466,7 +432,6 @@ export default function ProductDetail({ params }) {
             )}
           </div>
 
-          {/* Product Details */}
           <div
             className="rounded-lg p-6"
             style={{
@@ -489,7 +454,6 @@ export default function ProductDetail({ params }) {
               Category: <span className="font-semibold">{product.category}</span>
             </p>
 
-            {/* Color Selection */}
             {product.availableColors && product.availableColors.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-2" style={{ color: siteTheme.textColor }}>
@@ -517,7 +481,6 @@ export default function ProductDetail({ params }) {
               </div>
             )}
 
-            {/* Size Selection */}
             {product.availableSizes && product.availableSizes.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-2" style={{ color: siteTheme.textColor }}>
@@ -545,7 +508,6 @@ export default function ProductDetail({ params }) {
               </div>
             )}
 
-            {/* Quantity */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-2" style={{ color: siteTheme.textColor }}>
                 Quantity
@@ -591,7 +553,6 @@ export default function ProductDetail({ params }) {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row">
               <button
                 onClick={handleBuyNow}
