@@ -9,13 +9,11 @@ export default function DiscountManagement({ siteTheme }) {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
 
-  // Form states
   const [couponCode, setCouponCode] = useState("")
   const [discountPercentage, setDiscountPercentage] = useState("")
   const [description, setDescription] = useState("")
   const [isActive, setIsActive] = useState(true)
 
-  // Fetch coupons on component mount
   useEffect(() => {
     fetchCoupons()
   }, [])
@@ -31,7 +29,6 @@ export default function DiscountManagement({ siteTheme }) {
         throw new Error("Failed to fetch coupons")
       }
     } catch (err) {
-      console.error("Error fetching coupons:", err)
       setError("Failed to load coupons")
     } finally {
       setLoading(false)
@@ -76,14 +73,12 @@ export default function DiscountManagement({ siteTheme }) {
         setIsActive(true)
         fetchCoupons()
 
-        // Clear success message after 3 seconds
         setTimeout(() => setSuccess(null), 3000)
       } else {
         const errorData = await response.json()
         throw new Error(errorData.error || "Failed to create coupon")
       }
     } catch (err) {
-      console.error("Error creating coupon:", err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -105,13 +100,11 @@ export default function DiscountManagement({ siteTheme }) {
         setSuccess("Coupon deleted successfully!")
         fetchCoupons()
 
-        // Clear success message after 3 seconds
         setTimeout(() => setSuccess(null), 3000)
       } else {
         throw new Error("Failed to delete coupon")
       }
     } catch (err) {
-      console.error("Error deleting coupon:", err)
       setError("Failed to delete coupon")
     } finally {
       setLoading(false)
@@ -135,13 +128,11 @@ export default function DiscountManagement({ siteTheme }) {
         setSuccess(`Coupon ${!currentStatus ? "activated" : "deactivated"} successfully!`)
         fetchCoupons()
 
-        // Clear success message after 3 seconds
         setTimeout(() => setSuccess(null), 3000)
       } else {
         throw new Error("Failed to update coupon status")
       }
     } catch (err) {
-      console.error("Error updating coupon:", err)
       setError("Failed to update coupon status")
     } finally {
       setLoading(false)
@@ -167,7 +158,6 @@ export default function DiscountManagement({ siteTheme }) {
         </div>
       )}
 
-      {/* Create Coupon Form */}
       <div
         className="rounded-lg p-6 mb-8"
         style={{
@@ -287,7 +277,6 @@ export default function DiscountManagement({ siteTheme }) {
         </form>
       </div>
 
-      {/* Coupons List */}
       <div
         className="rounded-lg p-6"
         style={{
