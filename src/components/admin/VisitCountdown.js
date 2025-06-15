@@ -76,24 +76,39 @@ export default function VisitCountdown({ siteTheme }) {
 
         switch (activeTab) {
             case "pages":
+                    const truncatePageName = (pageName, maxLength = 20) => {
+                    if (pageName.length <= maxLength) return pageName;
+                    return pageName.substring(0, maxLength) + '...';
+                };
+
                 return (
                     <div className="space-y-3">
-                        {analytics.pageVisits?.map((page, index) => (
-                            <div key={index} className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                    <span
-                                        className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold"
-                                        style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
-                                    >
-                                        {index + 1}
+                        {analytics.pageVisits?.map((page, index) => {
+                            const displayName = page._id === "/" ? "Home" : page._id;
+                            const truncatedName = truncatePageName(displayName);
+
+                            return (
+                                <div key={index} className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <span
+                                            className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold"
+                                            style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
+                                        >
+                                            {index + 1}
+                                        </span>
+                                        <span
+                                            style={{ color: siteTheme.textColor }}
+                                            title={displayName}
+                                        >
+                                            {truncatedName}
+                                        </span>
+                                    </div>
+                                    <span className="font-bold" style={{ color: siteTheme.accentColor }}>
+                                        {page.count.toLocaleString()}
                                     </span>
-                                    <span style={{ color: siteTheme.textColor }}>{page._id === "/" ? "Home" : page._id}</span>
                                 </div>
-                                <span className="font-bold" style={{ color: siteTheme.accentColor }}>
-                                    {page.count.toLocaleString()}
-                                </span>
-                            </div>
-                        ))}
+                            );
+                        })}
                         {(!analytics.pageVisits || analytics.pageVisits.length === 0) && (
                             <p className="text-center opacity-70" style={{ color: siteTheme.textColor }}>
                                 No page data available for this period
