@@ -380,7 +380,7 @@ export default function VisitCountdown({ siteTheme }) {
                 }}
             >
                 {/* Tab Headers */}
-                <div className="flex border-b" style={{ borderColor: siteTheme.borderColor }}>
+                <div className="flex flex-wrap border-b" style={{ borderColor: siteTheme.borderColor }}>
                     {tabs.map((tab) => {
                         const IconComponent = tab.icon
                         return (
