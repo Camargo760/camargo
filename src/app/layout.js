@@ -2,6 +2,7 @@
 
 import './global.css';
 import { SessionProvider } from 'next-auth/react';
+import VisitTracker from '@/components/VisitTracker';
 
 export default function RootLayout({ children }) {
   return (
@@ -12,6 +13,7 @@ export default function RootLayout({ children }) {
         <body>
           <SessionProvider>
             {children}
+            <VisitTracker />
           </SessionProvider>
         </body>
       </html>
