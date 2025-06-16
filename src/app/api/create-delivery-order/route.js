@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb"
 
 export async function POST(request) {
   try {
+
     const requestData = await request.json()
 
     if (!requestData) {
@@ -26,10 +27,7 @@ export async function POST(request) {
       price,
       designImageId,
       category,
-      originalPrice,
-      finalPrice,
       couponCode,
-      discountPercentage,
     } = requestData
 
     if (!productId || !email || !name || !phone || !address) {
@@ -46,21 +44,45 @@ export async function POST(request) {
 
       const collection = isCustomProduct ? "customProducts" : "products"
 
-      const product = await db.collection(collection).findOne({ _id: new ObjectId(productId) })
+      let product = await db.collection(collection).findOne({ _id: new ObjectId(productId) })
 
       if (!product) {
         const alternativeCollection = isCustomProduct ? "products" : "customProducts"
 
-        const alternativeProduct = await db.collection(alternativeCollection).findOne({ _id: new ObjectId(productId) })
+        product = await db.collection(alternativeCollection).findOne({ _id: new ObjectId(productId) })
 
-        if (!alternativeProduct) {
+        if (!product) {
           return NextResponse.json({ error: "Product not found" }, { status: 404 })
         }
-
-        const product = alternativeProduct
       }
 
-      const totalPrice = product.price * quantity
+      let finalPrice = product.price
+      let discountPercentage = 0
+      const originalPrice = product.price
+
+      if (couponCode) {
+        try {
+          const couponResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/coupons/validate`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ code: couponCode }),
+            },
+          )
+
+          if (couponResponse.ok) {
+            const couponData = await couponResponse.json()
+            discountPercentage = couponData.discountPercentage
+            finalPrice = product.price * (1 - discountPercentage / 100)
+          }
+        } catch (couponError) {
+        }
+      }
+
+      const totalPrice = finalPrice * quantity
 
       const orderRecord = {
         paymentMethod: "delivery",
@@ -85,15 +107,15 @@ export async function POST(request) {
         selectedColor: color,
         selectedSize: size,
         quantity,
-        originalPrice: originalPrice || product.price,
-        finalPrice: finalPrice || product.price,
-        couponCode: couponCode || null,
-        discountPercentage: discountPercentage || 0,
-        amount_total: (finalPrice || product.price) * quantity * 100,
+        amount_total: totalPrice * 100,
         created: new Date(),
         status: "pending",
-        isOrderReceived: true, 
+        couponCode: couponCode || null,
+        originalPrice: originalPrice,
+        finalPrice: finalPrice,
+        discountPercentage: discountPercentage,
       }
+
 
       const result = await db.collection("orders").insertOne(orderRecord)
 
