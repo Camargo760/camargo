@@ -100,7 +100,7 @@ export async function GET(request) {
 originalPrice: order.metadata?.originalPrice ? parseFloat(order.metadata.originalPrice) : null,
 finalPrice: order.metadata?.finalPrice ? parseFloat(order.metadata.finalPrice) : null,
           customer: {
-            name: order.metadata?.userId || "N/A",
+            name: order.customer_details?.name || "N/A",
             email: order.customer_details?.email || "N/A",
             address: order.customer_details?.address
               ? `${order.customer_details.address.line1 || ""}, ${order.customer_details.address.city || ""}, ${order.customer_details.address.state || ""}, ${order.customer_details.address.postal_code || ""}, ${order.customer_details.address.country || ""}`.trim()
