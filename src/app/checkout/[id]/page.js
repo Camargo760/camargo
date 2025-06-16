@@ -4,11 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Header from "../../../components/Header"
-import PaymentModal from "../../../components/payment-modal"
-import DeliveryPaymentForm from "../../../components/delivery-payment-form"
-import { loadStripe } from "@stripe/stripe-js"
+import { Tag } from "lucide-react"
 import { useSession } from "next-auth/react"
-import LoadingSpinner from "../../../components/LoadingSpinner"
 
 import { use } from "react"
 
@@ -20,14 +17,10 @@ export default function Checkout({ params }) {
   const [designData, setDesignData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
+  const [couponCode, setCouponCode] = useState("")
   const [phone, setPhone] = useState("")
-  const [coupon, setCoupon] = useState("")
-  const [address, setAddress] = useState("")
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
-  const [isDeliveryFormOpen, setIsDeliveryFormOpen] = useState(false)
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null)
+  const [couponValidation, setCouponValidation] = useState(null)
+  const [discountedPrice, setDiscountedPrice] = useState(0)
   const [siteTheme, setSiteTheme] = useState({
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
@@ -49,13 +42,6 @@ export default function Checkout({ params }) {
   const imageId = searchParams.get("imageId") || ""
 
   useEffect(() => {
-    if (session && session.user) {
-      setEmail(session.user.email || "")
-      setName(session.user.name || "")
-    }
-  }, [session])
-
-  useEffect(() => {
     const fetchSiteTheme = async () => {
       try {
         const res = await fetch("/api/site-theme")
@@ -66,7 +52,6 @@ export default function Checkout({ params }) {
           }
         }
       } catch (err) {
-        
       }
     }
 
@@ -90,7 +75,6 @@ export default function Checkout({ params }) {
           setDesignData(data.designData)
         }
       } catch (err) {
-        
       }
     }
 
@@ -113,7 +97,7 @@ export default function Checkout({ params }) {
         }
 
         const data = await res.json()
-        
+
         if (isCustom) {
           const currentUrl = new URL(window.location.href)
           if (!currentUrl.searchParams.has("customProduct")) {
@@ -129,6 +113,7 @@ export default function Checkout({ params }) {
         }
 
         setProduct(data)
+        setDiscountedPrice(data.price)
       } catch (err) {
         setError("Failed to load product. Please try again.")
       } finally {
@@ -141,70 +126,90 @@ export default function Checkout({ params }) {
     }
   }, [id, router, imageId])
 
+  useEffect(() => {
+    const validateCoupon = async () => {
+      if (!couponCode || !couponCode.trim()) {
+        setCouponValidation(null)
+        setDiscountedPrice(product?.price || 0)
+        return
+      }
+
+      try {
+        const response = await fetch("/api/coupons/validate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            code: couponCode.trim(),
+          }),
+        })
+
+        if (response.ok) {
+          const couponData = await response.json()
+          setCouponValidation(couponData)
+          const newPrice = (product?.price || 0) * (1 - couponData.discountPercentage / 100)
+          setDiscountedPrice(newPrice)
+        } else {
+          setCouponValidation(null)
+          setDiscountedPrice(product?.price || 0)
+        }
+      } catch (err) {
+        setCouponValidation(null)
+        setDiscountedPrice(product?.price || 0)
+      }
+    }
+
+    if (product) {
+      validateCoupon()
+    }
+  }, [couponCode, product])
+
   const handleProceedToPayment = (e) => {
     e.preventDefault()
 
-    if (!name || !email || !phone || !address) {
-      setError("Please fill in all required fields")
+    if (!phone || !phone.trim()) {
+      setError("Phone number is required")
       return
     }
 
-    setIsPaymentModalOpen(true)
-  }
-
-  const handleSelectPaymentMethod = async (method) => {
-    setSelectedPaymentMethod(method)
-
-    if (method === "stripe") {
-      await handleStripeCheckout()
-    } else if (method === "delivery") {
-      setIsDeliveryFormOpen(true)
+    const checkoutData = {
+      productId: id,
+      productName: product.name,
+      productPrice: product.price,
+      discountedPrice,
+      color,
+      size,
+      customText,
+      quantity,
+      isCustomProduct,
+      imageId: imageId || product.finalDesignImageId || null,
+      designData: designData || null,
+      category: product?.category || null,
+      phone,
+      couponCode: couponValidation ? couponCode.trim() : null,
+      couponValidation,
     }
-  }
 
-  const handleStripeCheckout = async () => {
-    try {
-      setLoading(true)
+    sessionStorage.setItem("checkoutData", JSON.stringify(checkoutData))
 
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          productId: id,
-          name,
-          email,
-          coupon,
-          phone,
-          address,
-          color,
-          size,
-          isCustomProduct: isCustomProduct,
-          customText,
-          quantity,
-          designImageId: imageId || null, 
-          designData: designData || null, 
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to create checkout session")
-      }
-
-      const { id: sessionId } = await response.json()
-
-      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-      await stripe.redirectToCheckout({ sessionId })
-    } catch (err) {
-      setError("Failed to process payment. Please try again.")
-      setLoading(false)
-    }
+    router.push("/payment-method")
   }
 
   if (loading && !product) {
-    return <LoadingSpinner siteTheme={siteTheme} />
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor }}>
+        <Header />
+        <main className="container mx-auto py-8 px-4">
+          <div className="flex justify-center items-center h-64">
+            <div
+              className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
+              style={{ borderColor: siteTheme.accentColor }}
+            ></div>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   if (error && !product) {
@@ -252,6 +257,7 @@ export default function Checkout({ params }) {
   }
 
   const hasCustomDesign = !!designImage || !!product.finalDesignImageId
+  const totalPrice = discountedPrice * quantity
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
@@ -267,9 +273,9 @@ export default function Checkout({ params }) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="max-w-2xl mx-auto">
           <div
-            className="rounded-lg p-6"
+            className="rounded-lg p-6 mb-6"
             style={{
               backgroundColor: siteTheme.cardBgColor,
               borderColor: siteTheme.borderColor,
@@ -309,11 +315,12 @@ export default function Checkout({ params }) {
                   </div>
                 )}
               </div>
-              <div className="ml-4">
+              <div className="ml-4 flex-1">
                 <h3 className="font-semibold" style={{ color: siteTheme.textColor }}>
                   {product.name}
                 </h3>
                 <p style={{ color: siteTheme.textColor }}>${product.price.toFixed(2)}</p>
+                {product.category && <p style={{ color: siteTheme.textColor }}>Category: {product.category}</p>}
                 {color && <p style={{ color: siteTheme.textColor }}>Color: {color}</p>}
                 {size && <p style={{ color: siteTheme.textColor }}>Size: {size}</p>}
                 {customText && <p style={{ color: siteTheme.textColor }}>Custom Text: {customText}</p>}
@@ -325,18 +332,30 @@ export default function Checkout({ params }) {
                 )}
               </div>
             </div>
+
             <div className="border-t pt-4" style={{ borderColor: siteTheme.borderColor }}>
               <div className="flex justify-between mb-2">
                 <span style={{ color: siteTheme.textColor }}>Subtotal</span>
                 <span style={{ color: siteTheme.textColor }}>${(product.price * quantity).toFixed(2)}</span>
               </div>
+              {couponValidation && (
+                <>
+                  <div className="flex justify-between mb-2" style={{ color: siteTheme.accentColor }}>
+                    <span className="flex items-center">
+                      <Tag size={14} className="mr-1" />
+                      Coupon ({couponCode.toUpperCase()}): -{couponValidation.discountPercentage}%
+                    </span>
+                    <span>-${(product.price * quantity - totalPrice).toFixed(2)}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between mb-2">
                 <span style={{ color: siteTheme.textColor }}>Shipping</span>
                 <span style={{ color: siteTheme.textColor }}>Free</span>
               </div>
               <div className="flex justify-between font-semibold text-lg">
                 <span style={{ color: siteTheme.textColor }}>Total</span>
-                <span style={{ color: siteTheme.textColor }}>${(product.price * quantity).toFixed(2)}</span>
+                <span style={{ color: siteTheme.textColor }}>${totalPrice.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -350,17 +369,13 @@ export default function Checkout({ params }) {
             }}
           >
             <h2 className="text-xl font-semibold mb-4" style={{ color: siteTheme.textColor }}>
-              Customer Information
+              Checkout Information
             </h2>
 
             <form onSubmit={handleProceedToPayment}>
               <div className="mb-4">
-                <label
-                  className="block text-sm font-bold mb-2"
-                  htmlFor="name"
-                  style={{ color: siteTheme.textColor }}
-                >
-                  Full Name
+                <label className="block text-sm font-bold mb-2" htmlFor="coupon" style={{ color: siteTheme.textColor }}>
+                  Coupon Code (Optional)
                 </label>
                 <input
                   className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
@@ -370,68 +385,22 @@ export default function Checkout({ params }) {
                     borderColor: siteTheme.borderColor,
                     borderWidth: "1px",
                   }}
-                  id="name"
+                  id="coupon"
                   type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
+                  placeholder="Enter coupon code"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                 />
+                {couponValidation && (
+                  <p className="text-sm mt-1" style={{ color: siteTheme.accentColor }}>
+                    ✓ Coupon applied: {couponValidation.discountPercentage}% off
+                  </p>
+                )}
               </div>
 
-              <div className="mb-4">
-                <label
-                  className="block text-sm font-bold mb-2"
-                  htmlFor="email"
-                  style={{ color: siteTheme.textColor }}
-                >
-                  Email
-                </label>
-                <input
-                  className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
-                  style={{
-                    backgroundColor: siteTheme.secondaryBgColor,
-                    color: siteTheme.textColor,
-                    borderColor: siteTheme.borderColor,
-                    borderWidth: "1px",
-                  }}
-                  id="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-
-                             <div className="mb-4">
-            <label className="block text-sm font-bold mb-2" htmlFor="coupon" style={{ color: siteTheme.textColor }}>
-              Coupon Code (Optional)
-            </label>
-            <input
-              className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
-              style={{
-                backgroundColor: siteTheme.secondaryBgColor,
-                color: siteTheme.textColor,
-                borderColor: siteTheme.borderColor,
-                borderWidth: "1px",
-              }}
-              id="coupon"
-              type="text"
-              placeholder="Enter coupon code"
-              value={coupon}
-              onChange={(e) => setCoupon(e.target.value)}
-              required
-            />
-          </div>
-
-              <div className="mb-4">
-                <label
-                  className="block text-sm font-bold mb-2"
-                  htmlFor="phone"
-                  style={{ color: siteTheme.textColor }}
-                >
-                  Phone
+              <div className="mb-6">
+                <label className="block text-sm font-bold mb-2" htmlFor="phone" style={{ color: siteTheme.textColor }}>
+                  Phone Number *
                 </label>
                 <input
                   className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
@@ -450,32 +419,7 @@ export default function Checkout({ params }) {
                 />
               </div>
 
-              <div className="mb-6">
-                <label
-                  className="block text-sm font-bold mb-2"
-                  htmlFor="address"
-                  style={{ color: siteTheme.textColor }}
-                >
-                  Shipping Address
-                </label>
-                <textarea
-                  className="appearance-none rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
-                  style={{
-                    backgroundColor: siteTheme.secondaryBgColor,
-                    color: siteTheme.textColor,
-                    borderColor: siteTheme.borderColor,
-                    borderWidth: "1px",
-                  }}
-                  id="address"
-                  placeholder="123 Main St, City, State, ZIP"
-                  rows="3"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center justify-between">
                 <button
                   className="w-full font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                   style={{
@@ -492,43 +436,6 @@ export default function Checkout({ params }) {
             </form>
           </div>
         </div>
-
-        <PaymentModal
-          isOpen={isPaymentModalOpen}
-          onClose={() => setIsPaymentModalOpen(false)}
-          onSelectPaymentMethod={handleSelectPaymentMethod}
-          productDetails={{
-            name: product.name,
-            price: product.price,
-            color,
-            size,
-            quantity,
-          }}
-        />
-
-        <DeliveryPaymentForm
-          isOpen={isDeliveryFormOpen}
-          onClose={() => setIsDeliveryFormOpen(false)}
-          productDetails={{
-            id,
-            name: product.name,
-            price: product.price,
-            color,
-            size,
-            quantity,
-            isCustomProduct: isCustomProduct,
-            customText,
-            designImageId: imageId || product.finalDesignImageId || null,
-            designData: designData || null,
-          }}
-          customerInfo={{
-            name,
-            email,
-            coupon,
-            phone,
-            address,
-          }}
-        />
       </main>
     </div>
   )
