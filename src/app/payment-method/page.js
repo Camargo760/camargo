@@ -108,10 +108,8 @@ export default function PaymentMethodPage() {
 
             const { id: sessionId } = await response.json()
 
-            const stripe = await loadStripe(
-                "pk_test_51P2GkSSEzW86D25YUkzW9QoZE31ODA3vRCoQpwmKlue7nrsuj7MI0MVD5w8oVUXwsSYhjbV7Xvq2iNu12Mi6vpjQ00a8DAondY",
-            )
-
+            const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+            
             if (!stripe) {
                 throw new Error("Failed to load Stripe")
             }
