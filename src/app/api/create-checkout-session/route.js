@@ -16,10 +16,8 @@ export async function POST(request) {
     const {
       productId,
       name,
-      email,
       phone,
       address,
-      price,
       color,
       size,
       isCustomProduct,
@@ -27,10 +25,11 @@ export async function POST(request) {
       quantity = 1,
       designImageId,
       category,
-      coupon, 
+      couponCode,
+      discountedPrice,
     } = requestData
 
-    if (!productId || !email) {
+    if (!productId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
@@ -48,47 +47,32 @@ export async function POST(request) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
+    const finalPrice = discountedPrice || product.price
     const originalPrice = product.price
-    let finalPrice = originalPrice
-    let discountPercentage = 0
-    let couponCode = null
 
-    if (coupon && coupon.trim()) {
-      const couponDoc = await db.collection("coupons").findOne({
-        code: coupon.toUpperCase(),
-        isActive: true,
-      })
-
-      if (couponDoc) {
-        discountPercentage = couponDoc.discountPercentage
-        couponCode = couponDoc.code
-        finalPrice = originalPrice * (1 - discountPercentage / 100)
-      }
-    }
-
-    const totalPrice = finalPrice * quantity
+    console.log("Price calculation:", {
+      originalPrice,
+      discountedPrice,
+      finalPrice,
+      couponCode,
+    })
 
     const lineItems = [
       {
         price_data: {
           currency: "usd",
           product_data: {
-            name: `${product.name} ${color ? `(${color}` : ""}${size ? ` - ${size})` : color ? ")" : ""}${couponCode ? ` - ${discountPercentage}% OFF` : ""}`,
+            name: `${product.name} ${color ? `(${color}` : ""}${size ? ` - ${size})` : color ? ")" : ""}`,
             metadata: {
               productId,
-              price,
               color,
               size,
               isCustomProduct: isCustomProduct ? "true" : "false",
               customText: customText || "",
               category: category || product.category || "N/A",
-              originalPrice: originalPrice.toString(),
-              finalPrice: finalPrice.toString(),
-              coupon: coupon || "",
-              discountPercentage: discountPercentage.toString(),
             },
           },
-          unit_amount: Math.round(finalPrice * 100), 
+          unit_amount: Math.round(finalPrice * 100),
         },
         quantity: Number.parseInt(quantity, 10),
       },
@@ -99,7 +83,6 @@ export async function POST(request) {
       phone: phone || "",
       address: address || "",
       productId,
-      price: price || product.price || "N/A",
       color: color || "",
       size: size || "",
       isCustomProduct: isCustomProduct ? "true" : "false",
@@ -107,8 +90,12 @@ export async function POST(request) {
       category: category || product.category || "N/A",
       originalPrice: originalPrice.toString(),
       finalPrice: finalPrice.toString(),
-      coupon: coupon || "",
-      discountPercentage: discountPercentage.toString(),
+    }
+
+    if (couponCode) {
+      metadata.coupon = couponCode
+      const discountPercentage = ((originalPrice - finalPrice) / originalPrice) * 100
+      metadata.discountPercentage = Number(discountPercentage.toFixed(2)).toString()
     }
 
     if (customText) {
@@ -125,7 +112,6 @@ export async function POST(request) {
       mode: "payment",
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/product/${productId}`,
-      customer_email: email,
       billing_address_collection: "required",
       shipping_address_collection: {
         allowed_countries: ["US"],
