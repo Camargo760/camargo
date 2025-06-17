@@ -31,13 +31,14 @@ function SuccessContent() {
           }
         }
       } catch (err) {
-        
+        console.error("Error fetching site theme:", err)
       }
     }
 
     fetchSiteTheme()
 
     const fetchOrderDetails = async () => {
+      // Check if we have a Stripe session ID or a delivery order ID
       const sessionId = searchParams.get("session_id")
       const orderId = searchParams.get("order_id")
       const paymentMethod = searchParams.get("payment_method")
@@ -51,22 +52,31 @@ function SuccessContent() {
       try {
         let endpoint
         if (sessionId) {
+          // Stripe payment
+          console.log("Fetching Stripe order details for session:", sessionId)
           endpoint = `/api/order-details?session_id=${sessionId}`
         } else if (orderId) {
+          // Delivery payment
+          console.log("Fetching delivery order details for order:", orderId)
           endpoint = `/api/order-details?order_id=${orderId}&payment_method=${paymentMethod}`
         }
 
         const res = await fetch(endpoint)
 
+        // Log response status for debugging
+        console.log("Response status:", res.status)
 
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}))
+          console.error("Error response:", errorData)
           throw new Error(errorData.error || "Failed to fetch order details")
         }
 
         const data = await res.json()
+        console.log("Order details received:", data)
         setOrderDetails(data)
       } catch (err) {
+        console.error("Error fetching order details:", err)
         setError(err.message || "Failed to fetch order details. Please try again later.")
       } finally {
         setLoading(false)
@@ -78,6 +88,7 @@ function SuccessContent() {
     }
   }, [searchParams])
 
+  // Find the getStatusText function and make sure it's defined correctly
   const getStatusText = (status) => {
     switch (status) {
       case "received":
@@ -91,16 +102,17 @@ function SuccessContent() {
     }
   }
 
+  // Find the getStatusColor function and make sure it's defined correctly
   const getStatusColor = (status) => {
     switch (status) {
       case "received":
-        return "#3b82f6" 
+        return "#3b82f6" // blue
       case "out_for_delivery":
-        return "#eab308" 
+        return "#eab308" // yellow
       case "delivered":
-        return "#10b981" 
+        return "#10b981" // green
       default:
-        return "#f97316"
+        return "#f97316" // orange
     }
   }
 
@@ -184,6 +196,7 @@ function SuccessContent() {
               </span>
             </p>
           </div>
+          {/* Add coupon information if available */}
           {orderDetails.couponCode && (
             <div>
               <div className="mb-4">
@@ -284,18 +297,21 @@ function SuccessContent() {
               Size: <span className="font-medium">{orderDetails.product?.selectedSize || "N/A"}</span>
             </p>
 
+            {/* Display custom text if it exists */}
             {orderDetails.product?.customText && (
               <p>
                 Custom Text: <span className="font-medium">{orderDetails.product.customText}</span>
               </p>
             )}
 
+            {/* Display if this is a custom product */}
             {orderDetails.isCustomProduct && (
               <p>
                 Type: <span className="font-medium">Custom Product</span>
               </p>
             )}
 
+            {/* Display final design image if available */}
             {orderDetails.product?.finalDesignImage && (
               <div className="mt-4">
                 <p className="mb-2">Your Custom Design:</p>
