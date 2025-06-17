@@ -262,15 +262,15 @@ export default function Checkout({ params }) {
           </div>
         )}
 
-        <div className="max-w-2xl mx-auto">
+        <div className="md:flex justify-center gap-8">
           <div
-            className="rounded-lg p-6 mb-6"
+            className="md:w-150 md:mb-0 mb-8 rounded-lg p-6"
             style={{
               backgroundColor: siteTheme.cardBgColor,
               borderColor: siteTheme.borderColor,
               borderWidth: "1px",
             }}
-          >
+            >
             <h2 className="text-xl font-semibold mb-4" style={{ color: siteTheme.textColor }}>
               Order Summary
             </h2>
@@ -350,7 +350,7 @@ export default function Checkout({ params }) {
           </div>
 
           <div
-            className="rounded-lg p-6"
+            className="md:w-100 rounded-lg p-6"
             style={{
               backgroundColor: siteTheme.cardBgColor,
               borderColor: siteTheme.borderColor,
