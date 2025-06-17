@@ -188,7 +188,7 @@ export default function PaymentMethodPage() {
                                 >
                                     <div className="flex flex-col items-start">
                                         <span className="font-medium">{paymentSettings?.stripe?.displayName || "Pay with Card"}</span>
-                                        <span className="text-sm opacity-70">
+                                        <span className="text-sm opacity-70 text-left">
                                             {isStripeEnabled
                                                 ? paymentSettings?.stripe?.description || "Visa, Mastercard, etc."
                                                 : "Not available currently"}
@@ -212,7 +212,7 @@ export default function PaymentMethodPage() {
                                         <span className="font-medium">
                                             {paymentSettings?.cashOnDelivery?.displayName || "Pay at Delivery Time"}
                                         </span>
-                                        <span className="text-sm opacity-70">
+                                        <span className="text-sm opacity-70 text-left">
                                             {isCashOnDeliveryEnabled
                                                 ? paymentSettings?.cashOnDelivery?.description || "Cash on delivery"
                                                 : "Not available currently"}
