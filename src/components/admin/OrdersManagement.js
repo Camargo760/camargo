@@ -707,10 +707,12 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                               {selectedOrder.discountPercentage}%
                             </span>
                           </p>
-                          <p>
-                            <span className="font-medium">Original Total:</span>{" "}
-                            <span className="line-through">${selectedOrder.originalPrice * selectedOrder.quantity || "N/A"}</span>
-                          </p>
+                              <p>
+  <span className="font-medium">Original Total:</span>{" "}
+  <span className="line-through">
+    ${((selectedOrder.originalPrice * selectedOrder.quantity) || 0).toFixed(2)}
+  </span>
+</p>
                           <p>
                             <span className="font-medium">Final Price:</span>{" "}
                             {selectedOrder.originalPrice && selectedOrder.quantity && selectedOrder.discountPercentage ? (
