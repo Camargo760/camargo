@@ -148,8 +148,8 @@ export default function PaymentMethodPage() {
                     >
                         <div className="p-6">
                             <div className="mb-4">
-                                <h3 className="text-lg font-semibold mb-4 text-center">Order Summary</h3>
                                 <div className="p-3 rounded-md" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
+                                <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
                                     <p className="font-medium">{checkoutData.productName}</p>
                                     {checkoutData.color && <p className="text-sm">Color: {checkoutData.color}</p>}
                                     {checkoutData.size && <p className="text-sm">Size: {checkoutData.size}</p>}
