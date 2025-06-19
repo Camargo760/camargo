@@ -1,4 +1,5 @@
 
+// api/notifications/create-for-orders/route.js
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../auth/[...nextauth]/route"
@@ -7,6 +8,34 @@ import clientPromise from "../../../../lib/mongodb"
 import { ObjectId } from "mongodb"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+
+// Helper function to safely convert date to timestamp
+function getTimestamp(dateValue) {
+  if (!dateValue) {
+    return Date.now() / 1000;
+  }
+  
+  // If it's already a timestamp (number)
+  if (typeof dateValue === 'number') {
+    return dateValue > 1000000000000 ? dateValue / 1000 : dateValue; // Convert from milliseconds if needed
+  }
+  
+  // If it's a Date object
+  if (dateValue instanceof Date) {
+    return dateValue.getTime() / 1000;
+  }
+  
+  // If it's a string, try to parse it
+  if (typeof dateValue === 'string') {
+    const parsedDate = new Date(dateValue);
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate.getTime() / 1000;
+    }
+  }
+  
+  // Fallback to current time
+  return Date.now() / 1000;
+}
 
 export async function POST(request) {
   const session = await getServerSession(authOptions)
@@ -18,15 +47,19 @@ export async function POST(request) {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
+    // Get delivery orders from MongoDB
     const deliveryOrders = await db.collection("orders").find({ paymentMethod: "delivery" }).toArray()
 
+    // Get Stripe orders
     const stripeOrders = await stripe.checkout.sessions.list({
       limit: 100,
       expand: ["data.line_items", "data.customer"],
     })
 
+    // Combine all orders
     const allOrders = []
 
+    // Add delivery orders
     for (const order of deliveryOrders) {
       allOrders.push({
         id: order._id.toString(),
@@ -36,10 +69,11 @@ export async function POST(request) {
           email: order.customer.email || "N/A",
         },
         amount_total: order.amount_total || 0,
-        created: order.created ? order.created.getTime() / 1000 : Date.now() / 1000,
+        created: getTimestamp(order.created),
       })
     }
 
+    // Add Stripe orders
     for (const order of stripeOrders.data) {
       allOrders.push({
         id: order.id,
@@ -49,13 +83,15 @@ export async function POST(request) {
           email: order.customer_details?.email || "N/A",
         },
         amount_total: order.amount_total || 0,
-        created: order.created || Date.now() / 1000,
+        created: getTimestamp(order.created),
       })
     }
 
+    // Get existing notifications
     const existingNotifications = await db.collection("notifications").find({}).toArray()
     const existingOrderIds = new Set(existingNotifications.map((n) => n.orderId))
 
+    // Create notifications for orders that don't have them
     const newNotifications = []
 
     for (const order of allOrders) {
@@ -91,6 +127,7 @@ export async function POST(request) {
       }
     })
   } catch (error) {
+    console.error("Error creating notifications for orders:", error)
     return NextResponse.json({ error: "Failed to create notifications" }, { status: 500 })
   }
 }
