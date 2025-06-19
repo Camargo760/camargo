@@ -50,13 +50,10 @@ export async function GET(request) {
         break
     }
 
-    // Get total visits
     const totalVisits = await db.collection("visits").countDocuments(dateFilter)
 
-    // Get unique visitors (by IP)
     const uniqueVisitors = await db.collection("visits").distinct("ip", dateFilter)
 
-    // Get page visits breakdown
     const pageVisits = await db
       .collection("visits")
       .aggregate([
@@ -67,7 +64,6 @@ export async function GET(request) {
       ])
       .toArray()
 
-    // Get visits by country
     const visitsByCountry = await db
       .collection("visits")
       .aggregate([
@@ -86,7 +82,6 @@ export async function GET(request) {
       ])
       .toArray()
 
-    // Get visits by US states
     const visitsByUSStates = await db
       .collection("visits")
       .aggregate([
@@ -105,7 +100,6 @@ export async function GET(request) {
       ])
       .toArray()
 
-    // Get visits by cities (for US only)
     const visitsByUSCities = await db
       .collection("visits")
       .aggregate([
@@ -124,7 +118,6 @@ export async function GET(request) {
       ])
       .toArray()
 
-    // Get daily visits for the current period (for chart data)
     let dailyVisits = []
     if (filter !== "all") {
       dailyVisits = await db
@@ -150,7 +143,6 @@ export async function GET(request) {
         .toArray()
     }
 
-    // Get recent visits (last 10)
     const recentVisits = await db
       .collection("visits")
       .find(dateFilter)
@@ -180,7 +172,6 @@ export async function GET(request) {
       period: getPeriodLabel(filter),
     })
   } catch (error) {
-    console.error("Error fetching visit analytics:", error)
     return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 })
   }
 }
