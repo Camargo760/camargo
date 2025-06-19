@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import Header from "../../components/Header"
 import Link from "next/link"
 import Image from "next/image"
+import LoadingSpinner from "@/components/LoadingSpinner"
 
 function SuccessContent() {
   const [orderDetails, setOrderDetails] = useState(null)
@@ -31,14 +32,13 @@ function SuccessContent() {
           }
         }
       } catch (err) {
-        console.error("Error fetching site theme:", err)
+
       }
     }
 
     fetchSiteTheme()
 
     const fetchOrderDetails = async () => {
-      // Check if we have a Stripe session ID or a delivery order ID
       const sessionId = searchParams.get("session_id")
       const orderId = searchParams.get("order_id")
       const paymentMethod = searchParams.get("payment_method")
@@ -52,31 +52,22 @@ function SuccessContent() {
       try {
         let endpoint
         if (sessionId) {
-          // Stripe payment
-          console.log("Fetching Stripe order details for session:", sessionId)
           endpoint = `/api/order-details?session_id=${sessionId}`
         } else if (orderId) {
-          // Delivery payment
-          console.log("Fetching delivery order details for order:", orderId)
           endpoint = `/api/order-details?order_id=${orderId}&payment_method=${paymentMethod}`
         }
 
         const res = await fetch(endpoint)
 
-        // Log response status for debugging
-        console.log("Response status:", res.status)
 
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}))
-          console.error("Error response:", errorData)
           throw new Error(errorData.error || "Failed to fetch order details")
         }
 
         const data = await res.json()
-        console.log("Order details received:", data)
         setOrderDetails(data)
       } catch (err) {
-        console.error("Error fetching order details:", err)
         setError(err.message || "Failed to fetch order details. Please try again later.")
       } finally {
         setLoading(false)
@@ -88,40 +79,9 @@ function SuccessContent() {
     }
   }, [searchParams])
 
-  // Find the getStatusText function and make sure it's defined correctly
-  const getStatusText = (status) => {
-    switch (status) {
-      case "received":
-        return "Order Received"
-      case "out_for_delivery":
-        return "Out for Delivery"
-      case "delivered":
-        return "Delivered"
-      default:
-        return "Pending"
-    }
-  }
-
-  // Find the getStatusColor function and make sure it's defined correctly
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "received":
-        return "#3b82f6" // blue
-      case "out_for_delivery":
-        return "#eab308" // yellow
-      case "delivered":
-        return "#10b981" // green
-      default:
-        return "#f97316" // orange
-    }
-  }
 
   if (loading) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-90">
-        <div className="text-center text-white text-2xl font-bold">Loading...</div>
-      </div>
-    )
+    return (<LoadingSpinner siteTheme={siteTheme} />)
   }
 
   if (error) {
@@ -196,11 +156,10 @@ function SuccessContent() {
               </span>
             </p>
           </div>
-          {/* Add coupon information if available */}
           {orderDetails.couponCode && (
             <div>
               <div className="mb-4">
-                <h3 className="text-xl font-semibold">Discount Applied <small className="text-xs">(Each product)</small></h3>
+                <h3 className="text-xl font-semibold">Discount Applied {orderDetails.quantity > 1 ? (<small className="text-xs">(Each product)</small>) : null}</h3>
                 <p>
                   Coupon Code:{" "}
                   <span className="font-medium" style={{ color: siteTheme.accentColor }}>
@@ -230,49 +189,52 @@ function SuccessContent() {
                   </>
                 )}
               </div>
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold">Discount Applied <small className="text-xs">(All products)</small></h3>
-                <p>
-                  Coupon Code:{" "}
-                  <span className="font-medium" style={{ color: siteTheme.accentColor }}>
-                    {orderDetails.couponCode}
-                  </span>
-                </p>
-                <p>
-                  Discount: <span className="font-medium">{orderDetails.discountPercentage}%</span>
-                </p>
 
-                {orderDetails.originalPrice && orderDetails.quantity && orderDetails.discountPercentage && (
-                  <>
-                    <p>
-                      Original Total:{" "}
-                      <span className="line-through">
-                        ${(orderDetails.originalPrice * orderDetails.quantity).toFixed(2)}
-                      </span>
-                    </p>
-                    <p>
-                      Final Price:{" "}
-                      <span className="font-medium" style={{ color: siteTheme.accentColor }}>
-                        ${(
-                          orderDetails.originalPrice *
-                          orderDetails.quantity *
-                          (1 - orderDetails.discountPercentage / 100)
-                        ).toFixed(2)}
-                      </span>
-                    </p>
-                    <p>
-                      You Saved:{" "}
-                      <span className="font-medium" style={{ color: "#10b981" }}>
-                        ${(
-                          orderDetails.originalPrice *
-                          orderDetails.quantity *
-                          (orderDetails.discountPercentage / 100)
-                        ).toFixed(2)}
-                      </span>
-                    </p>
-                  </>
-                )}
-              </div>
+              {orderDetails.quantity > 1 ? (
+                <div className="mb-4">
+                  <h3 className="text-xl font-semibold">Discount Applied <small className="text-xs">(All products)</small></h3>
+                  <p>
+                    Coupon Code:{" "}
+                    <span className="font-medium" style={{ color: siteTheme.accentColor }}>
+                      {orderDetails.couponCode}
+                    </span>
+                  </p>
+                  <p>
+                    Discount: <span className="font-medium">{orderDetails.discountPercentage}%</span>
+                  </p>
+
+                  {orderDetails.originalPrice && orderDetails.quantity && orderDetails.discountPercentage && (
+                    <>
+                      <p>
+                        Original Total:{" "}
+                        <span className="line-through">
+                          ${(orderDetails.originalPrice * orderDetails.quantity).toFixed(2)}
+                        </span>
+                      </p>
+                      <p>
+                        Final Price:{" "}
+                        <span className="font-medium" style={{ color: siteTheme.accentColor }}>
+                          ${(
+                            orderDetails.originalPrice *
+                            orderDetails.quantity *
+                            (1 - orderDetails.discountPercentage / 100)
+                          ).toFixed(2)}
+                        </span>
+                      </p>
+                      <p>
+                        You Saved:{" "}
+                        <span className="font-medium" style={{ color: "#10b981" }}>
+                          ${(
+                            orderDetails.originalPrice *
+                            orderDetails.quantity *
+                            (orderDetails.discountPercentage / 100)
+                          ).toFixed(2)}
+                        </span>
+                      </p>
+                    </>
+                  )}
+                </div>
+              ) : null }
 
             </div>
           )}
@@ -297,21 +259,18 @@ function SuccessContent() {
               Size: <span className="font-medium">{orderDetails.product?.selectedSize || "N/A"}</span>
             </p>
 
-            {/* Display custom text if it exists */}
             {orderDetails.product?.customText && (
               <p>
                 Custom Text: <span className="font-medium">{orderDetails.product.customText}</span>
               </p>
             )}
 
-            {/* Display if this is a custom product */}
             {orderDetails.isCustomProduct && (
               <p>
                 Type: <span className="font-medium">Custom Product</span>
               </p>
             )}
 
-            {/* Display final design image if available */}
             {orderDetails.product?.finalDesignImage && (
               <div className="mt-4">
                 <p className="mb-2">Your Custom Design:</p>
