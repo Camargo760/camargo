@@ -70,6 +70,93 @@ export async function POST(request) {
         return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
       }
 
+      // FIXED: Enhanced payment method lookup with better debugging
+      const getPaymentMethodName = async (methodId) => {
+        if (!methodId) {
+          console.log("No method ID provided")
+          return "Cash"
+        }
+
+        console.log(`Looking up payment method for ID: "${methodId}"`)
+
+        try {
+          // Fetch payment settings from database
+          const paymentSettingsDoc = await db.collection("paymentSettings").findOne({})
+          console.log("Payment settings document:", JSON.stringify(paymentSettingsDoc, null, 2))
+
+          if (paymentSettingsDoc) {
+            // Check different possible structures
+            let methods = []
+
+            // Try different possible paths in the document
+            if (paymentSettingsDoc.settings?.cashOnDelivery?.methods) {
+              methods = paymentSettingsDoc.settings.cashOnDelivery.methods
+              console.log("Found methods in settings.cashOnDelivery.methods:", methods)
+            } else if (paymentSettingsDoc.cashOnDelivery?.methods) {
+              methods = paymentSettingsDoc.cashOnDelivery.methods
+              console.log("Found methods in cashOnDelivery.methods:", methods)
+            } else if (Array.isArray(paymentSettingsDoc.methods)) {
+              methods = paymentSettingsDoc.methods
+              console.log("Found methods in root methods:", methods)
+            } else {
+              console.log("No methods array found in payment settings")
+            }
+
+            if (methods && methods.length > 0) {
+              console.log(`Searching for method ID "${methodId}" in ${methods.length} methods`)
+
+              // Find the method by ID (try exact match first, then case-insensitive)
+              let method = methods.find((m) => m.id === methodId)
+
+              if (!method) {
+                // Try case-insensitive match
+                method = methods.find((m) => m.id?.toLowerCase() === methodId?.toLowerCase())
+              }
+
+              if (method) {
+                console.log(`Found matching method:`, method)
+                if (method.enabled !== false) {
+                  // Consider enabled if not explicitly false
+                  console.log(`Returning method name: "${method.name}"`)
+                  return method.name
+                } else {
+                  console.log(`Method "${methodId}" is disabled`)
+                }
+              } else {
+                console.log(`Method "${methodId}" not found in methods array`)
+                console.log(
+                  "Available method IDs:",
+                  methods.map((m) => m.id),
+                )
+              }
+            }
+          } else {
+            console.log("No payment settings document found in database")
+          }
+
+          console.log(`Payment method "${methodId}" not found in settings, using fallback`)
+
+          // Enhanced fallback mapping
+          const fallbackMap = {
+            cash: "Cash",
+            venmo: "Venmo",
+            cashapp: "CashApp",
+            zelle: "Zelle",
+            paypal: "PayPal",
+            // Add more common variations
+            "cash-on-delivery": "Cash",
+            cod: "Cash",
+          }
+
+          const fallbackResult = fallbackMap[methodId?.toLowerCase()] || methodId || "Cash"
+          console.log(`Using fallback result: "${fallbackResult}"`)
+          return fallbackResult
+        } catch (error) {
+          console.error("Error fetching payment method name:", error)
+          return methodId || "Cash" // Return the original ID if available, otherwise "Cash"
+        }
+      }
+
       // Determine which collection to query based on isCustomProduct flag
       const collection = isCustomProduct ? "customProducts" : "products"
       console.log(`Looking for product in ${collection} collection with ID: ${productId}`)
@@ -89,40 +176,6 @@ export async function POST(request) {
         }
 
         console.log(`Product found in ${alternativeCollection} instead of ${collection}`)
-      }
-
-      // FIXED: Convert payment method ID to readable name
-      const getPaymentMethodName = (methodId) => {
-        if (!methodId) return "Cash"
-
-        // If it's already a readable name, return as is
-        if (["cash", "venmo", "cashapp", "zelle", "paypal"].includes(methodId.toLowerCase())) {
-          return methodId.charAt(0).toUpperCase() + methodId.slice(1).toLowerCase()
-        }
-
-        // If it's a method ID (contains "method_"), extract the actual method
-        if (methodId.includes("method_")) {
-          const methodMap = {
-            cash: "Cash",
-            venmo: "Venmo",
-            cashapp: "CashApp",
-            zelle: "Zelle",
-            paypal: "PayPal",
-          }
-
-          // Check if the ID contains any known method names
-          for (const [key, value] of Object.entries(methodMap)) {
-            if (methodId.toLowerCase().includes(key)) {
-              return value
-            }
-          }
-
-          // Fallback: return "Cash" for unknown method IDs
-          return "Cash"
-        }
-
-        // Default fallback
-        return methodId.charAt(0).toUpperCase() + methodId.slice(1).toLowerCase()
       }
 
       // Validate and apply coupon if provided
@@ -153,10 +206,14 @@ export async function POST(request) {
       // Calculate the total price based on quantity and final price
       const totalPrice = finalPrice * quantity
 
+      // Get the actual payment method name from settings
+      const readablePreferredMethod = await getPaymentMethodName(preferredMethod)
+      console.log(`Final payment method result: "${readablePreferredMethod}"`)
+
       // Create an order record
       const orderRecord = {
         paymentMethod: "delivery",
-        preferredMethod: getPaymentMethodName(preferredMethod) || "Cash",
+        preferredMethod: readablePreferredMethod,
         additionalNotes: additionalNotes || "",
         customer: {
           name: customerInfo.name,
