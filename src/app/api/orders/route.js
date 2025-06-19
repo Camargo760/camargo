@@ -1,4 +1,5 @@
 
+// api/orders/route.js
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
@@ -8,19 +9,23 @@ import { ObjectId } from "mongodb"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
+// Helper function to safely convert date to timestamp
 function getTimestamp(dateValue) {
   if (!dateValue) {
     return Date.now() / 1000;
   }
   
+  // If it's already a timestamp (number)
   if (typeof dateValue === 'number') {
     return dateValue > 1000000000000 ? dateValue / 1000 : dateValue; // Convert from milliseconds if needed
   }
   
+  // If it's a Date object
   if (dateValue instanceof Date) {
     return dateValue.getTime() / 1000;
   }
   
+  // If it's a string, try to parse it
   if (typeof dateValue === 'string') {
     const parsedDate = new Date(dateValue);
     if (!isNaN(parsedDate.getTime())) {
@@ -28,6 +33,7 @@ function getTimestamp(dateValue) {
     }
   }
   
+  // Fallback to current time
   return Date.now() / 1000;
 }
 
@@ -41,10 +47,13 @@ export async function GET(request) {
     const client = await clientPromise
     const db = client.db("ecommerce")
 
+    // Get orders from MongoDB (delivery orders)
     const deliveryOrders = await db.collection("orders").find({ paymentMethod: "delivery" }).toArray()
 
+    // Format delivery orders to match the structure of Stripe orders
     const formattedDeliveryOrders = await Promise.all(
       deliveryOrders.map(async (order) => {
+        // Check if there's a design image ID and fetch the image data
         let finalDesignImage = null
         if (order.product.designImageId && ObjectId.isValid(order.product.designImageId)) {
           const imageDoc = await db.collection("customProductImages").findOne({
@@ -72,7 +81,8 @@ export async function GET(request) {
             price: order.product.price || "N/A",
             isCustomProduct: order.product.isCustomProduct || false,
             customText: order.product.customText || "N/A",
-            finalDesignImage: finalDesignImage,
+            // customImage: order.product.customImage || null,
+            finalDesignImage: finalDesignImage, // Include the actual image data
           },
           selectedColor: order.selectedColor || "N/A",
           selectedSize: order.selectedSize || "N/A",
@@ -87,6 +97,7 @@ export async function GET(request) {
       }),
     )
 
+    // Get orders from Stripe
     const stripeOrders = await stripe.checkout.sessions.list({
       limit: 100,
       expand: ["data.line_items", "data.customer"],
@@ -100,10 +111,12 @@ export async function GET(request) {
         const isCustomProduct = order.metadata?.isCustomProduct === "true"
 
         if (order.metadata && order.metadata.productId && ObjectId.isValid(order.metadata.productId)) {
+          // Determine which collection to query based on isCustomProduct flag
           const collection = isCustomProduct ? "customProducts" : "products"
           product = await db.collection(collection).findOne({ _id: new ObjectId(order.metadata.productId) })
         }
 
+        // Check if there's a design image ID and fetch the image data
         let finalDesignImage = null
         const designImageId = order.metadata?.designImageId || (product ? product.finalDesignImageId : null)
 
@@ -137,7 +150,8 @@ export async function GET(request) {
             price: product ? product.price : "N/A",
             isCustomProduct: isCustomProduct,
             customText: order.metadata?.customText || "N/A",
-            finalDesignImage: finalDesignImage,
+            // customImage: product && isCustomProduct ? product.customImage : null,
+            finalDesignImage: finalDesignImage, // Include the actual image data
           },
           selectedColor: order.metadata?.color || "N/A",
           selectedSize: order.metadata?.size || "N/A",
@@ -146,13 +160,17 @@ export async function GET(request) {
           created: getTimestamp(order.created),
         })
       } catch (itemError) {
+        console.error("Error processing individual order:", itemError, order.id)
+        // Continue processing other orders instead of failing completely
       }
     }
 
+    // Combine and sort all orders by creation date (newest first)
     const allOrders = [...formattedStripeOrders, ...formattedDeliveryOrders].sort((a, b) => b.created - a.created)
 
     return NextResponse.json(allOrders)
   } catch (error) {
+    console.error("Error fetching orders:", error)
     return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
   }
 }
