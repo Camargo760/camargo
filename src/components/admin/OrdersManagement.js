@@ -26,6 +26,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
   const [orders, setOrders] = useState(initialOrders)
   const [loading, setLoading] = useState(false)
   const [shouldFetch, setShouldFetch] = useState(false)
+  const [paymentSettings, setPaymentSettings] = useState(null)
 
   // Notification colors
   const newOrderColor = "#0A0F2C" // Light yellow for new orders
@@ -47,50 +48,112 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
 
   // Check navigation type to determine if we should fetch data
   useEffect(() => {
-    const navType = performance.getEntriesByType("navigation")[0]?.type;
-    if (navType === 'reload' || navType === 'navigate') {
-      setShouldFetch(true); // Full page load or reload
+    const navType = performance.getEntriesByType("navigation")[0]?.type
+    if (navType === "reload" || navType === "navigate") {
+      setShouldFetch(true) // Full page load or reload
     }
-  }, []);
+  }, [])
 
   // Load orders and notifications only on page visit/reload
   useEffect(() => {
-    if (!shouldFetch) return;
+    if (!shouldFetch) return
 
     const fetchOrdersAndNotifications = async () => {
-      setLoading(true);
+      setLoading(true)
       try {
         // Fetch orders if not provided via props or if we want fresh data
         if (initialOrders.length === 0) {
-          await fetchOrders();
+          await fetchOrders()
         }
 
         // Load notifications
-        await loadNotifications();
+        await loadNotifications()
+
+        // Load payment settings
+        await loadPaymentSettings()
 
         // Create notifications for orders that don't have them
-        await createNotificationsForOrders();
+        await createNotificationsForOrders()
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching data:", error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchOrdersAndNotifications();
-  }, [shouldFetch]);
+    fetchOrdersAndNotifications()
+  }, [shouldFetch])
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch("/api/orders");
+      const response = await fetch("/api/orders")
       if (response.ok) {
-        const data = await response.json();
-        setOrders(data);
+        const data = await response.json()
+        setOrders(data)
       }
     } catch (error) {
-      console.error("Error fetching orders:", error);
+      console.error("Error fetching orders:", error)
     }
-  };
+  }
+
+  const loadPaymentSettings = async () => {
+    try {
+      const response = await fetch("/api/payment-settings")
+      if (response.ok) {
+        const data = await response.json()
+        console.log("Admin - Payment settings response:", data)
+        setPaymentSettings(data.settings)
+      }
+    } catch (error) {
+      console.error("Error loading payment settings:", error)
+    }
+  }
+
+  const getPaymentMethodDetails = (methodId) => {
+    console.log("Admin - Looking up method:", methodId)
+    console.log("Admin - Payment settings:", paymentSettings)
+
+    if (!methodId || !paymentSettings) {
+      console.log("Admin - Missing methodId or paymentSettings")
+      return { name: methodId || "Unknown", details: null }
+    }
+
+    // Try different possible paths in the settings structure
+    let methods = []
+
+    if (paymentSettings.cashOnDelivery?.methods) {
+      methods = paymentSettings.cashOnDelivery.methods
+      console.log("Admin - Found methods in cashOnDelivery.methods:", methods)
+    } else if (paymentSettings.settings?.cashOnDelivery?.methods) {
+      methods = paymentSettings.settings.cashOnDelivery.methods
+      console.log("Admin - Found methods in settings.cashOnDelivery.methods:", methods)
+    } else {
+      console.log("Admin - No methods found in payment settings")
+    }
+
+    if (methods && methods.length > 0) {
+      // Find the method by ID (try exact match first, then case-insensitive)
+      let method = methods.find((m) => m.id === methodId)
+
+      if (!method) {
+        // Try case-insensitive match
+        method = methods.find((m) => m.id?.toLowerCase() === methodId?.toLowerCase())
+      }
+
+      if (method && method.enabled !== false) {
+        console.log("Admin - Found matching method:", method)
+        return {
+          name: method.name,
+          details: method.details,
+        }
+      } else {
+        console.log("Admin - Method not found or disabled")
+      }
+    }
+
+    console.log("Admin - Using fallback for method:", methodId)
+    return { name: methodId, details: null }
+  }
 
   const loadNotifications = async () => {
     try {
@@ -270,7 +333,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
 
   // Helper function to check if order has discount
   const hasDiscount = (order) => {
-    return order.coupon && order.coupon !== "N/A" && order.discountPercentage && order.discountPercentage > 0;
+    return order.coupon && order.coupon !== "N/A" && order.discountPercentage && order.discountPercentage > 0
   }
 
   // Show loading state if we should fetch but haven't loaded yet
@@ -282,7 +345,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
           <span>Loading orders and notifications...</span>
         </div>
       </div>
-    );
+    )
   }
 
   // Show message if no fetch should happen (client-side navigation)
@@ -297,7 +360,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
         </div>
         <p>Orders and notifications loaded only on page visit/reload (client-side navigation detected).</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -601,17 +664,27 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                     <span className="font-medium">Order ID:</span> {formatLongText(selectedOrder.id || "N/A")}
                   </p>
                   <p>
-                    <span className="font-medium">Date:</span>{" "}
-                    {new Date(selectedOrder.created * 1000).toLocaleString()}
+                    <span className="font-medium">Date:</span> {new Date(selectedOrder.created * 1000).toLocaleString()}
                   </p>
                   <p>
                     <span className="font-medium">Payment Method:</span>{" "}
                     {selectedOrder.paymentMethod === "delivery" ? "Delivery" : "Stripe"}
                   </p>
                   {selectedOrder.paymentMethod === "delivery" && selectedOrder.preferredMethod && (
-                    <p>
-                      <span className="font-medium">Preferred Method:</span> {selectedOrder.preferredMethod}
-                    </p>
+                    <div className="mt-3">
+                      <span className="font-medium">Preferred Method:</span>
+                      <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
+                        <div className="text-lg font-semibold" style={{ color: siteTheme.accentColor }}>
+                          {getPaymentMethodDetails(selectedOrder.preferredMethod)?.name ||
+                            selectedOrder.preferredMethod}
+                        </div>
+                        {getPaymentMethodDetails(selectedOrder.preferredMethod)?.details && (
+                          <div className="text-sm mt-2 opacity-90" style={{ color: siteTheme.textColor }}>
+                            {getPaymentMethodDetails(selectedOrder.preferredMethod).details}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   )}
                   <p>
                     <span className="font-medium">Quantity:</span> {selectedOrder.quantity || 1}
@@ -620,7 +693,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                     <span className="font-medium">Coupon:</span> {selectedOrder.coupon || "N/A"}
                   </p>
                   <p>
-                    <span className="font-medium">Discount percentage:</span> {(selectedOrder.discountPercentage)}% OFF
+                    <span className="font-medium">Discount percentage:</span> {selectedOrder.discountPercentage}% OFF
                   </p>
                   <p>
                     <span className="font-medium">Total:</span> ${(selectedOrder.amount_total / 100).toFixed(2)}
@@ -637,7 +710,10 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                       borderWidth: "1px",
                     }}
                   >
-                    <h4 className="font-semibold mb-3">Discount Applied {selectedOrder.quantity > 1 ? ((<small className="text-xs">Each product</small>)) : null}</h4>
+                    <h4 className="font-semibold mb-3">
+                      Discount Applied{" "}
+                      {selectedOrder.quantity > 1 ? <small className="text-xs">Each product</small> : null}
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p>
@@ -648,9 +724,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                         </p>
                         <p>
                           <span className="font-medium">Discount:</span>{" "}
-                          <span style={{ fontWeight: "bold" }}>
-                            {selectedOrder.discountPercentage}%
-                          </span>
+                          <span style={{ fontWeight: "bold" }}>{selectedOrder.discountPercentage}%</span>
                         </p>
                         <p>
                           <span className="font-medium">Original Price:</span>{" "}
@@ -682,8 +756,8 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                 )}
 
                 {/* Discount Information Section - All Products (Only show if discount exists) */}
-                {hasDiscount(selectedOrder) && (
-                  selectedOrder.quantity > 1 ? (
+                {hasDiscount(selectedOrder) &&
+                  (selectedOrder.quantity > 1 ? (
                     <div
                       className="mt-6 p-4 rounded-lg"
                       style={{
@@ -692,7 +766,9 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                         borderWidth: "1px",
                       }}
                     >
-                      <h4 className="font-semibold mb-3">Discount Applied (<small className="text-xs">All products</small>)</h4>
+                      <h4 className="font-semibold mb-3">
+                        Discount Applied (<small className="text-xs">All products</small>)
+                      </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <p>
@@ -703,21 +779,22 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                           </p>
                           <p>
                             <span className="font-medium">Discount:</span>{" "}
-                            <span style={{ fontWeight: "bold" }}>
-                              {selectedOrder.discountPercentage}%
+                            <span style={{ fontWeight: "bold" }}>{selectedOrder.discountPercentage}%</span>
+                          </p>
+                          <p>
+                            <span className="font-medium">Original Total:</span>{" "}
+                            <span className="line-through">
+                              ${selectedOrder.originalPrice * selectedOrder.quantity || "N/A"}
                             </span>
                           </p>
-                              <p>
-  <span className="font-medium">Original Total:</span>{" "}
-  <span className="line-through">
-    ${((selectedOrder.originalPrice * selectedOrder.quantity) || 0).toFixed(2)}
-  </span>
-</p>
                           <p>
                             <span className="font-medium">Final Price:</span>{" "}
-                            {selectedOrder.originalPrice && selectedOrder.quantity && selectedOrder.discountPercentage ? (
+                            {selectedOrder.originalPrice &&
+                            selectedOrder.quantity &&
+                            selectedOrder.discountPercentage ? (
                               <span style={{ color: siteTheme.accentColor, fontWeight: "bold" }}>
-                                ${(
+                                $
+                                {(
                                   selectedOrder.originalPrice *
                                   selectedOrder.quantity *
                                   (1 - selectedOrder.discountPercentage / 100)
@@ -729,9 +806,12 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                           </p>
                           <p>
                             <span className="font-medium">Customer Saved:</span>{" "}
-                            {selectedOrder.originalPrice && selectedOrder.quantity && selectedOrder.discountPercentage ? (
+                            {selectedOrder.originalPrice &&
+                            selectedOrder.quantity &&
+                            selectedOrder.discountPercentage ? (
                               <span style={{ color: "#10b981", fontWeight: "bold" }}>
-                                ${(
+                                $
+                                {(
                                   selectedOrder.originalPrice *
                                   selectedOrder.quantity *
                                   (selectedOrder.discountPercentage / 100)
@@ -744,8 +824,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                         </div>
                       </div>
                     </div>
-                  ) : null
-                )}
+                  ) : null)}
 
                 {/* Product Information */}
                 <div
@@ -800,7 +879,6 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                             src={
                               selectedOrder.product.finalDesignImage ||
                               selectedOrder.product.customImage ||
-                              "/placeholder.svg" ||
                               "/placeholder.svg" ||
                               "/placeholder.svg"
                             }
