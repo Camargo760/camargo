@@ -19,6 +19,7 @@ function SuccessContent() {
     secondaryBgColor: "#2a2a2a",
     borderColor: "#333",
   })
+  const [paymentSettings, setPaymentSettings] = useState(null)
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -31,12 +32,24 @@ function SuccessContent() {
             setSiteTheme(data.theme)
           }
         }
-      } catch (err) {
+      } catch (err) {}
+    }
 
+    const fetchPaymentSettings = async () => {
+      try {
+        const res = await fetch("/api/payment-settings")
+        if (res.ok) {
+          const data = await res.json()
+          console.log("Success page - Payment settings response:", data)
+          setPaymentSettings(data.settings)
+        }
+      } catch (err) {
+        console.error("Error fetching payment settings:", err)
       }
     }
 
     fetchSiteTheme()
+    fetchPaymentSettings()
 
     const fetchOrderDetails = async () => {
       const sessionId = searchParams.get("session_id")
@@ -59,7 +72,6 @@ function SuccessContent() {
 
         const res = await fetch(endpoint)
 
-
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}))
           throw new Error(errorData.error || "Failed to fetch order details")
@@ -79,9 +91,54 @@ function SuccessContent() {
     }
   }, [searchParams])
 
+  const getPaymentMethodDetails = (methodId) => {
+    console.log("Success page - Looking up method:", methodId)
+    console.log("Success page - Payment settings:", paymentSettings)
+
+    if (!methodId || !paymentSettings) {
+      console.log("Success page - Missing methodId or paymentSettings")
+      return { name: methodId || "Unknown", details: null }
+    }
+
+    // Try different possible paths in the settings structure
+    let methods = []
+
+    if (paymentSettings.cashOnDelivery?.methods) {
+      methods = paymentSettings.cashOnDelivery.methods
+      console.log("Success page - Found methods in cashOnDelivery.methods:", methods)
+    } else if (paymentSettings.settings?.cashOnDelivery?.methods) {
+      methods = paymentSettings.settings.cashOnDelivery.methods
+      console.log("Success page - Found methods in settings.cashOnDelivery.methods:", methods)
+    } else {
+      console.log("Success page - No methods found in payment settings")
+    }
+
+    if (methods && methods.length > 0) {
+      // Find the method by ID (try exact match first, then case-insensitive)
+      let method = methods.find((m) => m.id === methodId)
+
+      if (!method) {
+        // Try case-insensitive match
+        method = methods.find((m) => m.id?.toLowerCase() === methodId?.toLowerCase())
+      }
+
+      if (method && method.enabled !== false) {
+        console.log("Success page - Found matching method:", method)
+        return {
+          name: method.name,
+          details: method.details,
+        }
+      } else {
+        console.log("Success page - Method not found or disabled")
+      }
+    }
+
+    console.log("Success page - Using fallback for method:", methodId)
+    return { name: methodId, details: null }
+  }
 
   if (loading) {
-    return (<LoadingSpinner siteTheme={siteTheme} />)
+    return <LoadingSpinner siteTheme={siteTheme} />
   }
 
   if (error) {
@@ -110,6 +167,11 @@ function SuccessContent() {
     )
   }
 
+  const paymentMethodInfo =
+    orderDetails.paymentMethod === "delivery" && orderDetails.preferredMethod
+      ? getPaymentMethodDetails(orderDetails.preferredMethod)
+      : null
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
       <Header />
@@ -126,22 +188,31 @@ function SuccessContent() {
             <p className="mt-2">
               Order ID: <span className="font-medium">{orderDetails.id}</span>
             </p>
-            <p>
-              Payment Method: <span className="font-medium capitalize">{orderDetails.paymentMethod || "Stripe"}</span>
-              {orderDetails.paymentMethod === "delivery" && orderDetails.preferredMethod && (
-                <span
-                  className="ml-2 text-xs px-2 py-1 rounded capitalize"
-                  style={{ backgroundColor: siteTheme.secondaryBgColor }}
-                >
-                  {orderDetails.preferredMethod}
-                </span>
+            <div className="mt-2">
+              <span>Payment Method: </span>
+              <span className="font-medium capitalize">{orderDetails.paymentMethod || "Stripe"}</span>
+              {paymentMethodInfo && (
+                <div className="mt-3 p-4 rounded-lg" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
+                  <div className="text-lg font-semibold" style={{ color: siteTheme.accentColor }}>
+                    {paymentMethodInfo.name}
+                  </div>
+                  {paymentMethodInfo.details && (
+                    <div className="text-sm mt-2 opacity-90" style={{ color: siteTheme.textColor }}>
+                      {paymentMethodInfo.details}
+                    </div>
+                  )}
+                </div>
               )}
+            </div>
+            <p className="mt-2">
+              Discount:{" "}
+              <span className="font-medium" style={{ color: siteTheme.accentColor }}>
+                {orderDetails.discountPercentage}% OFF
+              </span>
             </p>
             <p>
-              Discount: <span className="font-medium" style={{ color: siteTheme.accentColor }}>{orderDetails.discountPercentage}% OFF</span>
-            </p>
-            <p>
-              Price <small>(Each Product)</small>: <span className="font-medium">${(orderDetails.finalPrice.toFixed(2))}</span>
+              Price <small>(Each Product)</small>:{" "}
+              <span className="font-medium">${orderDetails.finalPrice.toFixed(2)}</span>
             </p>
             <p>
               Quantity:{" "}
@@ -159,7 +230,10 @@ function SuccessContent() {
           {orderDetails.couponCode && (
             <div>
               <div className="mb-4">
-                <h3 className="text-xl font-semibold">Discount Applied {orderDetails.quantity > 1 ? (<small className="text-xs">(Each product)</small>) : null}</h3>
+                <h3 className="text-xl font-semibold">
+                  Discount Applied{" "}
+                  {orderDetails.quantity > 1 ? <small className="text-xs">(Each product)</small> : null}
+                </h3>
                 <p>
                   Coupon Code:{" "}
                   <span className="font-medium" style={{ color: siteTheme.accentColor }}>
@@ -192,7 +266,9 @@ function SuccessContent() {
 
               {orderDetails.quantity > 1 ? (
                 <div className="mb-4">
-                  <h3 className="text-xl font-semibold">Discount Applied <small className="text-xs">(All products)</small></h3>
+                  <h3 className="text-xl font-semibold">
+                    Discount Applied <small className="text-xs">(All products)</small>
+                  </h3>
                   <p>
                     Coupon Code:{" "}
                     <span className="font-medium" style={{ color: siteTheme.accentColor }}>
@@ -214,7 +290,8 @@ function SuccessContent() {
                       <p>
                         Final Price:{" "}
                         <span className="font-medium" style={{ color: siteTheme.accentColor }}>
-                          ${(
+                          $
+                          {(
                             orderDetails.originalPrice *
                             orderDetails.quantity *
                             (1 - orderDetails.discountPercentage / 100)
@@ -224,7 +301,8 @@ function SuccessContent() {
                       <p>
                         You Saved:{" "}
                         <span className="font-medium" style={{ color: "#10b981" }}>
-                          ${(
+                          $
+                          {(
                             orderDetails.originalPrice *
                             orderDetails.quantity *
                             (orderDetails.discountPercentage / 100)
@@ -234,8 +312,7 @@ function SuccessContent() {
                     </>
                   )}
                 </div>
-              ) : null }
-
+              ) : null}
             </div>
           )}
           <div className="mb-4">
@@ -244,7 +321,7 @@ function SuccessContent() {
               Name: <span className="font-medium">{orderDetails.product?.name || "N/A"}</span>
             </p>
             <p>
-              Name: <span className="font-medium">{orderDetails.product?.price || "N/A"}</span>
+              Price: <span className="font-medium">{orderDetails.product?.price || "N/A"}</span>
             </p>
             <p>
               Description: <span className="font-medium">{orderDetails.product?.description || "N/A"}</span>
