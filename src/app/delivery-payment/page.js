@@ -248,8 +248,8 @@ export default function DeliveryPaymentPage() {
                                                     type="radio"
                                                     name="paymentMethod"
                                                     value={method.id}
-                                                    checked={preferredMethod === method.id}
-                                                    onChange={() => setPreferredMethod(`${method.name} - ${method.details}`)}
+                                                    checked={preferredMethod === `${method.name} - ${method.details || ""}`}
+                                                    onChange={() => setPreferredMethod(`${method.name} - ${method.details || ""}`)}
                                                     className="mr-2"
                                                 />
                                                 <span>{method.name}</span>
