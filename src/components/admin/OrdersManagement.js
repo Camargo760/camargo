@@ -672,18 +672,7 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                   </p>
                   {selectedOrder.paymentMethod === "delivery" && selectedOrder.preferredMethod && (
                     <div className="mt-3">
-                      <span className="font-medium">Preferred Method:</span>
-                      <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: siteTheme.secondaryBgColor }}>
-                        <div className="text-lg font-semibold" style={{ color: siteTheme.accentColor }}>
-                          {getPaymentMethodDetails(selectedOrder.preferredMethod)?.name ||
-                            selectedOrder.preferredMethod}
-                        </div>
-                        {getPaymentMethodDetails(selectedOrder.preferredMethod)?.details && (
-                          <div className="text-sm mt-2 opacity-90" style={{ color: siteTheme.textColor }}>
-                            {getPaymentMethodDetails(selectedOrder.preferredMethod).details}
-                          </div>
-                        )}
-                      </div>
+                      <span className="font-medium">Preferred Method: {selectedOrder.preferredMethod}</span>
                     </div>
                   )}
                   <p>
