@@ -249,7 +249,7 @@ export default function DeliveryPaymentPage() {
                                                     name="paymentMethod"
                                                     value={method.id}
                                                     checked={preferredMethod === method.id}
-                                                    onChange={() => setPreferredMethod(method.id)}
+                                                    onChange={() => setPreferredMethod(`${method.name} - ${method.details}`)}
                                                     className="mr-2"
                                                 />
                                                 <span>{method.name}</span>
