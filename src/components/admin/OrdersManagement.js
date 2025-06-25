@@ -671,9 +671,9 @@ export default function OrdersManagement({ siteTheme, orders: initialOrders = []
                     {selectedOrder.paymentMethod === "delivery" ? "Delivery" : "Stripe"}
                   </p>
                   {selectedOrder.paymentMethod === "delivery" && selectedOrder.preferredMethod && (
-                    <div className="mt-3">
+                    <p>
                       <span className="font-medium">Preferred Method: {selectedOrder.preferredMethod}</span>
-                    </div>
+                    </p>
                   )}
                   <p>
                     <span className="font-medium">Quantity:</span> {selectedOrder.quantity || 1}
