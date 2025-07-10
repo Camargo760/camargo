@@ -1,82 +1,107 @@
-import { NextResponse } from 'next/server';
-import clientPromise from '../../../../lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { NextResponse } from "next/server"
+import { ObjectId } from "mongodb"
+import clientPromise from "../../../../lib/mongodb"
+
+export async function GET(request, { params }) {
+  try {
+    const { id } = params
+
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
+    }
+
+    const client = await clientPromise
+    const db = client.db("ecommerce")
+
+    const product = await db.collection("products").findOne({ _id: new ObjectId(id) })
+
+    if (!product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
+
+    // Convert ObjectId to string
+    product._id = product._id.toString()
+
+    return NextResponse.json(product)
+  } catch (error) {
+    console.error("Error fetching product:", error)
+    return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 })
+  }
+}
 
 export async function PUT(request, { params }) {
   try {
-    const { id } = await params;
-    const client = await clientPromise;
-    const db = client.db("ecommerce");
-    const product = await request.json();
-    const result = await db.collection("products").updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { ...product, uploadTime: new Date() } }
-    );
-    if (result.modifiedCount === 0) {
-      return NextResponse.json({ error: 'Product not found or not modified' }, { status: 404 });
+    const { id } = params
+    const updateData = await request.json()
+
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
     }
-    return NextResponse.json({ message: 'Product updated successfully' });
+
+    const client = await clientPromise
+    const db = client.db("ecommerce")
+
+    // Remove _id from update data if present
+    delete updateData._id
+
+    const result = await db.collection("products").updateOne({ _id: new ObjectId(id) }, { $set: updateData })
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
+    console.error("Error updating product:", error)
+    return NextResponse.json({ error: "Failed to update product" }, { status: 500 })
   }
 }
 
 export async function PATCH(request, { params }) {
   try {
-    const { id } = await params;
-    const client = await clientPromise;
-    const db = client.db("ecommerce");
-    const update = await request.json();
-    const result = await db.collection("products").updateOne(
-      { _id: new ObjectId(id) },
-      { $set: { ...update, uploadTime: new Date() } }
-    );
-    if (result.modifiedCount === 0) {
-      return NextResponse.json({ error: 'Product not found or not modified' }, { status: 404 });
-    }
-    return NextResponse.json({ message: 'Product updated successfully' });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
-  }
-}
-
-export async function GET(request, { params }) {
-  try {
-    const { id } = await params;
-    
-    if (!id) {
-      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
-    }
+    const { id } = params
+    const updateData = await request.json()
 
     if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 });
+      return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
     }
 
-    const client = await clientPromise;
-    const db = client.db("ecommerce");
-    const product = await db.collection("products").findOne({ _id: new ObjectId(id) });
+    const client = await clientPromise
+    const db = client.db("ecommerce")
 
-    if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    const result = await db.collection("products").updateOne({ _id: new ObjectId(id) }, { $set: updateData })
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
-    return NextResponse.json(product);
+    return NextResponse.json({ success: true })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });
+    console.error("Error updating product:", error)
+    return NextResponse.json({ error: "Failed to update product" }, { status: 500 })
   }
 }
 
 export async function DELETE(request, { params }) {
   try {
-    const { id } = await params;
-    const client = await clientPromise;
-    const db = client.db("ecommerce");
-    const result = await db.collection("products").deleteOne({ _id: new ObjectId(id) });
-    if (result.deletedCount === 0) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    const { id } = params
+
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
     }
-    return NextResponse.json({ message: 'Product deleted successfully' });
+
+    const client = await clientPromise
+    const db = client.db("ecommerce")
+
+    const result = await db.collection("products").deleteOne({ _id: new ObjectId(id) })
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
+    console.error("Error deleting product:", error)
+    return NextResponse.json({ error: "Failed to delete product" }, { status: 500 })
   }
 }
