@@ -4,11 +4,13 @@ import { useState, useRef } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import ImageLightbox from "../ImageLightBox"
+import RichTextEditor from "../RichTextEditor"
 
 export default function ProductManagement({ siteTheme, fetchProducts, products, sortOrder, setSortOrder }) {
   const [name, setName] = useState("")
   const [price, setPrice] = useState("")
   const [description, setDescription] = useState("")
+  const [richDescription, setRichDescription] = useState("")
   const [images, setImages] = useState([])
   const [category, setCategory] = useState("")
   const [availableColors, setAvailableColors] = useState("")
@@ -17,6 +19,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
   const [error, setError] = useState(null)
   const productImagesRefs = useRef({})
 
+  // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxImages, setLightboxImages] = useState([])
   const [lightboxInitialIndex, setLightboxInitialIndex] = useState(0)
@@ -27,6 +30,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
       name,
       price: Number.parseFloat(price),
       description,
+      richDescription,
       images,
       category,
       availableColors: availableColors.split(",").map((color) => color.trim()),
@@ -43,19 +47,23 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
       })
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}))
+        console.error("Error saving product:", errorData)
         throw new Error(errorData.error || "Failed to save product")
       }
       setName("")
       setPrice("")
       setDescription("")
+      setRichDescription("")
       setImages([])
       setCategory("")
       setAvailableColors("")
       setAvailableSizes("")
       setEditingProduct(null)
       fetchProducts()
+      // Reset the image input field
       document.getElementById("images").value = ""
     } catch (err) {
+      console.error("Error saving product:", err)
       setError("Failed to save product. Please try again.")
     }
   }
@@ -69,10 +77,12 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
       })
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}))
+        console.error("Error updating product:", errorData)
         throw new Error(errorData.error || "Failed to update product")
       }
       fetchProducts()
     } catch (err) {
+      console.error("Error updating product:", err)
       setError("Failed to update product. Please try again.")
     }
   }
@@ -82,6 +92,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
     setName(product.name)
     setPrice(product.price.toString())
     setDescription(product.description)
+    setRichDescription(product.richDescription || "")
     setImages(product.images || [])
     setCategory(product.category)
     setAvailableColors(product.availableColors.join(", "))
@@ -96,10 +107,12 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
         })
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}))
+          console.error("Error deleting product:", errorData)
           throw new Error(errorData.error || "Failed to delete product")
         }
         fetchProducts()
       } catch (err) {
+        console.error("Error deleting product:", err)
         setError("Failed to delete product. Please try again.")
       }
     }
@@ -126,6 +139,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
         setImages((prevImages) => [...prevImages, ...results])
       })
       .catch((err) => {
+        console.error("Error reading images:", err)
         setError("Failed to process images. Please try again.")
       })
   }
@@ -136,7 +150,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
 
   const scrollProductImages = (productId, direction) => {
     if (productImagesRefs.current[productId]) {
-      const scrollAmount = 110
+      const scrollAmount = 110 // Adjust based on image width + gap
       if (direction === "left") {
         productImagesRefs.current[productId].scrollBy({ left: -scrollAmount, behavior: "smooth" })
       } else {
@@ -145,12 +159,14 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
     }
   }
 
+  // Open lightbox for product images
   const openProductImageLightbox = (product, index) => {
     setLightboxImages(product.images)
     setLightboxInitialIndex(index)
     setLightboxOpen(true)
   }
 
+  // Open lightbox for form images
   const openFormImageLightbox = (index) => {
     setLightboxImages(images)
     setLightboxInitialIndex(index)
@@ -165,6 +181,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
         </div>
       )}
 
+      {/* Product Form */}
       <form
         onSubmit={handleSubmit}
         className="mb-8 p-6 rounded-lg"
@@ -214,7 +231,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
         </div>
         <div className="mb-4">
           <label className="block text-sm font-bold mb-2" htmlFor="description">
-            Description
+            Short Description
           </label>
           <textarea
             className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline"
@@ -224,11 +241,19 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
               borderColor: siteTheme.borderColor,
             }}
             id="description"
-            placeholder="Product Description"
+            placeholder="Brief product description (used in cart, orders, etc.)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
+            rows="3"
           />
+        </div>
+        <div className="mb-4">
+          <label className="block text-sm font-bold mb-2">Comprehensive Description</label>
+          <p className="text-sm mb-2 opacity-70">
+            Create a detailed product description with formatting (only shows on product page)
+          </p>
+          <RichTextEditor value={richDescription} onChange={setRichDescription} siteTheme={siteTheme} />
         </div>
         <div className="mb-4">
           <label className="block text-sm font-bold mb-2" htmlFor="images">
@@ -339,6 +364,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
         </div>
       </form>
 
+      {/* Products List */}
       <h2 className="text-2xl font-bold mb-4">Products</h2>
       <button
         onClick={handleSort}
@@ -464,6 +490,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
         </div>
       )}
 
+      {/* Lightbox component */}
       <ImageLightbox
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
