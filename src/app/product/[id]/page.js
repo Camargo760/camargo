@@ -483,9 +483,8 @@ export default function ProductDetail({ params }) {
                   <button
                     key={index}
                     onClick={() => setCurrentImage(index)}
-                    className={`relative h-20 w-20 rounded-md overflow-hidden ${
-                      currentImage === index ? "ring-2" : ""
-                    }`}
+                    className={`relative h-20 w-20 rounded-md overflow-hidden ${currentImage === index ? "ring-2" : ""
+                      }`}
                     style={{
                       backgroundColor: siteTheme.secondaryBgColor,
                       borderColor: siteTheme.borderColor,
@@ -501,6 +500,35 @@ export default function ProductDetail({ params }) {
                     />
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Rich Description Section - ONLY SHOWS HERE */}
+            {product.richDescription && (
+              <div className="mt-12">
+                <div
+                  className="rounded-lg p-8"
+                  style={{
+                    backgroundColor: siteTheme.cardBgColor,
+                    borderColor: siteTheme.borderColor,
+                    borderWidth: "1px",
+                  }}
+                >
+                  <h2
+                    className="text-2xl font-bold mb-6 pb-4 border-b"
+                    style={{
+                      color: siteTheme.textColor,
+                      borderColor: siteTheme.borderColor,
+                    }}
+                  >
+                    DESCRIPTION
+                  </h2>
+                  <div
+                    className="prose prose-lg max-w-none product-description"
+                    style={{ color: siteTheme.textColor }}
+                    dangerouslySetInnerHTML={{ __html: product.richDescription }}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -657,34 +685,98 @@ export default function ProductDetail({ params }) {
           </div>
         </div>
 
-        {/* Rich Description Section - ONLY SHOWS HERE */}
-        {product.richDescription && (
-          <div className="mt-12">
-            <div
-              className="rounded-lg p-8"
-              style={{
-                backgroundColor: siteTheme.cardBgColor,
-                borderColor: siteTheme.borderColor,
-                borderWidth: "1px",
-              }}
-            >
-              <h2
-                className="text-2xl font-bold mb-6 pb-4 border-b"
-                style={{
-                  color: siteTheme.textColor,
-                  borderColor: siteTheme.borderColor,
-                }}
-              >
-                DESCRIPTION
-              </h2>
-              <div
-                className="prose prose-lg max-w-none"
-                style={{ color: siteTheme.textColor }}
-                dangerouslySetInnerHTML={{ __html: product.richDescription }}
-              />
-            </div>
-          </div>
-        )}
+
+        {/* Custom styles for product description lists */}
+        <style jsx>{`
+          .product-description {
+            direction: ltr !important;
+            text-align: left !important;
+            writing-mode: horizontal-tb !important;
+          }
+          
+          .product-description * {
+            direction: ltr !important;
+            unicode-bidi: normal !important;
+          }
+          
+          .product-description ul {
+            list-style-type: disc !important;
+            padding-left: 20px !important;
+            margin-left: 10px !important;
+            margin-bottom: 16px !important;
+            direction: ltr !important;
+          }
+
+          .product-description ol {
+            list-style-type: decimal !important;
+            padding-left: 20px !important;
+            margin-left: 10px !important;
+            margin-bottom: 16px !important;
+            direction: ltr !important;
+          }
+
+          .product-description li {
+            margin-bottom: 8px !important;
+            padding-left: 8px !important;
+            line-height: 1.6 !important;
+            display: list-item !important;
+            direction: ltr !important;
+            text-align: left !important;
+          }
+
+          .product-description ul li {
+            list-style-type: disc !important;
+          }
+
+          .product-description ol li {
+            list-style-type: decimal !important;
+          }
+
+          .product-description li::marker {
+            color: #fff !important;
+            font-weight: bold !important;
+          }
+
+          .product-description li::before {
+            content: "• " !important;
+            color: #fff !important;
+            font-weight: bold !important;
+            margin-right: 8px !important;
+          }
+
+          .product-description ol li::before {
+            content: none !important;
+          }
+
+          .product-description p {
+            margin-bottom: 12px !important;
+            line-height: 1.6 !important;
+            direction: ltr !important;
+            text-align: left !important;
+          }
+
+          .product-description h1,
+          .product-description h2,
+          .product-description h3,
+          .product-description h4,
+          .product-description h5,
+          .product-description h6 {
+            margin-top: 24px !important;
+            margin-bottom: 12px !important;
+            font-weight: bold !important;
+            direction: ltr !important;
+            text-align: left !important;
+          }
+
+          .product-description a {
+            color: #3b82f6 !important;
+            text-decoration: underline !important;
+          }
+
+          .product-description a:hover {
+            color: #1d4ed8 !important;
+          }
+        `}</style>
       </main>
     </div>
   )
