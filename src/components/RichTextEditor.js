@@ -259,7 +259,7 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
 
           {showTextColorPicker && (
             <div
-            className="absolute -translate-x-1/2 mt-1 justify-center flex flex-wrap gap-4 rounded max-w-[150px] min-w-[150px]"
+            className="absolute -translate-x-1/2 mt-1 z-10 justify-center flex flex-wrap gap-4 rounded max-w-[150px] min-w-[150px]"
               style={{
                 backgroundColor: siteTheme.cardBgColor,
                 borderColor: siteTheme.borderColor,
@@ -296,7 +296,7 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
 
           {showBgColorPicker && (
             <div
-              className="absolute -translate-x-1/2 mt-1 justify-center flex flex-wrap gap-4 rounded max-w-[150px] min-w-[150px]"
+              className="absolute -translate-x-1/2 mt-1 z-10 justify-center flex flex-wrap gap-4 rounded max-w-[150px] min-w-[150px]"
               style={{
                 backgroundColor: siteTheme.cardBgColor,
                 borderColor: siteTheme.borderColor,
