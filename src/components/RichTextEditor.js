@@ -121,6 +121,15 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
     const listElement = document.createElement(ordered ? "ol" : "ul")
     const listItem = document.createElement("li")
 
+    // Add bullet point styling
+    listElement.style.listStyleType = ordered ? "decimal" : "disc"
+    listElement.style.paddingLeft = "20px"
+    listElement.style.marginLeft = "10px"
+    listItem.style.display = "list-item"
+    listItem.style.listStyleType = ordered ? "decimal" : "disc"
+    listItem.style.marginBottom = "4px"
+    listItem.style.paddingLeft = "5px"
+
     if (range.toString()) {
       listItem.innerHTML = range.toString()
       range.deleteContents()
@@ -130,6 +139,13 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
 
     listElement.appendChild(listItem)
     range.insertNode(listElement)
+
+    // Position cursor at end of list item
+    const newRange = document.createRange()
+    newRange.selectNodeContents(listItem)
+    newRange.collapse(false)
+    selection.removeAllRanges()
+    selection.addRange(newRange)
 
     handleInput()
   }
@@ -243,7 +259,7 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
 
           {showTextColorPicker && (
             <div
-              className="absolute top-10 left-0 z-10 rounded border grid grid-cols-6"
+            className="absolute -translate-x-1/2 mt-1 justify-center flex flex-wrap gap-4 rounded max-w-[150px] min-w-[150px]"
               style={{
                 backgroundColor: siteTheme.cardBgColor,
                 borderColor: siteTheme.borderColor,
@@ -257,7 +273,7 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
                     applyFormat("foreColor", color)
                     setShowTextColorPicker(false)
                   }}
-                  className="w-6 h-6 rounded border"
+                  className="w-6 h-6 mt-1 mb-1 rounded border"
                   style={{ backgroundColor: color, borderColor: siteTheme.borderColor }}
                   title={color}
                 />
@@ -280,7 +296,7 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
 
           {showBgColorPicker && (
             <div
-              className="absolute top-10 left-0 z-10 p-2 rounded shadow-lg border grid grid-cols-6 gap-1"
+              className="absolute -translate-x-1/2 mt-1 justify-center flex flex-wrap gap-4 rounded max-w-[150px] min-w-[150px]"
               style={{
                 backgroundColor: siteTheme.cardBgColor,
                 borderColor: siteTheme.borderColor,
@@ -294,7 +310,7 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
                     applyFormat("backColor", color)
                     setShowBgColorPicker(false)
                   }}
-                  className="w-6 h-6 rounded border"
+                  className="w-6 h-6 mt-1 mb-1 rounded border"
                   style={{ backgroundColor: color, borderColor: siteTheme.borderColor }}
                   title={color}
                 />
@@ -364,10 +380,13 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
         contentEditable
         onInput={handleInput}
         onKeyDown={handleKeyDown}
-        className="min-h-[200px] p-4 focus:outline-none"
+        className="min-h-[200px] p-4 focus:outline-none rich-text-editor"
         style={{
           color: siteTheme.textColor,
           backgroundColor: siteTheme.secondaryBgColor,
+          direction: "ltr",
+          textAlign: "left",
+          writingMode: "horizontal-tb",
         }}
         placeholder="Write your comprehensive product description here..."
       />
@@ -382,6 +401,75 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
           }}
         />
       )}
+
+      {/* Custom styles for the editor content */}
+      <style jsx global>{`
+        .rich-text-editor {
+          direction: ltr !important;
+          text-align: left !important;
+          writing-mode: horizontal-tb !important;
+          unicode-bidi: normal !important;
+        }
+        
+        .rich-text-editor * {
+          direction: ltr !important;
+          unicode-bidi: normal !important;
+        }
+        
+        .rich-text-editor ul {
+          list-style-type: disc !important;
+          padding-left: 20px !important;
+          margin-left: 10px !important;
+          margin-bottom: 16px !important;
+          direction: ltr !important;
+        }
+        
+        .rich-text-editor ol {
+          list-style-type: decimal !important;
+          padding-left: 20px !important;
+          margin-left: 10px !important;
+          margin-bottom: 16px !important;
+          direction: ltr !important;
+        }
+        
+        .rich-text-editor li {
+          margin-bottom: 8px !important;
+          padding-left: 8px !important;
+          line-height: 1.6 !important;
+          display: list-item !important;
+          direction: ltr !important;
+          text-align: left !important;
+        }
+        
+        .rich-text-editor ul li {
+          list-style-type: disc !important;
+        }
+        
+        .rich-text-editor ol li {
+          list-style-type: decimal !important;
+        }
+        
+        .rich-text-editor li::marker {
+          color: #fff !important;
+          font-weight: bold !important;
+        }
+        
+        .rich-text-editor p {
+          margin-bottom: 12px !important;
+          line-height: 1.6 !important;
+          direction: ltr !important;
+          text-align: left !important;
+        }
+        
+        .rich-text-editor a {
+          color: #3b82f6 !important;
+          text-decoration: underline !important;
+        }
+        
+        .rich-text-editor a:hover {
+          color: #1d4ed8 !important;
+        }
+      `}</style>
     </div>
   )
 }
