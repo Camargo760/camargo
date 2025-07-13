@@ -11,6 +11,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
   const [price, setPrice] = useState("")
   const [description, setDescription] = useState("")
   const [richDescription, setRichDescription] = useState("")
+  const [htmlCssCode, setHtmlCssCode] = useState("")
   const [images, setImages] = useState([])
   const [category, setCategory] = useState("")
   const [availableColors, setAvailableColors] = useState("")
@@ -31,6 +32,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
       price: Number.parseFloat(price),
       description,
       richDescription,
+      htmlCssCode,
       images,
       category,
       availableColors: availableColors.split(",").map((color) => color.trim()),
@@ -54,6 +56,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
       setPrice("")
       setDescription("")
       setRichDescription("")
+      setHtmlCssCode("")
       setImages([])
       setCategory("")
       setAvailableColors("")
@@ -93,6 +96,7 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
     setPrice(product.price.toString())
     setDescription(product.description)
     setRichDescription(product.richDescription || "")
+    setHtmlCssCode(product.htmlCssCode || "")
     setImages(product.images || [])
     setCategory(product.category)
     setAvailableColors(product.availableColors.join(", "))
@@ -256,6 +260,40 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
           <RichTextEditor value={richDescription} onChange={setRichDescription} siteTheme={siteTheme} />
         </div>
         <div className="mb-4">
+          <label className="block text-sm font-bold mb-2" htmlFor="htmlCssCode">
+            Custom HTML/CSS Code
+          </label>
+          <p className="text-sm mb-2 opacity-70">
+            Add custom HTML and CSS code for advanced product presentation (displays below description on product page)
+          </p>
+          <textarea
+            className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow-outline font-mono text-sm"
+            style={{
+              backgroundColor: siteTheme.secondaryBgColor,
+              color: siteTheme.textColor,
+              borderColor: siteTheme.borderColor,
+            }}
+            id="htmlCssCode"
+            placeholder="Paste your HTML and CSS code here..."
+            value={htmlCssCode}
+            onChange={(e) => setHtmlCssCode(e.target.value)}
+            rows="10"
+          />
+          {htmlCssCode && (
+            <div className="mt-2">
+              <p className="text-sm font-bold mb-2">Preview:</p>
+              <div
+                className="border rounded p-4 max-h-96 overflow-auto"
+                style={{
+                  backgroundColor: siteTheme.secondaryBgColor,
+                  borderColor: siteTheme.borderColor,
+                }}
+                dangerouslySetInnerHTML={{ __html: htmlCssCode }}
+              />
+            </div>
+          )}
+        </div>
+        <div className="mb-4">
           <label className="block text-sm font-bold mb-2" htmlFor="images">
             Images
           </label>
@@ -410,6 +448,12 @@ export default function ProductManagement({ siteTheme, fetchProducts, products, 
                   {product.published ? "Published" : "Not Published"}
                 </span>
               </p>
+              {product.htmlCssCode && (
+                <p className="text-sm mb-2">
+                  <span className="font-semibold">Custom HTML/CSS:</span>{" "}
+                  <span style={{ color: "#10B981" }}>✓ Added</span>
+                </p>
+              )}
               {product.images && product.images.length > 0 && (
                 <div className="mb-2 relative">
                   {product.images.length > 3 && (
