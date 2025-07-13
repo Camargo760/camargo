@@ -302,6 +302,119 @@ export default function ProductDetail({ params }) {
     }
   }
 
+  // Generate unique ID for this component instance to avoid style conflicts
+  const uniqueId = `custom-html-${id}`
+
+  // Function to process custom HTML/CSS and make it scoped
+  const processCustomHTML = (htmlContent) => {
+    if (!htmlContent) return ""
+
+    // Extract style tags and scope them
+    const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi
+    let processedHTML = htmlContent
+
+    // Replace style tags with scoped versions
+    processedHTML = processedHTML.replace(styleRegex, (match, cssContent) => {
+      // Clean up the CSS content
+      let cleanCSS = cssContent.trim()
+
+      // Handle CSS rules and scope them properly
+      const scopedCSS = cleanCSS
+        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments first
+        .split('}')
+        .map((rule) => {
+          if (!rule.trim()) return ''
+
+          const trimmedRule = rule.trim()
+          if (!trimmedRule.includes('{')) return trimmedRule
+
+          const [selector, ...declarations] = trimmedRule.split('{')
+          const cleanSelector = selector.trim()
+          const declarationBlock = declarations.join('{').trim()
+
+          // Handle special CSS rules that shouldn't be scoped
+          if (cleanSelector.startsWith('@keyframes')) {
+            // Make keyframes unique to this container
+            const keyframeName = cleanSelector.replace('@keyframes', '').trim()
+            return `@keyframes ${uniqueId}-${keyframeName} { ${declarationBlock} }`
+          }
+
+          if (cleanSelector.startsWith('@media')) {
+            // For media queries, we need to scope the inner rules
+            const mediaRule = declarationBlock
+            const scopedMediaRule = mediaRule.replace(/([^{}]+)\s*\{([^{}]*)\}/g, (innerMatch, innerSelector, innerDeclarations) => {
+              const cleanInnerSelector = innerSelector.trim()
+              if (cleanInnerSelector.startsWith('@')) return innerMatch
+
+              // Scope each selector in the media query
+              const scopedInnerSelectors = cleanInnerSelector
+                .split(',')
+                .map(s => {
+                  const trimmedS = s.trim()
+                  // Don't scope if it's already scoped or if it's a special selector
+                  if (trimmedS.includes(`#${uniqueId}`) || trimmedS.startsWith(':root') || trimmedS.startsWith('*')) {
+                    return trimmedS
+                  }
+                  return `#${uniqueId} ${trimmedS}`
+                })
+                .join(', ')
+
+              return `${scopedInnerSelectors} { ${innerDeclarations} }`
+            })
+
+            return `${cleanSelector} { ${scopedMediaRule} }`
+          }
+
+          // Handle other @ rules (like @font-face, @import, etc.)
+          if (cleanSelector.startsWith('@')) {
+            return `${cleanSelector} { ${declarationBlock} }`
+          }
+
+          // For regular selectors, scope them to the container
+          const scopedSelectors = cleanSelector
+            .split(',')
+            .map((s) => {
+              const trimmedS = s.trim()
+
+              // Don't scope if it's already scoped
+              if (trimmedS.includes(`#${uniqueId}`)) {
+                return trimmedS
+              }
+
+              // Don't scope universal selectors, :root, html, body
+              if (trimmedS === '*' || trimmedS === ':root' || trimmedS === 'html' || trimmedS === 'body') {
+                return `#${uniqueId}`
+              }
+
+              // Handle pseudo-selectors properly
+              if (trimmedS.startsWith(':')) {
+                return `#${uniqueId}${trimmedS}`
+              }
+
+              return `#${uniqueId} ${trimmedS}`
+            })
+            .join(', ')
+
+          return `${scopedSelectors} { ${declarationBlock} }`
+        })
+        .filter(rule => rule.trim()) // Remove empty rules
+        .join(' } ') + (cleanCSS ? ' }' : '')
+
+      // Update keyframe references in the scoped CSS
+      const finalCSS = scopedCSS.replace(
+        /animation(-name)?:\s*([^;,\s]+)/g,
+        (match, prop, animationName) => {
+          const cleanAnimationName = animationName.trim()
+          return match.replace(cleanAnimationName, `${uniqueId}-${cleanAnimationName}`)
+        }
+      )
+
+      return `<style>${finalCSS}</style>`
+    })
+
+    return processedHTML
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor }}>
@@ -483,9 +596,8 @@ export default function ProductDetail({ params }) {
                   <button
                     key={index}
                     onClick={() => setCurrentImage(index)}
-                    className={`relative h-20 w-20 rounded-md overflow-hidden ${
-                      currentImage === index ? "ring-2" : ""
-                    }`}
+                    className={`relative h-20 w-20 rounded-md overflow-hidden ${currentImage === index ? "ring-2" : ""
+                      }`}
                     style={{
                       backgroundColor: siteTheme.secondaryBgColor,
                       borderColor: siteTheme.borderColor,
@@ -503,60 +615,6 @@ export default function ProductDetail({ params }) {
                 ))}
               </div>
             )}
-
-                    {/* Rich Description Section - ONLY SHOWS HERE */}
-        {product.richDescription && (
-          <div className="mt-12">
-            <div
-              className="rounded-lg p-8"
-              style={{
-                backgroundColor: siteTheme.cardBgColor,
-                borderColor: siteTheme.borderColor,
-                borderWidth: "1px",
-              }}
-            >
-              <h2
-                className="text-2xl font-bold mb-6 pb-4 border-b"
-                style={{
-                  color: siteTheme.textColor,
-                  borderColor: siteTheme.borderColor,
-                }}
-              >
-                DESCRIPTION
-              </h2>
-              <div
-                className="prose prose-lg max-w-none product-description"
-                style={{ color: siteTheme.textColor }}
-                dangerouslySetInnerHTML={{ __html: product.richDescription }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Custom HTML/CSS Section - NEW SECTION */}
-        {product.htmlCssCode && (
-          <div className="mt-12">
-            <div
-              className="rounded-lg p-8"
-              style={{
-                backgroundColor: siteTheme.cardBgColor,
-                borderColor: siteTheme.borderColor,
-                borderWidth: "1px",
-              }}
-            >
-              <h2
-                className="text-2xl font-bold mb-6 pb-4 border-b"
-                style={{
-                  color: siteTheme.textColor,
-                  borderColor: siteTheme.borderColor,
-                }}
-              >
-                ADDITIONAL DETAILS
-              </h2>
-              <div className="custom-html-content" dangerouslySetInnerHTML={{ __html: product.htmlCssCode }} />
-            </div>
-          </div>
-        )}
           </div>
 
           {/* Product Details */}
@@ -566,7 +624,6 @@ export default function ProductDetail({ params }) {
               backgroundColor: siteTheme.cardBgColor,
               borderColor: siteTheme.borderColor,
               borderWidth: "1px",
-              maxHeight: "max-content",
             }}
           >
             <h1 className="text-3xl font-bold mb-2" style={{ color: siteTheme.textColor }}>
@@ -712,6 +769,70 @@ export default function ProductDetail({ params }) {
           </div>
         </div>
 
+        {/* Rich Description Section - ONLY SHOWS HERE */}
+        {product.richDescription && (
+          <div className="mt-12">
+            <div
+              className="rounded-lg p-8"
+              style={{
+                backgroundColor: siteTheme.cardBgColor,
+                borderColor: siteTheme.borderColor,
+                borderWidth: "1px",
+              }}
+            >
+              <h2
+                className="text-2xl font-bold mb-6 pb-4 border-b"
+                style={{
+                  color: siteTheme.textColor,
+                  borderColor: siteTheme.borderColor,
+                }}
+              >
+                DESCRIPTION
+              </h2>
+              <div
+                className="prose prose-lg max-w-none product-description"
+                style={{ color: siteTheme.textColor }}
+                dangerouslySetInnerHTML={{ __html: product.richDescription }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Custom HTML/CSS Section - PROPERLY SCOPED AND ISOLATED */}
+        {product.htmlCssCode && (
+          <div className="mt-12">
+            <div
+              className="rounded-lg p-4 sm:p-8"
+              style={{
+                backgroundColor: siteTheme.cardBgColor,
+                borderColor: siteTheme.borderColor,
+                borderWidth: "1px",
+              }}
+            >
+              <h2
+                className="text-2xl font-bold mb-6 pb-4 border-b"
+                style={{
+                  color: siteTheme.textColor,
+                  borderColor: siteTheme.borderColor,
+                }}
+              >
+                ADDITIONAL DETAILS
+              </h2>
+
+              {/* Custom HTML with properly scoped styles and isolation */}
+              <div
+                id={uniqueId}
+                className="custom-html-container"
+                style={{
+                  isolation: 'isolate', // CSS isolation
+                  contain: 'layout style', // CSS containment
+                  overflow: 'hidden', // Prevent overflow
+                }}
+                dangerouslySetInnerHTML={{ __html: processCustomHTML(product.htmlCssCode) }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Custom styles for product description lists */}
         <style jsx>{`
@@ -804,14 +925,47 @@ export default function ProductDetail({ params }) {
             color: #1d4ed8 !important;
           }
 
-          .custom-html-content {
-            width: 100%;
-            overflow-x: auto;
-          }
+          /* Container for custom HTML - basic styling */
 
-          .custom-html-content * {
-            max-width: 100%;
-          }
+          /* Container for custom HTML - enhanced isolation and styling */
+.custom-html-container {
+  width: 100%;
+  overflow-x: auto;
+  position: relative;
+  isolation: isolate;
+  contain: layout style;
+  z-index: 1;
+}
+
+.custom-html-container * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Reset any potentially problematic styles within the container */
+.custom-html-container {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+/* Prevent global styles from leaking out */
+.custom-html-container > * {
+  all: revert;
+}
+
+/* Ensure the container doesn't affect parent elements */
+.custom-html-container::before,
+.custom-html-container::after {
+  content: none;
+}
+
+/* Additional safety for animations and transitions */
+.custom-html-container * {
+  animation-duration: inherit;
+  transition-duration: inherit;
+}
         `}</style>
       </main>
     </div>
