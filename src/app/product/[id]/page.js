@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Header from "../../../components/Header"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import LoadingSpinner from "@/components/LoadingSpinner"
 
 export default function ProductDetail({ params }) {
   const [product, setProduct] = useState(null)
@@ -291,28 +290,30 @@ export default function ProductDetail({ params }) {
     router.push(`/checkout/${id}?color=${encodeURIComponent(selectedColor)}&size=${selectedSize}&quantity=${quantity}`)
   }
 
-  // Fixed navigation functions
-  const nextImage = (e) => {
-    e.stopPropagation() // Prevent triggering zoom/pan events
+  const nextImage = () => {
     if (product?.images && product.images.length > 1) {
-      setCurrentImage((prev) => (prev + 1) % product.images.length)
+      setCurrentImage((prev) => (prev === product.images.length - 1 ? 0 : prev + 1))
     }
   }
 
-  const prevImage = (e) => {
-    e.stopPropagation() // Prevent triggering zoom/pan events
+  const prevImage = () => {
     if (product?.images && product.images.length > 1) {
-      setCurrentImage((prev) => (prev - 1 + product.images.length) % product.images.length)
+      setCurrentImage((prev) => (prev === 0 ? product.images.length - 1 : prev - 1))
     }
-  }
-
-  // Handle thumbnail click
-  const handleThumbnailClick = (index) => {
-    setCurrentImage(index)
   }
 
   if (loading) {
-    return <LoadingSpinner siteTheme={siteTheme} />
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor }}>
+        <Header />
+        <div className="container mx-auto py-8 px-4 flex justify-center items-center h-64">
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2"
+            style={{ borderColor: siteTheme.accentColor }}
+          ></div>
+        </div>
+      </div>
+    )
   }
 
   if (error || !product) {
@@ -383,45 +384,23 @@ export default function ProductDetail({ params }) {
                       />
                     </div>
 
-                    {/* Navigation buttons - only show when not zoomed and multiple images exist */}
                     {product.images.length > 1 && zoomLevel === 1 && (
                       <>
                         <button
                           onClick={prevImage}
-                          className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-2 transition-all duration-200 z-10"
+                          className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 rounded-full p-2"
                           aria-label="Previous image"
-                          style={{
-                            cursor: "pointer",
-                            userSelect: "none",
-                          }}
                         >
                           <ChevronLeft size={24} color="white" />
                         </button>
                         <button
                           onClick={nextImage}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-2 transition-all duration-200 z-10"
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 rounded-full p-2"
                           aria-label="Next image"
-                          style={{
-                            cursor: "pointer",
-                            userSelect: "none",
-                          }}
                         >
                           <ChevronRight size={24} color="white" />
                         </button>
                       </>
-                    )}
-
-                    {/* Image counter */}
-                    {product.images.length > 1 && (
-                      <div
-                        className="absolute bottom-4 left-4 px-2 py-1 rounded text-sm"
-                        style={{
-                          backgroundColor: "rgba(0, 0, 0, 0.7)",
-                          color: "white",
-                        }}
-                      >
-                        {currentImage + 1} / {product.images.length}
-                      </div>
                     )}
                   </>
                 ) : (
@@ -499,13 +478,14 @@ export default function ProductDetail({ params }) {
 
             {/* Image Thumbnails */}
             {product.images && product.images.length > 1 && (
-              <div className="flex space-x-2 overflow-x-auto pb-2">
+              <div className="flex space-x-2 overflow-x-auto">
                 {product.images.map((image, index) => (
                   <button
                     key={index}
-                    onClick={() => handleThumbnailClick(index)}
-                    className={`relative h-20 w-20 rounded-md overflow-hidden flex-shrink-0 transition-all duration-200 ${currentImage === index ? "ring-2 opacity-100" : "opacity-70 hover:opacity-90"
-                      }`}
+                    onClick={() => setCurrentImage(index)}
+                    className={`relative h-20 w-20 rounded-md overflow-hidden ${
+                      currentImage === index ? "ring-2" : ""
+                    }`}
                     style={{
                       backgroundColor: siteTheme.secondaryBgColor,
                       borderColor: siteTheme.borderColor,
@@ -524,34 +504,59 @@ export default function ProductDetail({ params }) {
               </div>
             )}
 
-            {/* Rich Description Section - ONLY SHOWS HERE */}
-            {product.richDescription && (
-              <div className="mt-12">
-                <div
-                  className="rounded-lg p-8"
-                  style={{
-                    backgroundColor: siteTheme.cardBgColor,
-                    borderColor: siteTheme.borderColor,
-                    borderWidth: "1px",
-                  }}
-                >
-                  <h2
-                    className="text-2xl font-bold mb-6 pb-4 border-b"
-                    style={{
-                      color: siteTheme.textColor,
-                      borderColor: siteTheme.borderColor,
-                    }}
-                  >
-                    DESCRIPTION
-                  </h2>
-                  <div
-                    className="prose prose-lg max-w-none product-description"
-                    style={{ color: siteTheme.textColor }}
-                    dangerouslySetInnerHTML={{ __html: product.richDescription }}
-                  />
-                </div>
-              </div>
-            )}
+                    {/* Rich Description Section - ONLY SHOWS HERE */}
+        {product.richDescription && (
+          <div className="mt-12">
+            <div
+              className="rounded-lg p-8"
+              style={{
+                backgroundColor: siteTheme.cardBgColor,
+                borderColor: siteTheme.borderColor,
+                borderWidth: "1px",
+              }}
+            >
+              <h2
+                className="text-2xl font-bold mb-6 pb-4 border-b"
+                style={{
+                  color: siteTheme.textColor,
+                  borderColor: siteTheme.borderColor,
+                }}
+              >
+                DESCRIPTION
+              </h2>
+              <div
+                className="prose prose-lg max-w-none product-description"
+                style={{ color: siteTheme.textColor }}
+                dangerouslySetInnerHTML={{ __html: product.richDescription }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Custom HTML/CSS Section - NEW SECTION */}
+        {product.htmlCssCode && (
+          <div className="mt-12">
+            <div
+              className="rounded-lg p-8"
+              style={{
+                backgroundColor: siteTheme.cardBgColor,
+                borderColor: siteTheme.borderColor,
+                borderWidth: "1px",
+              }}
+            >
+              <h2
+                className="text-2xl font-bold mb-6 pb-4 border-b"
+                style={{
+                  color: siteTheme.textColor,
+                  borderColor: siteTheme.borderColor,
+                }}
+              >
+                ADDITIONAL DETAILS
+              </h2>
+              <div className="custom-html-content" dangerouslySetInnerHTML={{ __html: product.htmlCssCode }} />
+            </div>
+          </div>
+        )}
           </div>
 
           {/* Product Details */}
@@ -570,12 +575,10 @@ export default function ProductDetail({ params }) {
             <p className="text-2xl font-bold mb-4" style={{ color: siteTheme.accentColor }}>
               ${product.price.toFixed(2)}
             </p>
-            <p className="text-sm mb-6" style={{ color: siteTheme.textColor }}>
-              Category: <span className="font-semibold">{product.category || "Uncategorized"}</span>
-            </p>
             <p className="mb-6" style={{ color: siteTheme.textColor }}>
               {product.description || "No description available"}
             </p>
+
             {/* Color Selection */}
             {product.availableColors && product.availableColors.length > 0 && (
               <div className="mb-6">
@@ -686,6 +689,26 @@ export default function ProductDetail({ params }) {
                 Buy Now
               </button>
             </div>
+
+            {/* Additional Info */}
+            <div className="mt-8">
+              <p className="text-sm" style={{ color: siteTheme.textColor }}>
+                Category: <span className="font-semibold">{product.category || "Uncategorized"}</span>
+              </p>
+              {product.material && (
+                <p className="text-sm mt-1" style={{ color: siteTheme.textColor }}>
+                  Material: <span className="font-semibold">{product.material}</span>
+                </p>
+              )}
+              {product.dimensions && (
+                <p className="text-sm mt-1" style={{ color: siteTheme.textColor }}>
+                  Dimensions: <span className="font-semibold">{product.dimensions}</span>
+                </p>
+              )}
+              <p className="text-sm mt-1" style={{ color: siteTheme.textColor }}>
+                SKU: <span className="font-semibold">{product._id.substring(0, 8).toUpperCase()}</span>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -779,6 +802,15 @@ export default function ProductDetail({ params }) {
 
           .product-description a:hover {
             color: #1d4ed8 !important;
+          }
+
+          .custom-html-content {
+            width: 100%;
+            overflow-x: auto;
+          }
+
+          .custom-html-content * {
+            max-width: 100%;
           }
         `}</style>
       </main>
