@@ -53,6 +53,11 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
   }
 
   const applyFormat = (command, value = null) => {
+    // Focus the editor first
+    if (editorRef.current) {
+      editorRef.current.focus()
+    }
+
     const selection = window.getSelection()
     if (!selection.rangeCount) return
 
@@ -62,50 +67,91 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
       const span = document.createElement("span")
       span.style.fontWeight = "bold"
       try {
-        range.surroundContents(span)
+        if (!selection.isCollapsed) {
+          range.surroundContents(span)
+        } else {
+          span.innerHTML = "Bold text"
+          range.insertNode(span)
+          // Select the inserted text
+          const newRange = document.createRange()
+          newRange.selectNodeContents(span)
+          selection.removeAllRanges()
+          selection.addRange(newRange)
+        }
       } catch (e) {
-        span.innerHTML = range.toString()
-        range.deleteContents()
+        span.innerHTML = range.extractContents()
         range.insertNode(span)
       }
     } else if (command === "italic") {
       const span = document.createElement("span")
       span.style.fontStyle = "italic"
       try {
-        range.surroundContents(span)
+        if (!selection.isCollapsed) {
+          range.surroundContents(span)
+        } else {
+          span.innerHTML = "Italic text"
+          range.insertNode(span)
+          const newRange = document.createRange()
+          newRange.selectNodeContents(span)
+          selection.removeAllRanges()
+          selection.addRange(newRange)
+        }
       } catch (e) {
-        span.innerHTML = range.toString()
-        range.deleteContents()
+        span.innerHTML = range.extractContents()
         range.insertNode(span)
       }
     } else if (command === "underline") {
       const span = document.createElement("span")
       span.style.textDecoration = "underline"
       try {
-        range.surroundContents(span)
+        if (!selection.isCollapsed) {
+          range.surroundContents(span)
+        } else {
+          span.innerHTML = "Underlined text"
+          range.insertNode(span)
+          const newRange = document.createRange()
+          newRange.selectNodeContents(span)
+          selection.removeAllRanges()
+          selection.addRange(newRange)
+        }
       } catch (e) {
-        span.innerHTML = range.toString()
-        range.deleteContents()
+        span.innerHTML = range.extractContents()
         range.insertNode(span)
       }
     } else if (command === "foreColor") {
       const span = document.createElement("span")
       span.style.color = value
       try {
-        range.surroundContents(span)
+        if (!selection.isCollapsed) {
+          range.surroundContents(span)
+        } else {
+          span.innerHTML = "Colored text"
+          range.insertNode(span)
+          const newRange = document.createRange()
+          newRange.selectNodeContents(span)
+          selection.removeAllRanges()
+          selection.addRange(newRange)
+        }
       } catch (e) {
-        span.innerHTML = range.toString()
-        range.deleteContents()
+        span.innerHTML = range.extractContents()
         range.insertNode(span)
       }
     } else if (command === "backColor") {
       const span = document.createElement("span")
       span.style.backgroundColor = value
       try {
-        range.surroundContents(span)
+        if (!selection.isCollapsed) {
+          range.surroundContents(span)
+        } else {
+          span.innerHTML = "Highlighted text"
+          range.insertNode(span)
+          const newRange = document.createRange()
+          newRange.selectNodeContents(span)
+          selection.removeAllRanges()
+          selection.addRange(newRange)
+        }
       } catch (e) {
-        span.innerHTML = range.toString()
-        range.deleteContents()
+        span.innerHTML = range.extractContents()
         range.insertNode(span)
       }
     }
@@ -196,7 +242,6 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
           newRange.collapse(true)
           selection.removeAllRanges()
           selection.addRange(newRange)
-
           handleInput()
         }
       }
@@ -222,7 +267,6 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
         >
           <Bold size={16} />
         </button>
-
         <button
           type="button"
           onClick={() => applyFormat("italic")}
@@ -232,7 +276,6 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
         >
           <Italic size={16} />
         </button>
-
         <button
           type="button"
           onClick={() => applyFormat("underline")}
@@ -256,28 +299,30 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
           >
             <Type size={16} />
           </button>
-
           {showTextColorPicker && (
             <div
-            className="absolute -translate-x-1/2 mt-1 z-10 justify-center flex flex-wrap gap-4 rounded max-w-[150px] min-w-[150px]"
+              className="absolute left-1/2 transform -translate-x-1/2 mt-1 p-3 rounded-lg shadow-lg border z-50"
               style={{
                 backgroundColor: siteTheme.cardBgColor,
                 borderColor: siteTheme.borderColor,
+                minWidth: "180px",
               }}
             >
-              {colors.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() => {
-                    applyFormat("foreColor", color)
-                    setShowTextColorPicker(false)
-                  }}
-                  className="w-6 h-6 mt-1 mb-1 rounded border"
-                  style={{ backgroundColor: color, borderColor: siteTheme.borderColor }}
-                  title={color}
-                />
-              ))}
+              <div className="grid grid-cols-6 gap-2">
+                {colors.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => {
+                      applyFormat("foreColor", color)
+                      setShowTextColorPicker(false)
+                    }}
+                    className="w-6 h-6 rounded border hover:scale-110 transition-transform"
+                    style={{ backgroundColor: color, borderColor: siteTheme.borderColor }}
+                    title={color}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -293,28 +338,30 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
           >
             <Palette size={16} />
           </button>
-
           {showBgColorPicker && (
             <div
-              className="absolute -translate-x-1/2 mt-1 z-10 justify-center flex flex-wrap gap-4 rounded max-w-[150px] min-w-[150px]"
+              className="absolute left-1/2 transform -translate-x-1/2 mt-1 p-3 rounded-lg shadow-lg border z-50"
               style={{
                 backgroundColor: siteTheme.cardBgColor,
                 borderColor: siteTheme.borderColor,
+                minWidth: "180px",
               }}
             >
-              {colors.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() => {
-                    applyFormat("backColor", color)
-                    setShowBgColorPicker(false)
-                  }}
-                  className="w-6 h-6 mt-1 mb-1 rounded border"
-                  style={{ backgroundColor: color, borderColor: siteTheme.borderColor }}
-                  title={color}
-                />
-              ))}
+              <div className="grid grid-cols-6 gap-2">
+                {colors.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => {
+                      applyFormat("backColor", color)
+                      setShowBgColorPicker(false)
+                    }}
+                    className="w-6 h-6 rounded border hover:scale-110 transition-transform"
+                    style={{ backgroundColor: color, borderColor: siteTheme.borderColor }}
+                    title={color}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -330,7 +377,6 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
         >
           <List size={16} />
         </button>
-
         <button
           type="button"
           onClick={() => insertList(true)}
@@ -352,7 +398,6 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
         >
           <AlignLeft size={16} />
         </button>
-
         <button
           type="button"
           onClick={() => setAlignment("center")}
@@ -362,7 +407,6 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
         >
           <AlignCenter size={16} />
         </button>
-
         <button
           type="button"
           onClick={() => setAlignment("right")}
@@ -394,7 +438,7 @@ export default function RichTextEditor({ value, onChange, siteTheme }) {
       {/* Click outside to close color pickers */}
       {(showTextColorPicker || showBgColorPicker) && (
         <div
-          className="fixed inset-0 z-5"
+          className="fixed inset-0 z-40"
           onClick={() => {
             setShowTextColorPicker(false)
             setShowBgColorPicker(false)
