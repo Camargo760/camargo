@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import Header from "../components/Header"
+// import Header from "../components/Header"
 
 export default function Home() {
   // Site theme (static)
@@ -55,7 +55,7 @@ export default function Home() {
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}
     >
-      <Header />
+      // <Header />
 
       <main className="flex-grow">
         {/* Hero Section */}
