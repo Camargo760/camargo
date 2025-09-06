@@ -55,7 +55,7 @@ export default function Home() {
       className="min-h-screen flex flex-col"
       style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}
     >
-      // <Header />
+{/* <Header /> */}
 
       <main className="flex-grow">
         {/* Hero Section */}
