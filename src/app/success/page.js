@@ -1,345 +1,117 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
-import Header from "../../components/Header"
 import Link from "next/link"
 import Image from "next/image"
-import LoadingSpinner from "@/components/LoadingSpinner"
+import Header from "../components/Header"
 
-function SuccessContent() {
-  const [orderDetails, setOrderDetails] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [siteTheme, setSiteTheme] = useState({
+export default function Home() {
+  // Site theme (static)
+  const siteTheme = {
     bgColor: "#0a0a0a",
     cardBgColor: "#1a1a1a",
     accentColor: "#ff3e00",
     textColor: "#f0f0f0",
     secondaryBgColor: "#2a2a2a",
     borderColor: "#333",
-  })
-  const searchParams = useSearchParams()
-
-  useEffect(() => {
-    const fetchSiteTheme = async () => {
-      try {
-        const res = await fetch("/api/site-theme")
-        if (res.ok) {
-          const data = await res.json()
-          if (data.theme) {
-            setSiteTheme(data.theme)
-          }
-        }
-      } catch (err) {
-
-      }
-    }
-
-    fetchSiteTheme()
-
-    const fetchOrderDetails = async () => {
-      const sessionId = searchParams.get("session_id")
-      const orderId = searchParams.get("order_id")
-      const paymentMethod = searchParams.get("payment_method")
-
-      if (!sessionId && !orderId) {
-        setError("No order information provided")
-        setLoading(false)
-        return
-      }
-
-      try {
-        let endpoint
-        if (sessionId) {
-          endpoint = `/api/order-details?session_id=${sessionId}`
-        } else if (orderId) {
-          endpoint = `/api/order-details?order_id=${orderId}&payment_method=${paymentMethod}`
-        }
-
-        const res = await fetch(endpoint)
-
-
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}))
-          throw new Error(errorData.error || "Failed to fetch order details")
-        }
-
-        const data = await res.json()
-        setOrderDetails(data)
-      } catch (err) {
-        setError(err.message || "Failed to fetch order details. Please try again later.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (searchParams.get("session_id") || searchParams.get("order_id")) {
-      fetchOrderDetails()
-    }
-  }, [searchParams])
-
-
-  if (loading) {
-    return (<LoadingSpinner siteTheme={siteTheme} />)
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
-        <Header />
-        <div className="container mx-auto py-16 px-4">
-          <div className="text-center text-lg font-medium py-8" style={{ color: "#ef4444" }}>
-            Error: {error}
-          </div>
-        </div>
-      </div>
-    )
+  // Hero content (static)
+  const homeContent = {
+    backgroundImage: "/desktop-alien-bg.jpg",
+    backgroundImageMobile: "/mobile-alien-bg.jpg",
+    mainText: "Camargo's World",
+    subText: "Where we make your apparel possible.",
+    textStyles: {
+      mainTextSize: "text-4xl md:text-6xl",
+      mainTextColor: "text-white",
+      mainTextFont: "font-bold",
+      subtextSize: "text-xl md:text-2xl",
+      subtextColor: "text-white",
+      subtextFont: "font-normal",
+    },
   }
 
-  if (!orderDetails) {
-    return (
-      <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
-        <Header />
-        <div className="container mx-auto py-16 px-4">
-          <div className="text-center text-lg font-medium py-8" style={{ color: "#ef4444" }}>
-            No order details found.
-          </div>
-        </div>
-      </div>
-    )
-  }
+  // Check if mobile
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768
+
+  // Destructure textStyles
+  const {
+    mainTextSize,
+    mainTextColor,
+    mainTextFont,
+    subtextSize,
+    subtextColor,
+    subtextFont,
+  } = homeContent.textStyles
+
+  // Choose background image
+  const backgroundImage =
+    isMobile && homeContent.backgroundImageMobile
+      ? homeContent.backgroundImageMobile
+      : homeContent.backgroundImage
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: siteTheme.bgColor, color: siteTheme.textColor }}
+    >
       <Header />
-      <main className="container mx-auto py-16 px-4 md:px-8">
-        <h1 className="text-3xl font-bold mb-8 text-center" style={{ color: siteTheme.accentColor }}>
-          Thank You for Your Order!
-        </h1>
-        <div
-          className="shadow-lg rounded-lg p-8 space-y-4"
-          style={{ backgroundColor: siteTheme.cardBgColor, borderColor: siteTheme.borderColor, borderWidth: "1px" }}
-        >
-          <div className="mb-4">
-            <h2 className="text-2xl font-semibold">Order Details</h2>
-            <p className="mt-2">
-              Order ID: <span className="font-medium">{orderDetails.id}</span>
-            </p>
-            <p>
-              Payment Method: <span className="font-medium capitalize">{orderDetails.paymentMethod || "Stripe"}</span>
-              {orderDetails.paymentMethod === "delivery" && orderDetails.preferredMethod && (
-                <span
-                  className="ml-2 text-xs px-2 py-1 rounded capitalize"
-                  style={{ backgroundColor: siteTheme.secondaryBgColor }}
-                >
-                  {orderDetails.preferredMethod}
-                </span>
-              )}
-            </p>
-            <p>
-              Discount: <span className="font-medium" style={{ color: siteTheme.accentColor }}>{orderDetails.discountPercentage}% OFF</span>
-            </p>
-            <p>
-              Price <small>(Each Product)</small>: <span className="font-medium">${(orderDetails.finalPrice.toFixed(2))}</span>
-            </p>
-            <p>
-              Quantity:{" "}
-              <span className="font-medium">
-                {orderDetails.quantity || orderDetails.line_items?.[0]?.quantity || 1}
-              </span>
-            </p>
-            <p>
-              Total:{" "}
-              <span className="font-medium" style={{ color: siteTheme.accentColor }}>
-                ${((orderDetails.amount_total || 0) / 100).toFixed(2)}
-              </span>
-            </p>
-          </div>
-          {orderDetails.couponCode && (
-            <div>
-              <div className="mb-4">
-                <h3 className="text-xl font-semibold">Discount Applied {orderDetails.quantity > 1 ? (<small className="text-xs">(Each product)</small>) : null}</h3>
-                <p>
-                  Coupon Code:{" "}
-                  <span className="font-medium" style={{ color: siteTheme.accentColor }}>
-                    {orderDetails.couponCode}
-                  </span>
-                </p>
-                <p>
-                  Discount: <span className="font-medium">{orderDetails.discountPercentage}%</span>
-                </p>
-                {orderDetails.originalPrice && orderDetails.finalPrice && (
-                  <>
-                    <p>
-                      Original Price: <span className="line-through">${orderDetails.originalPrice.toFixed(2)}</span>
-                    </p>
-                    <p>
-                      Final Price:{" "}
-                      <span className="font-medium" style={{ color: siteTheme.accentColor }}>
-                        ${orderDetails.finalPrice.toFixed(2)}
-                      </span>
-                    </p>
-                    <p>
-                      You Saved:{" "}
-                      <span className="font-medium" style={{ color: "#10b981" }}>
-                        ${(orderDetails.originalPrice - orderDetails.finalPrice).toFixed(2)}
-                      </span>
-                    </p>
-                  </>
-                )}
-              </div>
 
-              {orderDetails.quantity > 1 ? (
-                <div className="mb-4">
-                  <h3 className="text-xl font-semibold">Discount Applied <small className="text-xs">(All products)</small></h3>
-                  <p>
-                    Coupon Code:{" "}
-                    <span className="font-medium" style={{ color: siteTheme.accentColor }}>
-                      {orderDetails.couponCode}
-                    </span>
-                  </p>
-                  <p>
-                    Discount: <span className="font-medium">{orderDetails.discountPercentage}%</span>
-                  </p>
-
-                  {orderDetails.originalPrice && orderDetails.quantity && orderDetails.discountPercentage && (
-                    <>
-                      <p>
-                        Original Total:{" "}
-                        <span className="line-through">
-                          ${(orderDetails.originalPrice * orderDetails.quantity).toFixed(2)}
-                        </span>
-                      </p>
-                      <p>
-                        Final Price:{" "}
-                        <span className="font-medium" style={{ color: siteTheme.accentColor }}>
-                          ${(
-                            orderDetails.originalPrice *
-                            orderDetails.quantity *
-                            (1 - orderDetails.discountPercentage / 100)
-                          ).toFixed(2)}
-                        </span>
-                      </p>
-                      <p>
-                        You Saved:{" "}
-                        <span className="font-medium" style={{ color: "#10b981" }}>
-                          ${(
-                            orderDetails.originalPrice *
-                            orderDetails.quantity *
-                            (orderDetails.discountPercentage / 100)
-                          ).toFixed(2)}
-                        </span>
-                      </p>
-                    </>
-                  )}
-                </div>
-              ) : null }
-
+      <main className="flex-grow">
+        {/* Hero Section */}
+        <div className="relative w-full h-[calc(100vh-60px)] flex items-center justify-center">
+          {backgroundImage ? (
+            <div className="absolute inset-0 z-0">
+              <Image
+                src={backgroundImage}
+                alt="Hero background"
+                fill
+                style={{ objectFit: "cover" }}
+                priority
+              />
+              <div className="absolute inset-0 bg-black/20"></div>
             </div>
-          )}
-          <div className="mb-4">
-            <h3 className="text-xl font-semibold">Product Information</h3>
-            <p>
-              Name: <span className="font-medium">{orderDetails.product?.name || "N/A"}</span>
-            </p>
-            <p>
-              Name: <span className="font-medium">{orderDetails.product?.price || "N/A"}</span>
-            </p>
-            <p>
-              Description: <span className="font-medium">{orderDetails.product?.description || "N/A"}</span>
-            </p>
-            <p>
-              Category: <span className="font-medium">{orderDetails.product?.category || "N/A"}</span>
-            </p>
-            <p>
-              Color: <span className="font-medium">{orderDetails.product?.selectedColor || "N/A"}</span>
-            </p>
-            <p>
-              Size: <span className="font-medium">{orderDetails.product?.selectedSize || "N/A"}</span>
-            </p>
-
-            {orderDetails.product?.customText && (
-              <p>
-                Custom Text: <span className="font-medium">{orderDetails.product.customText}</span>
-              </p>
-            )}
-
-            {orderDetails.isCustomProduct && (
-              <p>
-                Type: <span className="font-medium">Custom Product</span>
-              </p>
-            )}
-
-            {orderDetails.product?.finalDesignImage && (
-              <div className="mt-4">
-                <p className="mb-2">Your Custom Design:</p>
-                <div
-                  className="relative w-full max-w-md h-64 border rounded-lg overflow-hidden"
-                  style={{ borderColor: siteTheme.borderColor }}
-                >
-                  <Image
-                    src={orderDetails.product.finalDesignImage || "/placeholder.svg"}
-                    alt="Your custom design"
-                    fill
-                    style={{ objectFit: "contain" }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="mb-4">
-            <h3 className="text-xl font-semibold">Shipping Information</h3>
-            <p>
-              Name: <span className="font-medium">{orderDetails.customer_details?.name || "N/A"}</span>
-            </p>
-            <p>
-              Email: <span className="font-medium">{orderDetails.customer_details?.email || "N/A"}</span>
-            </p>
-            <p>
-              Address:{" "}
-              <span className="font-medium">
-                {orderDetails.customer_details?.address?.line1 ? (
-                  <>
-                    {orderDetails.customer_details?.address?.line1 || ""},
-                    {orderDetails.customer_details?.address?.city || ""},
-                    {orderDetails.customer_details?.address?.state || ""},
-                    {orderDetails.customer_details?.address?.postal_code || ""},
-                    {orderDetails.customer_details?.address?.country || ""}
-                  </>
-                ) : (
-                  orderDetails.customer_details?.address || "N/A"
-                )}
-              </span>
-            </p>
-          </div>
-
-          {orderDetails.paymentMethod === "delivery" && orderDetails.additionalNotes && (
-            <div className="mb-4">
-              <h3 className="text-xl font-semibold">Additional Notes</h3>
-              <p className="italic">{`"${orderDetails.additionalNotes}"`}</p>
-            </div>
+          ) : (
+            <div
+              className="absolute inset-0 z-0"
+              style={{ backgroundColor: siteTheme.secondaryBgColor }}
+            ></div>
           )}
 
-          <div className="mt-8 text-center">
-            <Link
-              href="/"
-              className="font-bold py-2 px-6 rounded-lg transition-colors"
-              style={{ backgroundColor: siteTheme.accentColor, color: siteTheme.textColor }}
-            >
-              Continue Shopping
-            </Link>
+          <div className="relative z-10 text-center px-4 max-w-4xl">
+            <h1 className={`${mainTextSize} ${mainTextColor} ${mainTextFont} mb-4`}>
+              {homeContent.mainText}
+            </h1>
+            <p className={`${subtextSize} ${subtextColor} ${subtextFont} mb-8`}>
+              {homeContent.subText}
+            </p>
+            <div className="flex md:gap-8 gap-4 justify-center">
+              <Link
+                href="/products"
+                className="px-4 py-2 rounded-md font-semibold text-sm transition-colors border-2"
+                style={{
+                  borderColor: "#ffffff",
+                  color: "#000000",
+                  backgroundColor: "#ffffff",
+                }}
+              >
+                Shop Now
+              </Link>
+              <Link
+                href="/customOrder"
+                className="px-4 py-2 rounded-md font-semibold text-sm transition-colors border-2"
+                style={{
+                  borderColor: "#ffffff",
+                  color: "#ffffff",
+                  backgroundColor: "transparent",
+                }}
+              >
+                Custom Orders
+              </Link>
+            </div>
           </div>
         </div>
       </main>
     </div>
-  )
-}
-
-export default function Success() {
-  return (
-    <Suspense fallback={<div className="text-center text-lg font-medium text-gray-700 py-8">Loading page...</div>}>
-      <SuccessContent />
-    </Suspense>
   )
 }
