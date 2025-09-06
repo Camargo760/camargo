@@ -17,8 +17,8 @@ export default function Home() {
 
   // Hero content (static)
   const homeContent = {
-    backgroundImage: "/desktop-alien-bg.jpg",
-    backgroundImageMobile: "/mobile-alien-bg.jpg",
+    backgroundImage: "/assets/desktop-alien-bg.jpg",
+    backgroundImageMobile: "/assets/mobile-alien-bg.jpg",
     mainText: "Camargo's World",
     subText: "Where we make your apparel possible.",
     textStyles: {
